@@ -1,0 +1,108 @@
+\documentclass[12pt]{article}
+\usepackage{fullpage}
+\usepackage{graphicx, rotating, booktabs} 
+\usepackage{times} 
+\usepackage{fbb} 
+\usepackage{natbib} 
+\usepackage{indentfirst} 
+\usepackage{setspace}
+\usepackage{grffile} 
+\usepackage{hyperref}
+\usepackage{tikz-cd}
+ \usetikzlibrary{cd}
+\usepackage[export]{adjustbox}
+\usepackage[most]{tcolorbox}
+\usepackage{verbatimbox}
+\usepackage{lscape}
+\usepackage{afterpage}
+\usepackage{amsmath}
+\usepackage[labelfont={bf},textfont=it,labelsep=period]{caption}
+ \usepackage{multirow} 
+\setcitestyle{aysep{}}
+\usepackage{dcolumn}
+
+\hypersetup{
+  colorlinks = true,
+  urlcolor = blue,
+  linkcolor = black,
+  citecolor = black,
+  pdfauthor = {Joshua Alley},
+  pdfkeywords = {},
+  pdftitle = {},
+  pdfsubject = {},
+  pdfpagemode = UseNone,
+%  pdffitwindow = true
+%  pdfcenterwindow = true
+}
+
+
+
+\singlespace
+%\title{\textbf{Elections, Arms Deals and Autocratic Allies}}
+\title{\textbf{A Simple and Interpretable Model for Estimating Heterogeneous Effects}}
+\author{Joshua Alley \\
+Assistant Professor \\
+University College Dublin\thanks{Thanks to Carlisle Rainey for helpful comments.} \\
+joshua.alley@ucd.edu
+}
+
+ 
+\date{\today}
+
+\bibliographystyle{apsr}
+
+\usepackage{sectsty}
+\sectionfont{\Large}
+\subsectionfont{\noindent\large\textit}
+\subsubsectionfont{\normalsize}
+
+\makeatletter
+\renewcommand\tiny{\@setfontsize\tiny{9}{10}}
+\makeatother
+
+
+\begin{document}
+
+\maketitle 
+
+\begin{abstract} 
+
+\end{abstract} 
+
+
+\newpage 
+\doublespace 
+
+
+\section{Introduction}
+
+
+Treatment effects vary.
+While many estimators focus on average effects across a sample, those averages often incorporate diverse relationships between the independent variable and outcome. 
+
+
+Given the importance of estimating heterogeneous effects, researchers have developed an enormous range of techniques. 
+Early attempts used parametric interactions and subgroup analyses. 
+Latter tools draw on random forests \citep{GreenKern2012, WagerAthey2018}, support vector machines \citep{ImaiRatkovic2013}, and ensemble methods \citep{Grimmeretal2017, Kunzeletal2019}. 
+
+
+
+\section{The Model}
+
+
+
+
+\section{Application} 
+
+
+
+\section{Conclusion}
+
+
+\newpage
+\singlespace
+ 
+\bibliography{../../MasterBibliography} 
+
+
+\end{document}
