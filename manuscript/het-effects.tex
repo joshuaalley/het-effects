@@ -39,7 +39,7 @@
 
 \singlespace
 %\title{\textbf{Elections, Arms Deals and Autocratic Allies}}
-\title{\textbf{A Simple and Interpretable Model for Estimating Heterogeneous Effects}}
+\title{\textbf{A Bayesian Hierarchical Model for Estimating Heterogeneous Effects}}
 \author{Joshua Alley \\
 Assistant Professor \\
 University College Dublin\thanks{Thanks to Carlisle Rainey for helpful comments.} \\
@@ -77,17 +77,106 @@ joshua.alley@ucd.edu
 \section{Introduction}
 
 
-Treatment effects vary.
-While many estimators focus on average effects across a sample, those averages often incorporate diverse relationships between the independent variable and outcome. 
+% one: het effects matter
+Every independent variable social scientists study impacts some units more than other. 
+Such heterogeneous effects are present in observational and experimental studies. 
+As a result, how different units respond to the same stimulus is essential for policy and scholarship. 
 
 
-Given the importance of estimating heterogeneous effects, researchers have developed an enormous range of techniques. 
+% two: introduce my solution 
+This note introduces a hierarchical Bayesian approach to estimating heterogeneous effects. 
+The model estimates how groups respond to an key independent variable based on unit characteristics, context and other experimental treatments.
+Modeling heterogeneous effects in this way is easy to interpret, which facilitates argument testing. 
+It also allows for comparisons between different sources of heterogeneous effects. 
+
+
+% three: loads of techniques
+This model complements the extensive array of tools for estimating heterogeneous effects. 
 Early attempts used parametric interactions and subgroup analyses. 
 Latter tools draw on random forests \citep{GreenKern2012, WagerAthey2018}, support vector machines \citep{ImaiRatkovic2013}, and ensemble methods \citep{Grimmeretal2017, Kunzeletal2019}. 
 
 
+% four: explain my fit
+Hierarchical modeling complements existing techniques. 
+Simple interactions and subgroup analysis are easy to interpret may understate variation by only examining a few factors, and do not scale well across more than a few dimensions. 
+More complex machine learning techniques capture complex patterns, but can be harder to interpret. 
+Using a hierarchical model where other variables predict the main effect a research is interested in preserves a simple and interpretable structure like interactions, while accommodating more factors and reducing the risks of underpowered subgroup analysis. 
+This facilitates argument testing, at the cost of flexibility to discover high-dimensional heterogeneity. 
 
-\section{The Model}
+
+% 
+To demonstrate how this model works, I reanalyze a study of... 
+
+
+
+\section{A Hierarchical Model of Heterogeneous Effects}
+
+
+The model uses at least two equations. 
+The first equation links the treatment and outcome. 
+The second equation estimates heterogeneous effects for each unique combination of variables that could modify the impact of a key independent variable.\footnote{If a researcher wants to estimate heterogeneous effects for multiple variables, they can add additional heterogeneous effect equations.}  
+
+
+For the outcome equation, start with \textit{N} units indexed with \textit{i}, some of which receive a binary experimental treatment \textit{T}.\footnote{I describe an extension to continuous interventions in the appendix.}
+For simplicity, I describe a model with an outcome variable \textit{y} that is normally distributed with mean $\mu_i$ and variance $\sigma$. 
+This approach can apply to binary, categorical and other outcomes as well. 
+
+
+The first equation is a simple random effects regression. 
+The outcome for each unit is then a function of an overall intercept $\alpha$, a matrix of control variables \textbf{X},\footnote{This can be omitted, depending on the application.} and a set of varying intercepts $\theta$, which are normally distributed with mean $\eta$ and variance $sigma_theta$. 
+All units are divided into \textit{g} groups based on unique combinations of treatment status and predictors of heterogeneous effects \textbf{Z}. 
+Each $\theta$ parameter estimates how much a specific group deviates from the overall intercept $\alpha$ as a result of the treatment. 
+
+
+\begin{equation}
+\begin{aligned}
+y &\sim N(\mu_i, \sigma) &\text{(Likelihood)} \\
+\mu_i &= \alpha + \theta_g + \textbf{X} * \beta &\text{(Outcome)}  \\
+\theta_g &\sim N(eta_g, \sigma_\theta) \\ 
+\eta_g &= \alpha_g + \textbf{Z} * \lambda &\text{(Heterogeneous Effects)} 
+\end{aligned}
+\end{equation}
+
+
+The second equation then predicts the group intercepts. 
+\textbf{Z} can contain unit characteristics, other treatments, or contextual factors; anything that modifies the impact of the treatment. 
+The second equation also includes an intercept $\alpha_g$ that is the impact of a treatment when all the heterogeneous effect variables are equal to zero.
+As in other regressions, this intercept may not always be substantively meaningful.  
+
+
+Identification requires one restriction. 
+One group is the control group, and I fix that $\eta$ to zero and set the corresponding predictors of that parameter to zero as well. 
+Without this restriction, sampling from the full posterior is difficult at best. 
+
+
+As a result of the identification restriction, the control group is equal to the overall intercept, and non-zero $\theta$ parameters estimate how much a given treated group deviates from that mean. 
+The model thus estimates heterogeneous effects by group, where each group has a unique mix of factors that can generate heterogeneous effects. 
+Partial pooling means that groups with fewer units still have reasonable uncertainty estimates. 
+
+
+% how to interpret: theta and lambda 
+The $\theta$ and $\lambda$ parameters are the key estimates for understanding heterogeneous effects. 
+Variables with a positive $\lambda$ parameter increase the impact of treatment, while a negative $\lambda$ indicates that a factor reduces the impact of the treatment.\footnote{Whether the $\lambda$ parameters have a direct substantive meaning depends on the likelihood and whether the researcher uses a link function.} 
+The net impact of treatment on a group $\theta$ depends on the balance of these factors. 
+
+
+% advantages 
+Estimating heterogeneous effects in this way has three advantages.
+First, this model allows researchers to account for multiple potential sources of heterogeneous effects in an easy to interpret framework. 
+Researchers can thus examine theories of heterogeneous effects and compare sources of variation. 
+Partial pooling also facilitates reasonable estimates for small groups by sharing information across treated units and leveraging variation in the predictors of heterogeneous effects. 
+Finally, this approach will be faster than machine learning approaches for many datasets, though it may not scale well to big datasets. 
+
+
+
+% disadvantages
+Like all methods, this approach has downsides as well. 
+First, it is most straightforward for discrete treatments and discrete modifiers of those treatments. 
+Using continuous variables in the heterogeneous effects equation creates many small groups or individual treatment effects, which increases the risk of sampling problems. 
+Researchers can create bins of continuous variables, but reducing variation in this way could impact inferences. 
+Second, this approach will not capture complex, high-dimensional interactions, which machine learning approaches are better placed to find. 
+That said, researchers can inject substantial flexibility into this modeling approach, using interactions or non-linear specifications in either level of the model. 
+Third, this model can show general trends, but will not be able to make powerful comparisons between all pairs of groups. 
 
 
 
