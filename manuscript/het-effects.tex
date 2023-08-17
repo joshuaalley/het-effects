@@ -38,8 +38,7 @@
 
 
 \singlespace
-%\title{\textbf{Elections, Arms Deals and Autocratic Allies}}
-\title{\textbf{A Bayesian Hierarchical Model for Estimating Heterogeneous Effects}}
+\title{\textbf{Using Bayesian Hierarchical Models to Estimate Heterogeneous Effects}}
 \author{Joshua Alley \\
 Assistant Professor \\
 University College Dublin\thanks{Thanks to Carlisle Rainey for helpful comments.} \\
@@ -66,7 +65,14 @@ joshua.alley@ucd.edu
 \maketitle 
 
 \begin{abstract} 
-
+Heterogeneous effects are common in social science. 
+In this note, I introduce a Bayesian hierarchical approach to estimating heterogeneous effects. 
+The modeling strategy adds an equation that predicts how an independent variable impacts different groups with additional variables.
+Researchers can use the results to infer how different factors correlate with an effect, and how groups with unique combinations of those factors respond to a given stimulus. 
+This approach provides an intermediate tool between interactions or subgroup analyses and machine-learning approaches for discovering complex heterogeneity. 
+It provides more nuance than interactions and reduces the risk of underpowered subgroup comparisons.
+At the same time, it is more theoretically driven and interpretable, as well as easier to implement and use with small datasets, than some machine-learning approaches. 
+Researchers can thus use this technique in conjunction with other approaches to provide a fuller accounting of heterogeneous effects for scholarship and policy.
 \end{abstract} 
 
 
@@ -78,117 +84,201 @@ joshua.alley@ucd.edu
 
 
 % one: het effects matter
-Every independent variable social scientists study impacts some units more than other. 
-Such heterogeneous effects are present in observational and experimental studies. 
-As a result, how different units respond to the same stimulus is essential for policy and scholarship. 
+Whether in observational and experimental studies, every independent variable social scientists study impacts some units more or less than others. 
+Aggregate relationships often mask heterogeneous effects.\footnote{For instance, \citet{Abramsonetal2022} note that the average marginal component effect (AMCE) of conjoint experiments reflects the direction and intensity of respondent preferences, and gives more weight to intense preferences.} 
+As a result, understanding variation in how different units respond to the same stimulus is essential for policy and scholarship. 
+Scholars can better elucidate the process linking their independent variables with key outcomes, while policymakers can target finite resources. 
 
 
 % two: introduce my solution 
 This note introduces a hierarchical Bayesian approach to estimating heterogeneous effects. 
-The model estimates how groups respond to an key independent variable based on unit characteristics, context and other experimental treatments.
-Modeling heterogeneous effects in this way is easy to interpret, which facilitates argument testing. 
-It also allows for comparisons between different sources of heterogeneous effects. 
+The technique uses two equations, one to link a treatment and outcome, and a second to estimate how group responses to the treatment differ as a result of unit characteristics, context and other experimental manipulations.
+Modeling heterogeneous effects in this way is straightforward and produces easily interpretable results, which facilitates argument testing. 
+It also allows researchers to compare different sources of heterogeneous effects, and can be extended in many ways.  
 
 
 % three: loads of techniques
-This model complements the extensive array of tools for estimating heterogeneous effects. 
-Early attempts used parametric interactions and subgroup analyses. 
-Latter tools draw on random forests \citep{GreenKern2012, WagerAthey2018}, support vector machines \citep{ImaiRatkovic2013}, and ensemble methods \citep{Grimmeretal2017, Kunzeletal2019}. 
+This model complements existing tools for estimating heterogeneous effects, which range from interactions to machine learning. 
+Parametric interactions and subgroup analyses are a common way that scholars examine individual modifiers. 
+While these techniques are easy to implement and interpret, they lose their ease of interpretation with more than three dimensions and are often misleadingly underpowered \citep{Simmonsetal2011}. 
+To capture more complex variation, later recent work employs random forests \citep{GreenKern2012, WagerAthey2018}, support vector machines \citep{ImaiRatkovic2013}, and ensemble methods \citep{Grimmeretal2017, Kuenzeletal2019, Dorieetal2022}.
+These machine learning algorithms capture complex patterns, but can be harder to interpret and implement, especially in smaller datasets. 
+
+ 
+Using a hierarchical model where other variables predict heterogeneous effects preserves a simple and interpretable structure like interactions, while accommodating more factors and reducing the risks of subgroup analysis. 
+This facilitates argument testing and is easier to interpret than some machine-learning techniques.
+The hierarchical approach lacks the flexibility to discover high-dimensional heterogeneity, however.  
+As a result, this approach is best used in concert with other heterogeneous effects techniques, and could be a useful addition to ensemble models. 
 
 
-% four: explain my fit
-Hierarchical modeling complements existing techniques. 
-Simple interactions and subgroup analysis are easy to interpret may understate variation by only examining a few factors, and do not scale well across more than a few dimensions. 
-More complex machine learning techniques capture complex patterns, but can be harder to interpret. 
-Using a hierarchical model where other variables predict the main effect a research is interested in preserves a simple and interpretable structure like interactions, while accommodating more factors and reducing the risks of underpowered subgroup analysis. 
-This facilitates argument testing, at the cost of flexibility to discover high-dimensional heterogeneity. 
-
-
-% 
-To demonstrate how this model works, I reanalyze a study of... 
+% wrap and introduce the application 
+In the remainder of this note, I describe the model and demonstrate how it works by analyzing a study of how foreign side-taking in US elections impacts support for economic engagement by \citet{BushPrather2020}.
+Bush and Prather test their argument with 8 t-tests, which this model encapsulates in three parameters.  
+While substantiating the original findings, the reanalysis also reveals that gender and political engagement shape how foreign side-taking in elections impacts support for economic engagement.
 
 
 
 \section{A Hierarchical Model of Heterogeneous Effects}
 
 
-The model uses at least two equations. 
+The heterogeneous effects model uses at least two equations, and is easiest to estimate with Bayesian methods.\footnote{Priors for most parameters depend on the problem and researcher knowledge. I estimate the example model below with STAN \citep{Carpenteretal2016}.} 
 The first equation links the treatment and outcome. 
-The second equation estimates heterogeneous effects for each unique combination of variables that could modify the impact of a key independent variable.\footnote{If a researcher wants to estimate heterogeneous effects for multiple variables, they can add additional heterogeneous effect equations.}  
+The second equation estimates heterogeneous effects as a function of unit characteristics, other treatments, contextual factors, or whatever else the researcher is interested in. 
+The estimates give heterogeneous effects for groups with unique combinations of variables that modify the treatment and correlates of differences in the treatment.\footnote{Adding additional heterogeneous effect equations to estimate heterogeneous effects for multiple variables is straightforward.}  
 
 
-For the outcome equation, start with \textit{N} units indexed with \textit{i}, some of which receive a binary experimental treatment \textit{T}.\footnote{I describe an extension to continuous interventions in the appendix.}
-For simplicity, I describe a model with an outcome variable \textit{y} that is normally distributed with mean $\mu_i$ and variance $\sigma$. 
-This approach can apply to binary, categorical and other outcomes as well. 
+This approach can apply to many problems, but the following example addresses a common scenario; making between-unit comparisons based on an experimental treatment.    
+Start with \textit{N} units indexed by \textit{i}, some of which receive a binary treatment \textit{T}.
+For simplicity, I assume that the outcome variable ${y}$ is normally distributed with mean $\mu_i$ and variance $\sigma$.\footnote{Researchers should use binary, categorical and other outcome likelihoods as needed.}
 
 
-The first equation is a simple random effects regression. 
-The outcome for each unit is then a function of an overall intercept $\alpha$, a matrix of control variables \textbf{X},\footnote{This can be omitted, depending on the application.} and a set of varying intercepts $\theta$, which are normally distributed with mean $\eta$ and variance $sigma_theta$. 
+The first equation predicts the outcome mean. 
+The outcome for each unit is then a function of an overall intercept $\alpha$, a matrix of control variables \textbf{X},\footnote{This can be omitted, depending on the application. Adding additional grouping structures for more complex data is also straightforward.} and a set of varying intercepts $\theta$, which are normally distributed with mean $\eta_g$ and variance $\sigma_\theta$. 
 All units are divided into \textit{g} groups based on unique combinations of treatment status and predictors of heterogeneous effects \textbf{Z}. 
-Each $\theta$ parameter estimates how much a specific group deviates from the overall intercept $\alpha$ as a result of the treatment. 
+Each $\theta$ parameter estimates how much a specific group deviates from the overall intercept $\alpha$ due to the treatment. 
 
 
 \begin{equation}
 \begin{aligned}
 y &\sim N(\mu_i, \sigma) &\text{(Likelihood)} \\
-\mu_i &= \alpha + \theta_g + \textbf{X} * \beta &\text{(Outcome)}  \\
-\theta_g &\sim N(eta_g, \sigma_\theta) \\ 
-\eta_g &= \alpha_g + \textbf{Z} * \lambda &\text{(Heterogeneous Effects)} 
+\mu_i &= \alpha + \theta_g + \textbf{X} \beta &\text{(Outcome Equation)}  \\
+\theta_g &\sim N(\eta_g, \sigma_\theta) \\ 
+\eta_g &= \lambda_1 + \textbf{Z} \lambda &\text{(Heterogeneous Effects)} 
 \end{aligned}
 \end{equation}
 
 
-The second equation then predicts the group intercepts. 
-\textbf{Z} can contain unit characteristics, other treatments, or contextual factors; anything that modifies the impact of the treatment. 
-The second equation also includes an intercept $\alpha_g$ that is the impact of a treatment when all the heterogeneous effect variables are equal to zero.
-As in other regressions, this intercept may not always be substantively meaningful.  
+The second equation then predicts the group intercepts with a second set of variables in the matrix \textbf{Z}. 
+\textbf{Z} can contain anything that modifies the impact of treatment, including unit characteristics, other treatments, or contextual factors. 
+The second equation also includes an intercept $\lambda_1$ that estimates the impact of treatment when all the heterogeneous effect variables are zero.
+As in other regressions, this intercept is not always substantively meaningful.  
 
 
-Identification requires one restriction. 
-One group is the control group, and I fix that $\eta$ to zero and set the corresponding predictors of that parameter to zero as well. 
-Without this restriction, sampling from the full posterior is difficult at best. 
+Identification requires one restriction on the model parameters. 
+One of the groups is the control group, and I fix that $\eta$ to zero by setting the corresponding intercept and predictors of that parameter to zero. 
+Without this restriction, sampling from the full posterior is difficult and the substantive meaning of the $\theta$ parameters changes. 
 
-
-As a result of the identification restriction, the control group is equal to the overall intercept, and non-zero $\theta$ parameters estimate how much a given treated group deviates from that mean. 
-The model thus estimates heterogeneous effects by group, where each group has a unique mix of factors that can generate heterogeneous effects. 
-Partial pooling means that groups with fewer units still have reasonable uncertainty estimates. 
+As a result of the identification restriction, the control group $\theta$ is equal to the overall intercept and non-zero $\theta$ parameters estimate how much a given treated group deviates from that control group mean. 
+The model thus estimates heterogeneous effects by group, where each group has a unique mix of factors that modify how that group responds to the treatment. 
+Partial pooling means that groups with fewer units still have reasonable uncertainty and can estimate individual treatment effects in some applications. 
 
 
 % how to interpret: theta and lambda 
 The $\theta$ and $\lambda$ parameters are the key estimates for understanding heterogeneous effects. 
-Variables with a positive $\lambda$ parameter increase the impact of treatment, while a negative $\lambda$ indicates that a factor reduces the impact of the treatment.\footnote{Whether the $\lambda$ parameters have a direct substantive meaning depends on the likelihood and whether the researcher uses a link function.} 
-The net impact of treatment on a group $\theta$ depends on the balance of these factors. 
+Variables with a positive $\lambda$ parameter increase the impact of treatment, while a negative $\lambda$ indicates that a factor reduces the treatment effect.\footnote{Whether the $\lambda$ parameters can be interpreted directly on the outcome scale depends on the likelihood and whether the researcher uses a link function.} 
+The net response of a group to treatment $\theta$ depends on the balance of the $\lambda$ parameters in that group. 
 
 
 % advantages 
 Estimating heterogeneous effects in this way has three advantages.
 First, this model allows researchers to account for multiple potential sources of heterogeneous effects in an easy to interpret framework. 
-Researchers can thus examine theories of heterogeneous effects and compare sources of variation. 
-Partial pooling also facilitates reasonable estimates for small groups by sharing information across treated units and leveraging variation in the predictors of heterogeneous effects. 
-Finally, this approach will be faster than machine learning approaches for many datasets, though it may not scale well to big datasets. 
-
+Researchers can thus examine theories of heterogeneous effects and compare sources of variation.\footnote{Rescaling variables in the heterogeneous effects equation, for example by rescaling continuous variables by two standard deviations \citep{Gelman2008}, can aid model fitting and direct coefficient comparisons.} 
+Partial pooling also facilitates reasonable estimates for small groups by sharing information across treated groups and leveraging the predictors in the heterogeneous effects equation. 
+Finally, this approach will be faster than machine learning approaches for many datasets, and may scale better than models that attempt to estimate individual treatment effects.
 
 
 % disadvantages
-Like all methods, this approach has downsides as well. 
-First, it is most straightforward for discrete treatments and discrete modifiers of those treatments. 
-Using continuous variables in the heterogeneous effects equation creates many small groups or individual treatment effects, which increases the risk of sampling problems. 
-Researchers can create bins of continuous variables, but reducing variation in this way could impact inferences. 
-Second, this approach will not capture complex, high-dimensional interactions, which machine learning approaches are better placed to find. 
-That said, researchers can inject substantial flexibility into this modeling approach, using interactions or non-linear specifications in either level of the model. 
-Third, this model can show general trends, but will not be able to make powerful comparisons between all pairs of groups. 
+Like all methods, this technique has downsides, which can be partially ameliorated by altering the basic framework above. 
+First, relying on varying intercepts makes it most straightforward for binary independent variables. 
+Extensions to continuous variables should use varying slopes within groups, not varying intercepts like the model above.\footnote{See \citet{Alley2021isq} for an example.}
+Furthermore, because groups are based on unique combinations of heterogeneous effect variables, using multiple continuous variables in the heterogeneous effects equation creates many small groups or individual treatment effects, which increases the risk of sampling problems, especially in small datasets. 
+If using several continuous variables hinders model convergence, researchers can bin continuous variables.
+
+
+Second, unlike machine learning approaches, this model will not discover high-dimensional interactions. 
+That said, researchers can inject substantial flexibility if they want using interactions or non-linear specifications in either level of the model. 
+Third, this model can show general trends, but will not make powerful comparisons between every pair of groups. 
+Researchers who want to compare a few specific groups may not be able to, especially if the groups are small.
 
 
 
+\section{Example Application} 
 
-\section{Application} 
 
+In the following, I demonstrate how the model works by reanalyzing a study by \citet{BushPrather2020} (BP hereafter). 
+This study examines how foreign meddling in elections impacts support for economic engagement with the meddler. 
+One of their experiments examines how Russian or German engagement in the 2016 US election impacts mass support for trade and investment with those countries.
+I use a heterogeneous effects model to check their results and further explore their findings. 
+
+
+% describe design
+BP employ a 2x2x2 factorial experiment.
+This design randomizes whether a foreign country is interfering in the 2016 election, the country and their attitude towards Trump and whether the potential economic ties entail greater trade or investment in the United States.
+In one treatment, Russia expresses support for Trump and in the other, Germany expresses opposition to Trump. 
+
+
+BP hypothesize that individuals will prefer economic engagement with states that support their candidate. 
+They thus examine how the impact of side-taking varies with the direction of the endorsement, individual political preferences, and the economic issue. 
+To do this, they use four tables and figures, and rely on eight t-tests of differences in means between groups of roughly 25 respondents. 
+
+
+The heterogeneous effects model encapsulates the argument and all tests by estimating the impact of side-taking on economic engagement as a function of which country is involved, a dummy indicator of intention to vote for Clinton, and their interaction. 
+The interaction captures the hypothesis that Clinton voters will support engagement with Germany because Germany opposed Trump, and should be positive. 
+I also add an indicator of whether the experiment deals with trade or investment. 
+Last the heterogeneous effects equation also includes indicators of female gender, active employment, college education, political knowledge, and political interest. 
+
+
+
+The outcome variable is a scale from one to four that measures support for greater economic engagement with the potential partner. 
+To approximate BP's analyses, I use a normal outcome likelihood. 
+Because this experimental randomization produced a roughly balanced sample, I do not include any control variables in the outcome equation. 
+
+
+\begin{figure}[htpb]
+	\centering
+		\includegraphics[width=0.95\textwidth]{../figures/bp-lambda.png}
+	\caption{}
+	\label{fig:bp-lambda}
+\end{figure}
+
+
+\autoref{fig:bp-lambda} summarizes the estimates from the heterogeneous effects equation. 
+As BP predicted and find, side-taking increases support for economic engagement with voters whose candidate the intervention supports. 
+Relative to the impact of Russian side-taking on Trump voters, German side-taking increases the impact of side taking by almost 1, which is a large difference on an outcome that ranges from 1 to 4. 
+German side-taking does not impact Trump voter support for economic engagement, and Clinton voters are marginally but not clearly less supportive of engagement with Russia after Russian side-taking.
+These estimates are consistent with BP's results. 
+
+
+\begin{figure}[htpb]
+	\centering
+		\includegraphics[width=0.95\textwidth]{../figures/bp-theta-est.png}
+	\caption{Heterogeneous effects of foreign side-taking in US elections on support for economic engagement with the interfering country. Each estimate reflects a treated group with a unique combination of other treatments and demographic characteristics.}
+	\label{fig:bp-theta-est}
+\end{figure}
+
+
+The model also provides some new information about how side-taking impacts support for economic engagement. 
+Electoral side-taking is more likely to reduce support for foreign investment in the United States, all else equal. 
+Moreover, women largely respond more negatively to side-taking. 
+Finally, increasing political knowledge decreases the the impact of side-taking, while interest in politics increases it. 
+
+
+\autoref{fig:bp-theta-est} substantiates these inferences and presents the group-specific treatment effects. 
+In general, Clinton voters were more responsive to side-taking. 
+Most Clinton voters were less likely to support trade and investment with Russia after exposure to Russian support for Trump, and more likely to back economic cooperation with Germany in response to German opposition to Trump. 
+Additional variation in this relationship comes from gender and political engagement.
+Some Trump voters reduce their support for investment regardless of who the intervention backs and are less likely to change their trade attitudes in response to side-taking as well. 
+
+
+% power point
+The credible intervals on these estimates suggest that researchers should not rely on this technique to generate powerful tests between groups, unless predictors of heterogeneous effects create substantial differences. 
+For instance, most Trump voters hold very similar views of economic engagement, and there are only a few that are clearly different. 
+Among Clinton voters, however, the response to German side-taking and corresponding distaste for Russian side-taking creates huge differences between different treated groups. 
 
 
 \section{Conclusion}
 
+This note introduced a simple and interpretable hierarchical technique for estimating heterogeneous effects. 
+The approach above can apply to a wide range of outcomes, data structures, and theories. 
+Explicitly modeling how different groups respond to an independent variable can help test new arguments and identify who responds best to a given intervention. 
 
-\newpage
+
+Again, this approach is a complement for existing tools, not a substitute. 
+Hierarchical modeling provides an intermediate approach between simple interactions or subgroup analyses and complex machine-learning algorithms. 
+Researchers can thus use this tool to check other results or inform those techniques.
+With this and other tools, scholars and policymakers can better understand heterogeneous effects.
+
+
 \singlespace
  
 \bibliography{../../MasterBibliography} 

@@ -43,10 +43,10 @@ table(bp.us$w2_vote_hill, bp.us$treat_germrus)
 # pull data and complete cases
 bp.us.key <- bp.us %>%
                select(ipe_support, 
-                      treat_germrus, treat_ipesidetaking,
+                      treat_germrus, w2_vote_hill, treat_ipesidetaking,
                       woman, employ_dum, invest_cond,
                       college_educ, democrat, republican,
-                      w2_vote_hill) %>%
+                      polknowledge, polint) %>%
               drop_na()
 # down to 468 obs w/ focus on trump/Clinton voters 
 
@@ -58,10 +58,10 @@ bp.us.sides <- bp.us.split[[2]]
 
 bp.us.sides$treat_gr <- bp.us.sides %>%
   group_by(
-    treat_germrus,
+    treat_germrus, w2_vote_hill,
     woman, employ_dum, invest_cond,
     college_educ, 
-    w2_vote_hill) %>%
+    polknowledge, polint) %>%
   group_indices()
 
 # return these
@@ -81,8 +81,9 @@ het.bp.mat <- bp.us.clean %>%
   ) %>%
   select(intercept, treat_gr,
          treat_germrus, w2_vote_hill, clinton_germany,
-         woman, employ_dum, invest_cond,
-         college_educ, 
+         invest_cond,
+         woman, employ_dum, 
+         college_educ, polknowledge, polint
          ) %>%
   arrange(treat_gr) %>%
   distinct() %>%
@@ -129,22 +130,28 @@ print(diagnostics)
 draws.bp <- fit.het.bp$draws(format = "df")
 
 # heterogeneous effects model parameters
+mcmc_intervals(draws.bp, regex_pars = "lambda") 
 mcmc_intervals(draws.bp, regex_pars = "lambda") +
   scale_y_discrete(labels = colnames(data.bp.het$M))
 
+# nice labels and color scheme 
+labs.bp.het <- c("Pol. Interest",
+                 "Pol. Knowledge",
+                 "College Education",
+                 "Employed",
+                 "Woman",
+                 "Investment",
+                 "Clinton Voter &\nGerman Side-Taking",
+                 "Clinton Voter",
+                 "German Side-Taking\n(Against Trump)", 
+                 "Intercept")
 color_scheme_set("gray")
 mcmc_areas(draws.bp, regex_pars = "lambda",
                prob = .9) +
-  scale_y_discrete(labels = c("Intercept",
-                              "German Side-Taking\n(Against Trump)",
-                              "Clinton Voter",
-                              "Clinton Voter &\nGerman Side-Taking",
-                              "Woman",
-                              "Employed",
-                              "Investment",
-                              "College Education")) +
+  scale_y_discrete(labels = labs.bp.het,
+                   limits = rev) +
   labs(title = "Predictors of how Side-Taking in US Elections\nImpacts Support for Economic Engagement",
-       x = "Estimated Shift in Treatment Effect",
+       x = "Estimated Shift in Effect of Side-Taking",
        y = "")
 ggsave("figures/bp-lambda.png", height = 6, width = 8)
 
@@ -161,13 +168,14 @@ theta.sum.bp <- mcmc_intervals(draws.bp, regex_pars = "theta")$data %>%
 
 
 # plot it 
-ggplot(theta.sum, aes(x = m, y = hh,
-                      color = factor(treat_germrus),
-                      #size = n,
-                      shape = factor(w2_vote_hill))) +
-  facet_wrap(~ invest_cond,
+ggplot(theta.sum.bp, aes(x = m, y = hh,
+                      #shape = factor(w2_vote_hill),
+                      color = factor(treat_germrus))) +
+  facet_grid(w2_vote_hill ~ invest_cond,
              labeller = labeller(invest_cond = c(`0` = "Trade",
-                                                 `1` = "Investment"))) +
+                                                 `1` = "Investment"),
+                                 w2_vote_hill = c(`0` = "Trump Voter",
+                                                  `1` = "Clinton Voter"))) +
   geom_hline(yintercept = 0) +
   geom_pointrange(aes(y = m, ymin = ll,
                       ymax = hh),
@@ -177,11 +185,13 @@ ggplot(theta.sum, aes(x = m, y = hh,
   scale_color_grey(start = .1, end = .6,
                    name = "Side-Taker",
                    labels = c("0" = "Russia: Support Trump", "1" = "Germany: Oppose Trump")) +
-  scale_shape_discrete(name = "Voting Intention",
-                       labels=c("0" = "Trump", "1" = "Clinton")) +
+  # scale_shape_discrete(name = "Voting Intention",
+  #                      labels=c("0" = "Trump", "1" = "Clinton")) +
   labs(title = "Political Preference and Impact of Side-Taking on
        Support for Foreign Economic Engagement",
        x = "Median Estimated Impact of Side-Taking",
        y = "95% Credible Interval") +
+  # guides(color = guide_legend(nrow = 2, byrow = TRUE),
+  #        shape = guide_legend(nrow = 2, byrow = TRUE)) +
   theme(legend.position = "bottom")
 ggsave("figures/bp-theta-est.png", height = 6, width = 8)
