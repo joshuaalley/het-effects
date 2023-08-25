@@ -6,6 +6,7 @@
 library(tidyverse)
 library(haven)
 library(cmdstanr)
+library(brms)
 library(bayesplot)
 
 # set ggplot theme
@@ -47,7 +48,44 @@ bp.us.key <- bp.us %>%
                       woman, employ_dum, invest_cond,
                       college_educ, democrat, republican,
                       polknowledge, polint) %>%
-              drop_na()
+              drop_na() %>%
+              mutate(
+                pol_engage = polknowledge + polint
+              )
+
+bp.us.key$treat_gr <- bp.us.key %>%
+  group_by(
+    w2_vote_hill,
+    woman, pol_engage# employ_dum, invest_cond,
+    # college_educ
+    ) %>%
+  group_indices()
+class(bp.us.key)
+bp.us.key <- sjlabelled::remove_all_labels(bp.us.key)
+
+# simple brms model
+formula.bp <- bf(ipe_support ~ 1 + 
+                   treat_germrus*(w2_vote_hill +
+                   invest_cond +
+                   woman + 
+                   pol_engage) + 
+                   (1 + treat_germrus | 
+                      invest_cond:w2_vote_hill:woman:pol_engage))
+bp.mod.vars <- brm(formula.bp, 
+                   data = bp.us.key,
+                   family = gaussian(link = "identity"),
+                   backend = "cmdstanr",
+                   cores = 4,
+                   refresh = 500)
+summary(bp.mod.vars)
+coef(bp.mod.vars)
+
+# extract all params
+bp.pred <- prepare_predictions(bp.mod.vars)
+vars.pars <- coef(bp.pred)
+
+mcmc_intervals(vars.pars)
+
 # down to 468 obs w/ focus on trump/Clinton voters 
 
 # create a group indicator
@@ -56,13 +94,7 @@ bp.us.split <- bp.us.key %>%
   group_split(treat_ipesidetaking) 
 bp.us.sides <- bp.us.split[[2]]
 
-bp.us.sides$treat_gr <- bp.us.sides %>%
-  group_by(
-    treat_germrus, w2_vote_hill,
-    woman, employ_dum, invest_cond,
-    college_educ, 
-    polknowledge, polint) %>%
-  group_indices()
+
 
 # return these
 bp.us.clean <- bind_rows(bp.us.sides, bp.us.split[[1]])

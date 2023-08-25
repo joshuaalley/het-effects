@@ -42,7 +42,7 @@
 \author{Joshua Alley \\
 Assistant Professor \\
 University College Dublin\thanks{Thanks to Carlisle Rainey for helpful comments.} \\
-joshua.alley@ucd.edu
+joshua.alley@ucd.ie
 }
 
  
@@ -67,12 +67,12 @@ joshua.alley@ucd.edu
 \begin{abstract} 
 Heterogeneous effects are common in social science. 
 In this note, I introduce a Bayesian hierarchical approach to estimating heterogeneous effects. 
-The modeling strategy adds an equation that predicts how an independent variable impacts different groups with additional variables.
-Researchers can use the results to infer how different factors correlate with an effect, and how groups with unique combinations of those factors respond to a given stimulus. 
-This approach provides an intermediate tool between interactions or subgroup analyses and machine-learning approaches for discovering complex heterogeneity. 
+The modeling strategy uses varying slopes and intercepts, along with predictors of the slopes, to capture heterogeneous effects by groups.  
+Researchers can use the results to infer how different factors modify an effect and how groups with unique combinations of those factors respond to an independent variable. 
+This approach provides a flexible intermediate tool between interactions or subgroup analyses and machine-learning approaches for discovering complex heterogeneity. 
 It provides more nuance than interactions and reduces the risk of underpowered subgroup comparisons.
 At the same time, it is more theoretically driven and interpretable, as well as easier to implement and use with small datasets, than some machine-learning approaches. 
-Researchers can thus use this technique in conjunction with other approaches to provide a fuller accounting of heterogeneous effects for scholarship and policy.
+Researchers can thus use hierarchical models alongside other approaches to provide a fuller accounting of heterogeneous effects for scholarship and policy.
 \end{abstract} 
 
 
@@ -87,33 +87,37 @@ Researchers can thus use this technique in conjunction with other approaches to 
 Whether in observational and experimental studies, every independent variable social scientists study impacts some units more or less than others. 
 Aggregate relationships often mask heterogeneous effects.\footnote{For instance, \citet{Abramsonetal2022} note that the average marginal component effect (AMCE) of conjoint experiments reflects the direction and intensity of respondent preferences, and gives more weight to intense preferences.} 
 As a result, understanding variation in how different units respond to the same stimulus is essential for policy and scholarship. 
-Scholars can better elucidate the process linking their independent variables with key outcomes, while policymakers can target finite resources. 
+Scholars can better elucidate the process linking their independent variable and outcome, while policymakers can target finite resources. 
 
+
+% expand/sharpen this 
 
 % two: introduce my solution 
 This note introduces a hierarchical Bayesian approach to estimating heterogeneous effects. 
-The technique uses two equations, one to link a treatment and outcome, and a second to estimate how group responses to the treatment differ as a result of unit characteristics, context and other experimental manipulations.
-Modeling heterogeneous effects in this way is straightforward and produces easily interpretable results, which facilitates argument testing. 
+The technique uses varying slopes and intercepts, along with covariates, to estimate heterogeneous effects. 
+Modeling heterogeneous effects in this way is produces easily interpretable results, which facilitates argument testing. 
 It also allows researchers to compare different sources of heterogeneous effects, and can be extended in many ways.  
+Implementation using the brms package for \textsf{R} is straightforward. 
 
 
 % three: loads of techniques
-This model complements existing tools for estimating heterogeneous effects, which range from interactions to machine learning. 
+This approach to heterogeneous effects fills a niche between existing tools for estimating heterogeneous effects.
 Parametric interactions and subgroup analyses are a common way that scholars examine individual modifiers. 
-While these techniques are easy to implement and interpret, they lose their ease of interpretation with more than three dimensions and are often misleadingly underpowered \citep{Simmonsetal2011}. 
+While these techniques are easy to implement and interpret, they lose their ease of interpretation with more than three dimensions and are often misleadingly underpowered \citep{Simmonsetal2011}.\footnote{\citet{BlackwellOlson2022} describe a lasso approach to interactions that is also an intermediate step between machine-learning and linear regressions.}
 To capture more complex variation, later recent work employs random forests \citep{GreenKern2012, WagerAthey2018}, support vector machines \citep{ImaiRatkovic2013}, and ensemble methods \citep{Grimmeretal2017, Kuenzeletal2019, Dorieetal2022}.
 These machine learning algorithms capture complex patterns, but can be harder to interpret and implement, especially in smaller datasets. 
 
  
-Using a hierarchical model where other variables predict heterogeneous effects preserves a simple and interpretable structure like interactions, while accommodating more factors and reducing the risks of subgroup analysis. 
+ 
+Using a hierarchical model where other variables predict heterogeneous effects is more flexible than simple parametric interactions but easier to employ than machine learning approaches.  
+It preserves a simple and interpretable structure like interactions, while accommodating more factors and reducing the risks of subgroup analysis. 
 This facilitates argument testing and is easier to interpret than some machine-learning techniques.
 The hierarchical approach lacks the flexibility to discover high-dimensional heterogeneity, however.  
 As a result, this approach is best used in concert with other heterogeneous effects techniques, and could be a useful addition to ensemble models. 
 
 
 % wrap and introduce the application 
-In the remainder of this note, I describe the model and demonstrate how it works by analyzing a study of how foreign side-taking in US elections impacts support for economic engagement by \citet{BushPrather2020}.
-Bush and Prather test their argument with 8 t-tests, which this model encapsulates in three parameters.  
+In the remainder of this note, I describe the model and demonstrate how it works by analyzing a study of how foreign side-taking in US elections impacts support for economic engagement by \citet{BushPrather2020}.  
 While substantiating the original findings, the reanalysis also reveals that gender and political engagement shape how foreign side-taking in elections impacts support for economic engagement.
 
 
@@ -129,45 +133,39 @@ The estimates give heterogeneous effects for groups with unique combinations of 
 
 This approach can apply to many problems, but the following example addresses a common scenario; making between-unit comparisons based on an experimental treatment.    
 Start with \textit{N} units indexed by \textit{i}, some of which receive a binary treatment \textit{T}.
-For simplicity, I assume that the outcome variable ${y}$ is normally distributed with mean $\mu_i$ and variance $\sigma$.\footnote{Researchers should use binary, categorical and other outcome likelihoods as needed.}
+For simplicity, I assume that the outcome variable ${y}$ is normally distributed with mean $\mu_i$ and standard deviation $\sigma$.\footnote{Researchers should use binary, categorical and other outcome likelihoods as needed.}
 
 
 The first equation predicts the outcome mean. 
-The outcome for each unit is then a function of an overall intercept $\alpha$, a matrix of control variables \textbf{X},\footnote{This can be omitted, depending on the application. Adding additional grouping structures for more complex data is also straightforward.} and a set of varying intercepts $\theta$, which are normally distributed with mean $\eta_g$ and variance $\sigma_\theta$. 
-All units are divided into \textit{g} groups based on unique combinations of treatment status and predictors of heterogeneous effects \textbf{Z}. 
-Each $\theta$ parameter estimates how much a specific group deviates from the overall intercept $\alpha$ due to the treatment. 
+The outcome for each unit is then a function of varying intercepts $\alpha_g$, a matrix of control variables \textbf{X},\footnote{This can be omitted, depending on the application. Adding additional grouping structures for more complex data is also straightforward.} and a set of group treatment effects $\theta_g$, which are normally distributed with mean $\eta_g$ and standard deviation $\sigma_\theta$. 
+The researcher divides all units into \textit{g} groups based on unique combinations predictors of heterogeneous effects \textbf{Z}. 
+Each $\theta$ parameter estimates the treatment effect in group \textit{g}, and is often referred to as a varying slope. 
 
 
 \begin{equation}
 \begin{aligned}
 y &\sim N(\mu_i, \sigma) &\text{(Likelihood)} \\
-\mu_i &= \alpha + \theta_g + \textbf{X} \beta &\text{(Outcome Equation)}  \\
+\mu_i &= \alpha_g + \theta_g \textit{T} + \textbf{X} \beta &\text{(Mean Equation)}  \\
 \theta_g &\sim N(\eta_g, \sigma_\theta) \\ 
-\eta_g &= \lambda_1 + \textbf{Z} \lambda &\text{(Heterogeneous Effects)} 
+\eta_g &= \lambda_g + \textbf{Z} \lambda &\text{(Heterogeneous Effects)} 
 \end{aligned}
 \end{equation}
 
 
-The second equation then predicts the group intercepts with a second set of variables in the matrix \textbf{Z}. 
+The second equation then predicts the treatment effects with a second set of variables in the matrix \textbf{Z}. 
 \textbf{Z} can contain anything that modifies the impact of treatment, including unit characteristics, other treatments, or contextual factors. 
-The second equation also includes an intercept $\lambda_1$ that estimates the impact of treatment when all the heterogeneous effect variables are zero.
-As in other regressions, this intercept is not always substantively meaningful.  
+The researcher specifies these variables and uses them to define the groups. 
+The second equation also includes an intercept $\lambda_g$ that estimates the impact of treatment when all the heterogeneous effect variables are zero.
+As in other regressions, this intercept is not always substantively meaningful.\footnote{In most applications, the random intercepts $\alpha_g$ and varying slopes $theta_g$ should have a common multivariate normal prior to capture correlations between group slopes and intercepts.}
 
 
-Identification requires one restriction on the model parameters. 
-One of the groups is the control group, and I fix that $\eta$ to zero by setting the corresponding intercept and predictors of that parameter to zero. 
-Without this restriction, sampling from the full posterior is difficult and the substantive meaning of the $\theta$ parameters changes. 
-
-As a result of the identification restriction, the control group $\theta$ is equal to the overall intercept and non-zero $\theta$ parameters estimate how much a given treated group deviates from that control group mean. 
-The model thus estimates heterogeneous effects by group, where each group has a unique mix of factors that modify how that group responds to the treatment. 
-Partial pooling means that groups with fewer units still have reasonable uncertainty and can estimate individual treatment effects in some applications. 
+% Interpretation 
+The $\theta$ parameters are the key estimates in this model.
+These give the impact of a treatment within each group as a function of a systematic component where the group-level variables in \textbf{Z} modify the varying slope directly, and a random component. 
+The impact of a treatment within groups is also correlated with the group mean $\alpha_g$.  
 
 
-% how to interpret: theta and lambda 
-The $\theta$ and $\lambda$ parameters are the key estimates for understanding heterogeneous effects. 
-Variables with a positive $\lambda$ parameter increase the impact of treatment, while a negative $\lambda$ indicates that a factor reduces the treatment effect.\footnote{Whether the $\lambda$ parameters can be interpreted directly on the outcome scale depends on the likelihood and whether the researcher uses a link function.} 
-The net response of a group to treatment $\theta$ depends on the balance of the $\lambda$ parameters in that group. 
-
+% a word on groups 
 
 % advantages 
 Estimating heterogeneous effects in this way has three advantages.
