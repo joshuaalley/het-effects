@@ -85,9 +85,13 @@ Researchers can thus use hierarchical models alongside other approaches to provi
 
 % one: het effects matter
 Whether in observational and experimental studies, every independent variable social scientists study impacts some units more or less than others. 
-Aggregate relationships often mask heterogeneous effects.\footnote{For instance, \citet{Abramsonetal2022} note that the average marginal component effect (AMCE) of conjoint experiments reflects the direction and intensity of respondent preferences, and gives more weight to intense preferences.} 
-As a result, understanding variation in how different units respond to the same stimulus is essential for policy and scholarship. 
-Scholars can better elucidate the process linking their independent variable and outcome, while policymakers can target finite resources. 
+Aggregate relationships often mask heterogeneous effects.\footnote{\citet{Abramsonetal2022} note that the average marginal component effect (AMCE) of conjoint experiments reflects the direction and intensity of respondent preferences, and gives more weight to intense preferences.} 
+In some circumstances, these averages are useful, but in many cases, they mask interesting and important variation. 
+
+
+As a result, understanding varying responses. to the same stimulus is essential for policy and scholarship. 
+Scholars can better elucidate the process linking their independent variable and outcome.
+Policymakers can target finite resources. 
 
 
 % expand/sharpen this 
@@ -166,6 +170,26 @@ The impact of a treatment within groups is also correlated with the group mean $
 
 
 % a word on groups 
+Specifying the groups in which treatment slopes vary is the most important task for researchers. 
+Setting groups determines how treatment slopes vary.
+As in almost every social science application, researchers should identify what variation is most important and interesting. 
+This requires theoretical or policy guidance. 
+
+
+% three ways to set groups
+There are three general ways to set groups.
+First, if an intervention has multiple dimensions, researchers might set groups using combinations of other treatments.
+This uses the hierarchical model to estimate heterogeneous treatments and the experimental design determines groups. 
+A second approach uses unit and contextual factors to create groups and estimate treatment effect heterogeneity. 
+In this instance, researchers examine what within or around units shapes their reaction to an intervention.\footnote{For example, \citet{Alley2021isq} uses alliance characteristics such as treaty design and membership to examine when alliance membership increases or decreases military spending.} 
+Third, researchers may have specific policy aims, for example if they want to understand how an intervention affects individuals in a specific population in a given geography. 
+
+
+% grouping factors: numbers 
+The number of grouping factors will depend on a researcher's theoretical interest, but there may be some practical constraints. 
+Dividing groups based on many factors will create many small groups and increase the risk of model convergence problems. 
+Using only one factor will create an unidentified model, and researchers should use interactions in this case. 
+
 
 % advantages 
 Estimating heterogeneous effects in this way has three advantages.
@@ -177,15 +201,13 @@ Finally, this approach will be faster than machine learning approaches for many 
 
 % disadvantages
 Like all methods, this technique has downsides, which can be partially ameliorated by altering the basic framework above. 
-First, relying on varying intercepts makes it most straightforward for binary independent variables. 
-Extensions to continuous variables should use varying slopes within groups, not varying intercepts like the model above.\footnote{See \citet{Alley2021isq} for an example.}
-Furthermore, because groups are based on unique combinations of heterogeneous effect variables, using multiple continuous variables in the heterogeneous effects equation creates many small groups or individual treatment effects, which increases the risk of sampling problems, especially in small datasets. 
+Because groups are based on unique combinations of heterogeneous effect variables, using multiple continuous variables in the heterogeneous effects equation creates many small groups or individual treatment effects, which increases the risk of sampling problems, especially in small datasets. 
 If using several continuous variables hinders model convergence, researchers can bin continuous variables.
 
 
-Second, unlike machine learning approaches, this model will not discover high-dimensional interactions. 
-That said, researchers can inject substantial flexibility if they want using interactions or non-linear specifications in either level of the model. 
-Third, this model can show general trends, but will not make powerful comparisons between every pair of groups. 
+Furthermore, unlike machine learning approaches, this model will not discover high-dimensional interactions. 
+That said, researchers can inject substantial flexibility if they want using additional interactions or non-linear specifications in either level of the model. 
+Third, this model can show general trends, but will not make powerful comparisons between every groups. 
 Researchers who want to compare a few specific groups may not be able to, especially if the groups are small.
 
 
