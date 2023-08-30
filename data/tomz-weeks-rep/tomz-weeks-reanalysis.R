@@ -8,6 +8,7 @@ library(haven)
 library(brms)
 library(bayesplot)
 library(marginaleffects)
+library(ggdist)
 
 # set ggplot theme
 theme_set(theme_bw(base_size = 14))
@@ -54,46 +55,48 @@ tw.het.treat <- brm(bf(force ~ 1 + white + male + hawk + intl + natl.sup +
                     )
 summary(tw.het.treat)
 
+# Using marginaleffects out of the box 
+# predictions 
+pred.het.treat <- predictions(tw.het.treat,
+            newdata = datagrid(model = tw.het.treat,
+                       alliance = c(0, 1),
+                       treat.group = unique(tw.rep$treat.group))) %>%
+                       posterior_draws()
 
-# results
-coef.het.treat <- coef(tw.het.treat)
-
-# all draws
-draws.het.treat <- prepare_predictions(tw.het.treat)
-
-# fixed/systematic params
-fixed.het.treat <- draws.het.treat[["dpars"]][["mu"]][["fe"]][["b"]]
-var.het.treat <- draws.het.treat[["dpars"]][["mu"]][["re"]][["r"]][["regime:stakes:costs:region"]]
-
+ggplot(pred.het.treat, aes(x = draw, y = treat.group, 
+                           fill = factor(alliance))) +
+  stat_halfeye(slab_alpha = .5) +
+  labs(x = "Predicted Support for Force",
+       y = "",
+       fill = "Alliance")
 
 # slopes- create groups
 slopes.het.treat <- slopes(model = tw.het.treat,
-                variables = "alliance",
-                 newdata = datagrid(
-                   costs = c(0, 1),
-                   regime = c(0, 1),
-                   stakes = c(0, 1),
-                   region = c(1, 2, 3, 4),
-                   treat.group = unique(tw.rep$treat.group))
-                 )
+                           variables = "alliance",
+                           newdata = datagrid(
+                             treat.group = unique(tw.rep$treat.group))
+)
 slopes.het.treat
 
-draws.het.treat <- posterior_draws(slopes.het.treat)
+het.treat.all <- posterior_draws(slopes.het.treat)
 
-ggplot(draws.het.treat, aes(x = draw, y = treat.group)) +
-  ggdist::stat_halfeye() +
+ggplot(het.treat.all, aes(x = draw, y = treat.group)) +
+  stat_halfeye() +
   labs(x = "Marginal effect", y = "")
 
 
-### model with treatment heterogeneity 
+
+### model with treatment heterogeneity
+tw.rep$het.group <- paste(tw.rep$white, tw.rep$male, tw.rep$hawk,
+                            sep = "_")
 treat.het.prior <- c(
   prior(normal(0, .5), class = "b"),
   prior(normal(0, 1), class = "sd")
 )
 tw.treat.het <- brm(bf(force ~ 1 +
                          regime + stakes + costs + region +
-                         alliance*(white + male + hawk + intl) +
-                         (1 + alliance | white:male:hawk:intl) ),
+                         alliance*(white + male + hawk) +
+                         (1 + alliance | het.group) ),
                     data = tw.rep,
                     prior = treat.het.prior,
                     family = gaussian(),
@@ -103,3 +106,32 @@ tw.treat.het <- brm(bf(force ~ 1 +
                     refresh = 500
 )
 summary(tw.treat.het)
+
+
+# predictions 
+pred.treat.het <- predictions(tw.treat.het,
+                              newdata = datagrid(model = tw.treat.het,
+                                                 alliance = c(0, 1),
+                                                 het.group = unique(tw.rep$het.group))) %>%
+  posterior_draws()
+
+ggplot(pred.treat.het, aes(x = draw, y = het.group, 
+                           fill = factor(alliance))) +
+  stat_halfeye(slab_alpha = .5) +
+  labs(x = "Predicted Support for Force",
+       y = "",
+       fill = "Alliance")
+
+# slopes- create groups
+slopes.treat.het <- slopes(model = tw.treat.het,
+                           variables = "alliance",
+                           newdata = datagrid(model = tw.treat.het,
+                                      het.group = unique(tw.rep$het.group))
+)
+slopes.treat.het
+
+treat.het.all <- posterior_draws(slopes.treat.het)
+
+ggplot(treat.het.all, aes(x = draw, y = het.group)) +
+  stat_halfeye() +
+  labs(x = "Marginal effect of Alliance", y = "")

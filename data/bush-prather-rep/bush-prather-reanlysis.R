@@ -5,9 +5,10 @@
 # key packages
 library(tidyverse)
 library(haven)
-library(cmdstanr)
 library(brms)
 library(bayesplot)
+library(marginaleffects)
+library(ggdist)
 
 # set ggplot theme
 theme_set(theme_bw(base_size = 14))
@@ -50,14 +51,15 @@ bp.us.key <- bp.us %>%
                       polknowledge, polint) %>%
               drop_na() %>%
               mutate(
-                pol_engage = polknowledge + polint
+                pol_engage = polknowledge + polint,
+                high_pol_engage = ifelse(pol_engage >= median(pol_engage, na.rm = TRUE),
+                                          1, 0)
               )
 
 bp.us.key$treat_gr <- bp.us.key %>%
   group_by(
     w2_vote_hill,
-    woman, pol_engage# employ_dum, invest_cond,
-    # college_educ
+    woman, high_pol_engage, invest_cond
     ) %>%
   group_indices()
 class(bp.us.key)
@@ -70,7 +72,7 @@ formula.bp <- bf(ipe_support ~ 1 +
                    woman + 
                    pol_engage) + 
                    (1 + treat_germrus | 
-                      invest_cond:w2_vote_hill:woman:pol_engage))
+                      treat_gr))
 bp.mod.vars <- brm(formula.bp, 
                    data = bp.us.key,
                    family = gaussian(link = "identity"),
@@ -78,152 +80,32 @@ bp.mod.vars <- brm(formula.bp,
                    cores = 4,
                    refresh = 500)
 summary(bp.mod.vars)
-coef(bp.mod.vars)
-
-# extract all params
-bp.pred <- prepare_predictions(bp.mod.vars)
-vars.pars <- coef(bp.pred)
-
-mcmc_intervals(vars.pars)
-
-# down to 468 obs w/ focus on trump/Clinton voters 
-
-# create a group indicator
-# groups with particular combat experiences and demographics 
-bp.us.split <- bp.us.key %>%
-  group_split(treat_ipesidetaking) 
-bp.us.sides <- bp.us.split[[2]]
 
 
+# predictions 
+pred.bp <- predictions(bp.mod.vars,
+                              newdata = datagrid(
+                                          treat_germrus = c(0, 1),
+  treat_gr = unique(bp.us.key$treat_gr))) %>%
+  posterior_draws()
 
-# return these
-bp.us.clean <- bind_rows(bp.us.sides, bp.us.split[[1]])
+ggplot(pred.bp, aes(x = draw, y = treat_gr, 
+                           fill = factor(treat_germrus))) +
+  stat_halfeye(slab_alpha = .5) +
+  labs(x = "Predicted Support for Engagement",
+       y = "",
+       fill = "Interference")
 
-# number of combat to zero for non-combat
-bp.us.clean$treat_gr[bp.us.clean$treat_ipesidetaking == 0] <- 0
-bp.us.clean$treat_gr <- bp.us.clean$treat_gr + 1
-table(bp.us.clean$treat_gr)
+# slopes- create groups
+slopes.bp <- slopes(model = bp.mod.vars,
+                           variables = "treat_germrus",
+                           newdata = datagrid(
+                             treat_gr = unique(bp.us.key$treat_gr)))
+slopes.bp
 
-# set up data: het effects matrix
-het.bp.mat <- bp.us.clean %>%
-  filter(treat_ipesidetaking == 1) %>%
-  mutate(
-    intercept = 1,
-    clinton_germany = treat_germrus * w2_vote_hill,
-  ) %>%
-  select(intercept, treat_gr,
-         treat_germrus, w2_vote_hill, clinton_germany,
-         invest_cond,
-         woman, employ_dum, 
-         college_educ, polknowledge, polint
-         ) %>%
-  arrange(treat_gr) %>%
-  distinct() %>%
-  select(-treat_gr)
+bp.me <- posterior_draws(slopes.bp)
 
-# add zeros for IVs in control group 
-het.bp.mat <- rbind(rep(0, times = ncol(het.bp.mat)),
-                     het.bp.mat)
+ggplot(bp.me, aes(x = draw, y = het.group)) +
+  stat_halfeye() +
+  labs(x = "Marginal effect of Endorsement", y = "")
 
-# set up data
-# data list
-data.bp.het <- list(
-  N = nrow(bp.us.clean),
-  y = bp.us.clean$ipe_support,
-  T = max(bp.us.clean$treat_gr),
-  treat = bp.us.clean$treat_gr,
-  L = ncol(het.bp.mat),
-  M = het.bp.mat
-)
-
-# compile model
-het.mod.bp <- cmdstan_model(stan_file = "data/bush-prather-rep/het-effects-bp.stan",
-                         cpp_options = list(stan_threads = TRUE))
-
-
-# fit model 
-fit.het.bp <- het.mod.bp$sample(
-  data = data.bp.het,
-  chains = 4, 
-  parallel_chains = 4,
-  threads_per_chain = 2,
-  seed = 12,
-  #max_treedepth = 20, 
-  adapt_delta = .99,
-  refresh = 200
-)
-
-#  diagnose 
-fit.het.bp$cmdstan_diagnose()
-
-diagnostics <- fit.het.bp$diagnostic_summary()
-print(diagnostics)
-
-draws.bp <- fit.het.bp$draws(format = "df")
-
-# heterogeneous effects model parameters
-mcmc_intervals(draws.bp, regex_pars = "lambda") 
-mcmc_intervals(draws.bp, regex_pars = "lambda") +
-  scale_y_discrete(labels = colnames(data.bp.het$M))
-
-# nice labels and color scheme 
-labs.bp.het <- c("Pol. Interest",
-                 "Pol. Knowledge",
-                 "College Education",
-                 "Employed",
-                 "Woman",
-                 "Investment",
-                 "Clinton Voter &\nGerman Side-Taking",
-                 "Clinton Voter",
-                 "German Side-Taking\n(Against Trump)", 
-                 "Intercept")
-color_scheme_set("gray")
-mcmc_areas(draws.bp, regex_pars = "lambda",
-               prob = .9) +
-  scale_y_discrete(labels = labs.bp.het,
-                   limits = rev) +
-  labs(title = "Predictors of how Side-Taking in US Elections\nImpacts Support for Economic Engagement",
-       x = "Estimated Shift in Effect of Side-Taking",
-       y = "")
-ggsave("figures/bp-lambda.png", height = 6, width = 8)
-
-
-
-# treatment group parameters
-mcmc_intervals(draws.bp, regex_pars = "theta") 
-
-
-# summary with predictors
-theta.sum.bp <- mcmc_intervals(draws.bp, regex_pars = "theta")$data %>%
-  filter(str_detect(parameter, "std|mu|sigma", negate = TRUE)) %>%
-  bind_cols(het.bp.mat)
-
-
-# plot it 
-ggplot(theta.sum.bp, aes(x = m, y = hh,
-                      #shape = factor(w2_vote_hill),
-                      color = factor(treat_germrus))) +
-  facet_grid(w2_vote_hill ~ invest_cond,
-             labeller = labeller(invest_cond = c(`0` = "Trade",
-                                                 `1` = "Investment"),
-                                 w2_vote_hill = c(`0` = "Trump Voter",
-                                                  `1` = "Clinton Voter"))) +
-  geom_hline(yintercept = 0) +
-  geom_pointrange(aes(y = m, ymin = ll,
-                      ymax = hh),
-                  alpha = .75,
-                  size = 1,
-                  linewidth = 1) +
-  scale_color_grey(start = .1, end = .6,
-                   name = "Side-Taker",
-                   labels = c("0" = "Russia: Support Trump", "1" = "Germany: Oppose Trump")) +
-  # scale_shape_discrete(name = "Voting Intention",
-  #                      labels=c("0" = "Trump", "1" = "Clinton")) +
-  labs(title = "Political Preference and Impact of Side-Taking on
-       Support for Foreign Economic Engagement",
-       x = "Median Estimated Impact of Side-Taking",
-       y = "95% Credible Interval") +
-  # guides(color = guide_legend(nrow = 2, byrow = TRUE),
-  #        shape = guide_legend(nrow = 2, byrow = TRUE)) +
-  theme(legend.position = "bottom")
-ggsave("figures/bp-theta-est.png", height = 6, width = 8)
