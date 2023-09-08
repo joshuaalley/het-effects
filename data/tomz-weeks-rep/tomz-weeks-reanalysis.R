@@ -114,7 +114,7 @@ ggplot(slopes.het.treat, aes(y = estimate, x = factor(regime),
        subtitle = c("Region, Regime, Stakes, Cost"),
        x = "Regime", 
        y = "Marginal effect of Alliance")
-ggsave("figures/tw-het-treat.png", height = 6, width = 8)
+ggsave("figures/tw-het-treat.png", height = 8, width = 10)
 
 # give posterior mass
 het.treat.all <- posterior_draws(slopes.het.treat)
@@ -198,7 +198,7 @@ ggplot(slopes.treat.het, aes(y = estimate, x = factor(male),
        subtitle = "Internationalism, Hawkishness, Race and Gender",
        x = "Gender", 
        y = "Marginal effect of Alliance")
-ggsave("figures/tw-treat-het.png", height = 6, width = 8)
+ggsave("figures/tw-treat-het.png", height = 8, width = 10)
 
 # alternative presenation
 treat.het.all <- posterior_draws(slopes.treat.het)

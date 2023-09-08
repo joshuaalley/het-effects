@@ -127,7 +127,7 @@ ggplot(slopes.bp, aes(y = estimate, x = pol_engage,
        subtitle = c("Political Affiliation, Engagement, Economic Tie, Gender"),
        x = "Political Engagement", 
        y = "Marginal effect of Electoral Endorsement")
-ggsave("figures/bp-het-est.png", height = 6, width = 8)
+ggsave("appendix/bp-het-est.png", height = 6, width = 8)
 
 bp.me <- posterior_draws(slopes.bp)
 
