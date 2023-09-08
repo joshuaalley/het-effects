@@ -59,18 +59,18 @@ bp.us.key <- bp.us %>%
 bp.us.key$treat_gr <- bp.us.key %>%
   group_by(
     w2_vote_hill,
-    woman, high_pol_engage, invest_cond
+    woman, pol_engage, invest_cond
     ) %>%
   group_indices()
 class(bp.us.key)
 bp.us.key <- sjlabelled::remove_all_labels(bp.us.key)
 
 # simple brms model
-formula.bp <- bf(ipe_support ~ 1 + 
+formula.bp <- bf(ipe_support ~ 1 + treat_germrus +
                    treat_germrus*(w2_vote_hill +
                    invest_cond +
-                   woman + 
-                   pol_engage) + 
+                   woman +
+                   pol_engage) +
                    (1 + treat_germrus | 
                       treat_gr))
 bp.mod.vars <- brm(formula.bp, 
@@ -78,15 +78,21 @@ bp.mod.vars <- brm(formula.bp,
                    family = gaussian(link = "identity"),
                    backend = "cmdstanr",
                    cores = 4,
+                   control = list(adapt_delta = .9),
                    refresh = 500)
 summary(bp.mod.vars)
 
 
 # predictions 
-pred.bp <- predictions(bp.mod.vars,
-                              newdata = datagrid(
-                                          treat_germrus = c(0, 1),
-  treat_gr = unique(bp.us.key$treat_gr))) %>%
+# new data
+
+grid.het.treat <- bp.us.key %>%
+  select(treat_germrus, invest_cond,
+         w2_vote_hill, woman, pol_engage,
+         treat_gr) %>%
+  distinct() 
+
+pred.bp <- predictions(bp.mod.vars, newdata = grid.het.treat) %>%
   posterior_draws()
 
 ggplot(pred.bp, aes(x = draw, y = treat_gr, 
@@ -99,13 +105,33 @@ ggplot(pred.bp, aes(x = draw, y = treat_gr,
 # slopes- create groups
 slopes.bp <- slopes(model = bp.mod.vars,
                            variables = "treat_germrus",
-                           newdata = datagrid(
-                             treat_gr = unique(bp.us.key$treat_gr)))
+                           newdata = grid.het.treat)
 slopes.bp
+
+ggplot(slopes.bp, aes(y = estimate, x = pol_engage,
+                             color = factor(invest_cond),
+                      shape = factor(woman))) +
+  facet_wrap(~ w2_vote_hill, ncol = 5,
+             labeller = labeller(w2_vote_hill = c(`0` = "Trump Voter",
+                                            `1` = "Clinton Voter"))) +
+  geom_hline(yintercept = 0) +
+  geom_pointrange(aes(ymin = conf.low, ymax = conf.high),
+                  position = position_dodge(width = 1)) +
+  scale_color_grey(name = "Econ. Tie",
+                   labels = c(`0` = "Trade",
+                              `1` = "Investment")) +
+  scale_shape_discrete(name = "Gender",
+                       labels = c(`0` = "Male",
+                                  `1` = "Female")) +
+  labs(title = "Heterogeneous Treatments",
+       subtitle = c("Political Affiliation, Engagement, Economic Tie, Gender"),
+       x = "Political Engagement", 
+       y = "Marginal effect of Electoral Endorsement")
+ggsave("figures/bp-het-est.png", height = 6, width = 8)
 
 bp.me <- posterior_draws(slopes.bp)
 
-ggplot(bp.me, aes(x = draw, y = het.group)) +
+ggplot(bp.me, aes(x = draw, y = treat_gr)) +
   stat_halfeye() +
   labs(x = "Marginal effect of Endorsement", y = "")
 

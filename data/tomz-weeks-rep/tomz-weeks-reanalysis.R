@@ -32,7 +32,13 @@ tw.rep <- tw.rep %>%
               stakes = as.integer(recode(stakes, `1` = 1, `2` = 0)),
               costs = as.integer(recode(costs, `1` = 0, `2` = 1)),
               region = as.integer(region),
-              treat.group = paste(regime, stakes, costs, region,
+              region.txt = case_when(
+                region == 1 ~ "Africa",
+                region == 2 ~ "Asia",
+                region == 3 ~ "Eastern Europe",
+                region == 4 ~ "South America"
+              ),
+              treat.group = paste(regime, stakes, costs, region.txt,
                             sep = "_")
             ) 
 
@@ -43,7 +49,7 @@ het.treat.prior <- c(
   prior(normal(0, 1), class = "sd")
 )
 tw.het.treat <- brm(bf(force ~ 1 + white + male + hawk + intl + natl.sup +
-                         alliance*(regime + stakes + costs + region) +
+                         alliance*(regime + stakes + costs + region.txt) +
                       (1 + alliance | treat.group) ),
                     data = tw.rep,
                     prior = het.treat.prior,
@@ -59,7 +65,7 @@ summary(tw.het.treat)
 
 grid.het.treat <- tw.rep %>%
   select(alliance, regime, stakes,
-         costs, region, treat.group) %>%
+         costs, region.txt, treat.group) %>%
   distinct() %>%
   mutate(
     white = median(tw.rep$white),
@@ -87,15 +93,17 @@ slopes.het.treat <- slopes(model = tw.het.treat,
                            newdata = grid.het.treat)
 slopes.het.treat
 
-ggplot(slopes.het.treat, aes(y = estimate, x = region,
+ggplot(slopes.het.treat, aes(y = estimate, x = factor(regime),
                              shape = factor(costs),
                              color = factor(stakes))) +
-  facet_wrap(~ regime, ncol = 5,
+  facet_wrap(~ region.txt, ncol = 5,
              labeller = labeller(regime = c(`0` = "Autocracy",
                                             `1` = "Democracy"))) +
   geom_hline(yintercept = 0) +
   geom_pointrange(aes(ymin = conf.low, ymax = conf.high),
                   position = position_dodge(width = 1)) +
+  scale_x_discrete(labels = c(`0` = "Autocracy",
+                              `1` = "Democracy")) +
   scale_color_grey(name = "Stakes",
                    labels = c(`0` = "Low",
                               `1` = "High")) +
@@ -104,8 +112,9 @@ ggplot(slopes.het.treat, aes(y = estimate, x = region,
                                   `1` = "Low")) +
   labs(title = "Heterogeneous Treatments",
        subtitle = c("Region, Regime, Stakes, Cost"),
-       x = "Region", 
+       x = "Regime", 
        y = "Marginal effect of Alliance")
+ggsave("figures/tw-het-treat.png", height = 6, width = 8)
 
 # give posterior mass
 het.treat.all <- posterior_draws(slopes.het.treat)
@@ -125,7 +134,7 @@ treat.het.prior <- c(
   prior(normal(0, 1), class = "sd")
 )
 tw.treat.het <- brm(bf(force ~ 1 +
-                         regime + stakes + costs + region +
+                         regime + stakes + costs + region.txt +
                          alliance*(white + male + intl + hawk) +
                          (1 + alliance | het.group) ),
                     data = tw.rep,
@@ -148,7 +157,7 @@ grid.treat.het <- tw.rep %>%
                       mutate(
                         regime = median(tw.rep$regime),
                         stakes = median(tw.rep$stakes),
-                        region = median(tw.rep$region),
+                        region.txt = "Africa",
                         costs =  median(tw.rep$costs)
                       )
 
@@ -169,31 +178,32 @@ slopes.treat.het <- slopes(model = tw.treat.het,
                            newdata = grid.treat.het)
 slopes.treat.het
 
-ggplot(slopes.treat.het, aes(y = estimate, x = hawk,
-                          shape = factor(male),
+ggplot(slopes.treat.het, aes(y = estimate, x = factor(male),
                           color = factor(white))) +
-  facet_wrap(~ intl, ncol = 5) +
+  facet_grid(hawk ~ intl,
+             labeller = label_both ) +
   geom_pointrange(aes(ymin = conf.low, ymax = conf.high),
                   position = position_dodge(width = 1)) +
+  geom_hline(yintercept = 0) +
+  scale_x_discrete(labels = c(`0` = "Female",
+                              `1` = "Male")) +
   scale_color_grey(name = "Race",
                    labels = c(`0` = "Non-White",
                               `1` = "White")) +
   scale_shape_discrete(name = "Gender",
-                       labels = c(`0` = "Female/Other",
+                       labels = c(`0` = "Female",
                                   `1` = "Male")) +
+  theme(legend.position = "bottom") +
   labs(title = "Treatment Heterogeneity",
        subtitle = "Internationalism, Hawkishness, Race and Gender",
-       x = "Hawkishness", 
+       x = "Gender", 
        y = "Marginal effect of Alliance")
 ggsave("figures/tw-treat-het.png", height = 6, width = 8)
 
 # alternative presenation
 treat.het.all <- posterior_draws(slopes.treat.het)
 
-ggplot(treat.het.all, aes(x = draw, y = het.group,
-                          color = factor(male),
-                          shape = factor(white))) +
-  facet_grid(hawk ~ intl, scales = "free_y") +
+ggplot(treat.het.all, aes(x = draw, y = het.group)) +
   stat_pointinterval() +
   labs(x = "Marginal effect of Alliance", y = "")
 
