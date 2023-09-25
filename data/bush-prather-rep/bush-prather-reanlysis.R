@@ -67,10 +67,10 @@ bp.us.key <- sjlabelled::remove_all_labels(bp.us.key)
 
 # simple brms model
 formula.bp <- bf(ipe_support ~ 1 + treat_germrus +
-                   treat_germrus*(w2_vote_hill +
+                   treat_germrus*(
+                   w2_vote_hill + pol_engage +
                    invest_cond +
-                   woman +
-                   pol_engage) +
+                   woman) +
                    (1 + treat_germrus | 
                       treat_gr))
 bp.mod.vars <- brm(formula.bp, 
@@ -123,10 +123,11 @@ ggplot(slopes.bp, aes(y = estimate, x = pol_engage,
   scale_shape_discrete(name = "Gender",
                        labels = c(`0` = "Male",
                                   `1` = "Female")) +
+  theme(legend.position = "bottom") +
   labs(title = "Heterogeneous Treatments",
        subtitle = c("Political Affiliation, Engagement, Economic Tie, Gender"),
        x = "Political Engagement", 
-       y = "Marginal effect of Electoral Endorsement")
+       y = "Marginal Effect of Electoral Endorsement")
 ggsave("appendix/bp-het-est.png", height = 6, width = 8)
 
 bp.me <- posterior_draws(slopes.bp)
