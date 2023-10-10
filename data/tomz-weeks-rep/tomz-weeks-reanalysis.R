@@ -8,6 +8,7 @@ library(haven)
 library(brms)
 library(bayesplot)
 library(marginaleffects)
+library(modelsummary)
 library(ggdist)
 
 # set ggplot theme
@@ -114,7 +115,7 @@ ggplot(slopes.het.treat, aes(y = estimate, x = factor(regime),
        subtitle = c("Region, Regime, Stakes, Cost"),
        x = "Regime", 
        y = "Marginal effect of Alliance")
-ggsave("figures/tw-het-treat.png", height = 8, width = 10)
+ggsave("appendix/tw-het-treat.png", height = 8, width = 10)
 
 # give posterior mass
 het.treat.all <- posterior_draws(slopes.het.treat)
@@ -148,6 +149,22 @@ tw.treat.het <- brm(bf(force ~ 1 +
 summary(tw.treat.het)
 
 
+# parameters
+modelplot(tw.treat.het,
+          coef_map =
+            c("b_alliance:hawk" = "Hawkishness and\nAlliance Impact",
+              "b_alliance:intl" = "Internationalism and\nAlliance Impact",
+              "b_alliance:male" = "Male Gender and\nAlliance Impact",
+              "b_alliance:white" = "White Race and\nAlliance Impact",
+              "b_alliance" = "Alliance"),
+          size = 1, linewidth = 2 # to geom_pointrange
+          ) +
+  geom_vline(xintercept = 0) +
+  labs(title = "Demographic Sources of Heterogeneous Alliance Effects",
+      x = "Estimate and 95% Credible Intervals")
+ggsave("figures/tw-het-source.png", height = 6, width = 8)
+
+
 # predictions
 # get data 
 grid.treat.het <- tw.rep %>%
@@ -178,6 +195,9 @@ slopes.treat.het <- slopes(model = tw.treat.het,
                            newdata = grid.treat.het)
 slopes.treat.het
 
+summary(slopes.treat.het$estimate)
+sd(slopes.treat.het$estimate)
+
 ggplot(slopes.treat.het, aes(y = estimate, x = factor(male),
                           color = factor(white))) +
   facet_grid(hawk ~ intl,
@@ -197,7 +217,7 @@ ggplot(slopes.treat.het, aes(y = estimate, x = factor(male),
   labs(title = "Treatment Heterogeneity",
        subtitle = "Internationalism, Hawkishness, Race and Gender",
        x = "Gender", 
-       y = "Marginal effect of Alliance")
+       y = "Marginal Effect of Alliance")
 ggsave("figures/tw-treat-het.png", height = 8, width = 10)
 
 # alternative presenation
@@ -205,5 +225,14 @@ treat.het.all <- posterior_draws(slopes.treat.het)
 
 ggplot(treat.het.all, aes(x = draw, y = het.group)) +
   stat_pointinterval() +
+  labs(x = "Marginal effect of Alliance", y = "")
+
+
+ggplot(treat.het.all, aes(x = draw, 
+                          fill = het.group,
+                          group = het.group)) +
+  geom_density(alpha = .25) +
+  scale_fill_grey() +
+  theme(legend.position = "none") +
   labs(x = "Marginal effect of Alliance", y = "")
 

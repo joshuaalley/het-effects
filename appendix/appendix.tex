@@ -27,13 +27,11 @@
 
 
 \singlespace
-\title{\textbf{Appendix: Using Bayesian Hierarchical Models to Estimate Heterogeneous Effects}}
+\title{\textbf{Appendix: Using Hierarchical Models to Estimate Heterogeneous Effects}}
 %\author{Joshua Alley} 
-\date{}
-
-\bibliographystyle{apsr}
 
 \begin{document}
+
 
 \maketitle 
 
@@ -41,10 +39,35 @@
 
 \tableofcontents
 
-\bigskip
 
 
-\section{R Code: Tomz and Weeks Reanalysis}
+\section{Tomz and Weeks Reanalysis}
+
+This summarizes a heterogeneous treatments model of \citep{TomzWeeks2021} and details the underlying \textsf{R} code. 
+
+\subsection{Heterogeneous Treatments} 
+
+Here, I examine how the impact of alliances varies with other factors in the experiment, especially costs, stakes, region and partner democracy.
+The heterogeneous treatment model corroborates TW's conclusion that alliances exert the greatest impact in instances when public opinion is otherwise skeptical of intervention.
+This suggests that alliances exert the most impact on individuals who otherwise prefer peaceful international engagement.  
+
+
+\autoref{fig:tw-het-treat} supports TW's findings that alliances exert the most influence in situations where the public is otherwise unlikely to intervene. 
+This figure shows the impact of alliances in unique combinations of all other experimental treatments. 
+For a hypothetical democracy in Eastern Europe where intervention has high stakes, alliances exert minimal impact on public attitudes. 
+In low-stakes and high cost interventions to support African, Asian or Latin American dictators, alliances increase support for intervention by 50\%. 
+Beyond these systematic differences, random variation that is not attributed to the other treatments is roughly 6\%. 
+
+
+\begin{figure}[htpb]
+	\centering
+		\includegraphics[width=0.95\textwidth]{tw-het-treat.png}
+	\caption{Estimated impact of military alliances on public support for war across hypothetical region, costs, stakes and partner regime. Colors distinguish stakes, point shapes mark different costs, and estimates are grouped by regime type. Point estimates give the posterior median and error bars summarize the 95\% credible interval.}
+	\label{fig:tw-het-treat}
+\end{figure}
+
+
+\subsection{R Code: Tomz and Weeks Reanalysis}
 
 First, the following model formula expresses a heterogeneous treatments model where the impact of alliances varies with the regime under attack, the stakes, the costs, and the region. 
 The \verb+treat.group+ indicator marks unique combinations of the regime, stakes, costs and region variables. 
