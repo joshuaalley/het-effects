@@ -67,12 +67,12 @@ joshua.alley@ucd.ie
 \begin{abstract} 
 %Heterogeneous effects are common in social science. 
 This note describes a Bayesian hierarchical approach to estimating heterogeneous effects. 
-To begin, researchers specify groups and sources of heterogeneity based on quantities of interest such as heterogeneous treatments, treatment heterogeneity, and policy relevance.  
-Then, researchers should fit a hierarchical model with varying slopes and intercepts by groups and group level factors modifying the slopes.
+To start, researchers specify groups based on quantities of interest such as heterogeneous treatments, treatment heterogeneity, and policy relevance.  
+Then, researchers fit a hierarchical model where treatment slopes and intercepts vary by groups and group level factors modify the slopes.
 This captures systematic and random variation in heterogeneous effects, estimates effects within each group, and measures effect variance. 
 Hierarchical modeling provides an intermediate tool between interactions or subgroup analyses and machine-learning approaches to discovering complex heterogeneity. 
 It is more flexible than interactions and reduces the risk of underpowered subgroup comparisons.
-At the same time, it is more theoretically driven and interpretable than some machine-learning approaches, as well as easier to implement in small datasets. 
+At the same time, it is more theoretically informed and interpretable than some machine-learning approaches, as well as easier to implement in small datasets. 
 Researchers should use hierarchical models alongside other approaches to understand heterogeneous effects for scholarship and policy.
 \end{abstract} 
 
@@ -85,8 +85,8 @@ Researchers should use hierarchical models alongside other approaches to underst
 
 
 % one: het effects matter
-Whether in observational and experimental studies, every independent variable social scientists examine impacts some units differently than others. 
-Common estimands aggregate heterogeneous effects, sometimes in misleading ways.\footnote{For example, \citet{Abramsonetal2022} note that the average marginal component effect (AMCE) of conjoint experiments gives more weight to intense preferences.} 
+Whether in observational or experimental studies, every independent variable social scientists examine impacts some units differently than others. 
+Common estimands aggregate heterogeneous effects, sometimes in misleading ways.\footnote{\citet{Abramsonetal2022} note that the average marginal component effect (AMCE) of conjoint experiments gives more weight to intense preferences.} 
 Average effects can be useful, but they often obscure interesting and important variation. 
 
 
@@ -97,9 +97,10 @@ Policymakers can maximize the impact of finite resources with targeted intervent
 
 % two: introduce my solution 
 This note describes a hierarchical Bayesian approach to estimating heterogeneous effects. 
-Before fitting a model, researchers define groups based on the potential sources of heterogeneity such as other treatments, context, demographics, or policy concerns. 
-The model then estimates heterogeneous effects across those groups using varying slopes and intercepts, along with covariates that predict slopes.\footnote{These ideas are established in the statistics literature \citep{FellerGelman2015}, but political science researchers rarely use them. \citet{FellerGelman2015} have three applied political science citations, and of these only \citet{Marquardt2022} models treatment effects.} 
-Modeling heterogeneous effects in this way produces easily interpretable results, which facilitates argument testing.
+There are two steps in this process. 
+First, researchers should define groups based on the potential sources of heterogeneity such as other treatments, context, demographics, or policy concerns. 
+Second, they should estimates heterogeneous effects across those groups using a hierarchical model with varying slopes and intercepts, along with covariates that predict slopes.\footnote{Using hierarchical models is an established idea in statistics \citep{FellerGelman2015}, but political science researchers rarely use them. \citet{FellerGelman2015} have three applied political science citations, and of these only \citet{Marquardt2022} models treatment effects.} 
+Modeling heterogeneous effects in this way produces interpretable results, which facilitates argument testing.
 It also allows researchers to examine effects within groups, compare different sources of heterogeneous effects and describe how much an effect varies.  
 
 
@@ -117,16 +118,16 @@ These machine learning algorithms capture complex patterns, but can be difficult
 
  
 Using a hierarchical model is more flexible than parametric interactions but more straightforward than machine learning approaches.  
-It preserves a simple and interpretable structure, while accommodating more factors and reducing the risks of subgroup analysis. 
-Unlike some machine-learning techniques, this facilitates argument testing.
-The hierarchical approach lacks the flexibility to discover high-dimensional heterogeneity, however.  
-As a result, hierarchical modeling complements other heterogeneous effects techniques, and could contribute to ensemble models. 
+It preserves a simple and interpretable structure, while accommodating more factors and ameliorating the downsides of subgroup analysis via partial pooling. 
+This facilitates argument testing.
+Unlike machine learning techniques, the hierarchical approach lacks the flexibility to discover high-dimensional heterogeneity, however.  
+As a result, hierarchical modeling complements other heterogeneous effects techniques. 
 
 
 % wrap and introduce the application 
 In the remainder of this note, I describe the approach and demonstrate how it works by analyzing a study of how military alliances shape public support for war by \citet{TomzWeeks2021}. 
 The reanalysis also reveals that alliances increase support for intervention most among men who support international engagement but are otherwise skeptical of using force. 
-This suggests that alliances increase mass support for war by impacting individuals who otherwise prefer peaceful collaboration. 
+Alliances increase mass support for war by impacting individuals who otherwise prefer peaceful collaboration. 
 
 
 
@@ -135,32 +136,31 @@ This suggests that alliances increase mass support for war by impacting individu
 
 There are two steps in this approach to heterogeneous effects estimation. 
 First, researchers must define the groups over which an independent variables' impact varies. 
-To do this, they create groups based on unique combinations of characteristics such as other treatments, context and demographics.
+Groups are based on unique combinations of characteristics such as other treatments, context and demographics.
 
 
-Setting groups is the most important task.
-This determines what heterogeneous effects a model estimates. 
+Researchers should create groups based on what variation is most important and interesting. 
+Theory, policy concerns, or normative factors are all possible motivations. 
+
+
+Setting groups is the most important task, because it determines what heterogeneous effects a model estimates. 
 Defining groups before model fitting helps researchers define what variation is most important, link heterogeneous effects to theory, and structure their analyses.\footnote{It also facilitates pre-registration when applicable.}
 Poorly defined groups will obfuscate the results and can hinder model fitting.   
 
 
-Researchers should create groups based on what variation is most important and interesting. 
-Theory, policy concerns, or normative factors are all possible motivations.
-Three general approaches follow from these factors.  
-
-
 % three ways to set groups
+There are three general approaches to defining groups.  
 First, researchers can set groups using combinations of other treatments, especially when an intervention has several dimensions but theory emphasizes one of them. 
-The experimental design determines groups in this approach, and the results estimate heterogeneous treatments.   
-For instance, if researchers want to know how different issues shape the impact of elite cues \citep{GuisingerSaunders2017}, they could define groups by issues. 
+The experimental design determines groups, and the results estimate heterogeneous treatment effects.   
+For instance, if researchers want to know how different issues shape the impact of elite foreign policy cues \citep{GuisingerSaunders2017}, they could define groups by issues. 
 
 
-A second approach uses unit and contextual factors to create groups and estimate treatment effect heterogeneity. 
-In this instance, researchers examine what within or around units shapes a treatment.
+A second approach uses unit and contextual factors to create groups and estimate  effect heterogeneity. 
+In this instance, researchers examine what factors within or around units shape their response to an independent variable.
 For example, \citet{Alley2021isq} uses alliance characteristics to examine when alliance membership increases or decreases military spending.
 
 
-Third, researchers can emphasize policy aims.
+Third, researchers might emphasize policy concerns.
 Understanding how an intervention impacts a specific population is a common problem.
 Researchers might want to know if a job-training program improves employment prospects for black women in the South, for instance.  
 
@@ -169,21 +169,21 @@ Researchers might want to know if a job-training program improves employment pro
 Whether researchers use other treatments, context, or policy to determine groups, the number of grouping factors depends first on theory.
 There are some practical constraints, however.
 Dividing groups based on many factors will create many small groups and increase the risk of model fitting problems. 
-Using only one factor will create an unidentified model, and researchers should use interactions in that case. 
+Using only one factor will create an unidentified model, and researchers should use interactions instead. 
 
 
-After defining groups, researchers fit a hierarchical model of effects within the groups.\footnote{Bayesian estimation is easiest. Priors depend on the problem and researcher knowledge.} 
-The first equation links the treatment and outcome. 
+After defining groups, researchers fit a hierarchical model of effects within groups.\footnote{Bayesian estimation is easiest. Priors depend on the problem and researcher knowledge.} 
+The first equation links the independent variable and outcome. 
 The second equation estimates heterogeneous effects as a function of the group characteristics.\footnote{Researchers can adjust for autocorrelation and clustering as needed.}  
 
 
 This model can apply to many problems, but for ease of exposition consider making between-unit comparisons based on an experimental treatment.    
 Start with \textit{N} units indexed by \textit{i}, some of which receive a binary treatment \textit{T}.
 For simplicity, assume that the outcome variable ${y}$ is normally distributed with mean $\mu_i$ and standard deviation $\sigma$.\footnote{Researchers should use binary, categorical and other outcome likelihoods as needed.}
-\textit{g} indexes researcher-defined groups. 
+\textit{g} indexes the researcher-defined groups. 
 
 
-The first equation predicts the outcome mean. 
+%The first equation predicts the outcome mean. 
 The outcome for each unit is then a function of varying intercepts $\alpha_g$, an optional matrix of control variables \textbf{X},\footnote{Adding additional grouping structures for more complex data is also straightforward.} and a set of group treatment effects $\theta_g$, which are normally distributed with mean $\eta_g$ and standard deviation $\sigma_\theta$. 
 The researcher divides all units into \textit{g} groups based on unique combinations predictors of heterogeneous effects \textbf{Z}. 
 Each $\theta$ parameter estimates the treatment effect in group \textit{g}, and is often referred to as a varying slope. 
@@ -207,34 +207,35 @@ The second equation also includes an intercept $\lambda_0$ that estimates the im
 % Interpretation 
 Modeling heterogeneous effects across groups facilitates detailed inferences about how much and why an effect varies.
 First, the $\theta$ parameters estimate the impact of a variable within each group.\footnote{The random intercepts $\alpha_g$ and varying slopes $\theta_g$ should usually have a common multivariate normal prior to capture correlations between group slopes and intercepts.}
-All $\theta$s reflect a systematic component from \textbf{Z} $\lambda$ and a random component of varying slopes from $sigma_\theta$. 
+All $\theta$s reflect a systematic component from the predictors in \textbf{Z} $\lambda$ and a random component of varying slopes from $\sigma_\theta$. 
 The systematic component will usually dominate. 
 
 
 % additional information 
-In addition to group-specific effect estimates, a hierarchical model estimates how specific factors drive differences between groups via the $\lambda$ parameters.
-This facilitates rich description of effects across groups. 
-The $\sigma_\theta$ parameter also summarizes how much the effects vary. 
+In addition to group-specific effect estimates, a hierarchical model facilitates rich description of effects across groups. 
+It estimates how specific factors drive differences between groups via the $\lambda$ parameters.
+Researchers can also calculate variance in the $\theta$ parameters across groups.
+The $\sigma_\theta$ parameter summarizes the random variation. 
 Other techniques such as OLS with robust standard errors provide far less information.
 
 
 % advantages 
 Estimating heterogeneous effects in this way has three advantages.
-First, this model allows researchers to make detailed inferences about heterogeneous effects in an easy to interpret framework. 
+First, researchers can make detailed inferences about heterogeneous effects in an easy to interpret framework. 
 Researchers can thus examine theories of heterogeneous effects and compare sources of variation.\footnote{Rescaling variables in the heterogeneous effects equation can aid model fitting and coefficient comparisons \citep{Gelman2008}.} 
-Partial pooling also facilitates reasonable estimates for small groups by sharing information across groups and leveraging the predictors in the heterogeneous effects equation. 
+Partial pooling also facilitates reasonable estimates for small groups by sharing information across groups and leveraging predictors in the heterogeneous effects equation. 
 Finally, this approach will be faster than machine learning approaches for many datasets, easier to use in small datasets, and may scale better than models that attempt to estimate individual treatment effects.
 
 
 % disadvantages
-Like all methods, the hierarchical approach has downsides, some of which can be ameliorated by altering the basic framework above. 
+Like all methods, the hierarchical approach has downsides, some of which can be ameliorated by modifying the above framework. 
 Because groups are based on unique combinations of heterogeneous effect variables, using multiple continuous variables in the heterogeneous effects equation creates many small groups or individual treatment effects, which increases the risk of sampling problems, especially in small datasets. 
 If using several continuous variables hinders model convergence, researchers can bin continuous variables.
 
 
 Furthermore, unlike machine learning approaches, this model will not uncover high-dimensional interactions. 
-Even so, researchers can inject substantial flexibility by using additional interactions or non-linear specifications in either level of the model. 
-Finally, this model can show general trends, but will not make powerful comparisons between every groups. 
+Even so, researchers can add flexibility with additional interactions or non-linear specifications in either level of the model. 
+Finally, this model can show general trends, but will not make powerful comparisons between every group. 
 Researchers who want to compare specific groups may lack empirical leverage, especially if the groups are small.
 
 
@@ -246,17 +247,17 @@ In the following, I demonstrate how the hierarchical approach works by reanalyzi
 TW examine how military alliances shape public support for war.
 In a factorial experiment with vignettes, they find that alliances increase support for war by 33\% on average. 
 This is a large and potentially important effect. 
-I use a hierarchical model to estimate how demographics drive treatment heterogeneity.\footnote{See the appendix for a heterogeneous treatments analysis that corroborates TW's results.}
+I estimate how demographics drive treatment heterogeneity.\footnote{See the appendix for a heterogeneous treatments analysis that corroborates TW's results.}
 
 
-Here, race, gender, hawkishness and internationalism define the groups and predict the impact of alliances on support for using force. 
-I selected these variables because foreign policy dispositions like militant assertiveness shape general willingness to intervene \citep{Kertzeretal2014} as do gender \citep{Barnhartetal2020} and race. 
+I used race, gender, hawkishness and internationalism define the groups and predict the impact of alliances on support for using force. 
+I selected these variables because foreign policy dispositions like militant assertiveness shape general willingness to use force \citep{Kertzeretal2014} as do gender \citep{Barnhartetal2020} and race. 
 I also control for other experimental manipulations. 
 
 
-I describe the results in two ways. 
-First, I summarize the correlates of alliance impact in \autoref{fig:tw-het-source}.
-I then present the corresponding heterogeneous effects for each group in \autoref{fig:tw-treat-het}.
+I describe the results in two steps. 
+First, I summarize the correlates of the alliance effect in \autoref{fig:tw-het-source}.
+I then present the resulting heterogeneous effects for every group in \autoref{fig:tw-treat-het}.
 
 
 \begin{figure}[htpb]
@@ -298,8 +299,7 @@ The standard deviation of the impact of alliances is .09.
 Alliances never decrease support for intervention, but how much they increase support varies widely across demographic groups. 
 
 
-
-These results show some of the strengths and weaknesses of the hierarchical approach to estimating heterogeneous effects.\footnote{In the appendix, I analyze \citet{BushPrather2020}.}
+These results show some of the strengths and weaknesses of the hierarchical approach to heterogeneous effects.\footnote{In the appendix, I analyze \citet{BushPrather2020}.}
 A simple model based on demographic groups provides new insights about who responds to alliances. 
 At the same time, because some demographic groups are small, the within-group effect estimates have substantial uncertainty, so comparing groups is challenging. 
 Smaller groups would have less uncertainty but perhaps obscure variation in the impact of alliances. 
