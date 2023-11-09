@@ -49,7 +49,7 @@ het.treat.prior <- c(
   prior(normal(0, .5), class = "b"),
   prior(normal(0, 1), class = "sd")
 )
-tw.het.treat <- brm(bf(force ~ 1 + white + male + hawk + intl + natl.sup +
+tw.het.treat <- brm(bf(force ~ 1 + white + male + hawk + intl + 
                          alliance*(regime + stakes + costs + region.txt) +
                       (1 + alliance | treat.group) ),
                     data = tw.rep,
@@ -72,8 +72,7 @@ grid.het.treat <- tw.rep %>%
     white = median(tw.rep$white),
     male = median(tw.rep$male),
     hawk = median(tw.rep$hawk),
-    intl =  median(tw.rep$intl),
-    natl.sup = median(tw.rep$natl.sup)
+    intl =  median(tw.rep$intl)
   )
 
 # predictions 
@@ -114,7 +113,7 @@ ggplot(slopes.het.treat, aes(y = estimate, x = factor(regime),
   labs(title = "Heterogeneous Treatments",
        subtitle = c("Region, Regime, Stakes, Cost"),
        x = "Regime", 
-       y = "Marginal effect of Alliance")
+       y = "Marginal Effect of Alliance")
 ggsave("appendix/tw-het-treat.png", height = 8, width = 10)
 
 # give posterior mass
@@ -154,8 +153,8 @@ modelplot(tw.treat.het,
           coef_map =
             c("b_alliance:hawk" = "Hawkishness and\nAlliance Impact",
               "b_alliance:intl" = "Internationalism and\nAlliance Impact",
-              "b_alliance:male" = "Male Gender and\nAlliance Impact",
-              "b_alliance:white" = "White Race and\nAlliance Impact",
+              "b_alliance:male" = "Male and\nAlliance Impact",
+              "b_alliance:white" = "White and\nAlliance Impact",
               "b_alliance" = "Alliance"),
           size = 1, linewidth = 2 # to geom_pointrange
           ) +
@@ -214,7 +213,7 @@ ggplot(slopes.treat.het, aes(y = estimate, x = factor(male),
                        labels = c(`0` = "Female",
                                   `1` = "Male")) +
   theme(legend.position = "bottom") +
-  labs(title = "Treatment Heterogeneity",
+  labs(title = "Alliance Treatment Heterogeneity",
        subtitle = "Internationalism, Hawkishness, Race and Gender",
        x = "Gender", 
        y = "Marginal Effect of Alliance")
