@@ -92,6 +92,26 @@ bf(force ~ 1 + regime + stakes + costs + region.txt +
 \end{verbatim}
 
 
+\subsection{Priors: Tomz and Weeks Reanalysis}
+
+
+\autoref{tab:priors} summarizes the prior distributions. 
+All priors are weakly informative relative to the scale of the data. 
+
+\begin{table} % Create a table of priors.
+\begin{center}
+\begin{tabular}{c} 
+$ p(\alpha) \sim N(0, 1)$  \\
+$ p(\sigma) \sim \mbox{half-}N(0, 1) $ \\
+$ p(\sigma_\theta) \sim \mbox{half-}N(0, 1) $ \\ 
+$ p(\beta) \sim N(0, .5) $ 
+\end{tabular} 
+\caption{Summary of Priors in treatment heterogeneity model.} 
+\label{tab:priors}
+\end{center} 
+\end{table} 
+
+
 
 \section{Bush and Prather Reanalysis}
 

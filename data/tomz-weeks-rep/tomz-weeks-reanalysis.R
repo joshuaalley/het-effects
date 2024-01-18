@@ -130,8 +130,10 @@ tw.rep$het.group <- paste(tw.rep$white, tw.rep$male,
                           tw.rep$intl, tw.rep$hawk,
                             sep = "_")
 treat.het.prior <- c(
+  prior(normal(0, 1), class = "Intercept"),
   prior(normal(0, .5), class = "b"),
-  prior(normal(0, 1), class = "sd")
+  prior(normal(0, 1), class = "sd"),
+  prior(normal(0, 1), class = "sigma")
 )
 tw.treat.het <- brm(bf(force ~ 1 +
                          regime + stakes + costs + region.txt +
@@ -159,6 +161,7 @@ modelplot(tw.treat.het,
           size = 1, linewidth = 2 # to geom_pointrange
           ) +
   geom_vline(xintercept = 0) +
+  theme_bw(base_size = 14) +
   labs(title = "Demographic Sources of Heterogeneous Alliance Effects",
       x = "Estimate and 95% Credible Intervals")
 ggsave("figures/tw-het-source.png", height = 6, width = 8)
@@ -177,6 +180,12 @@ grid.treat.het <- tw.rep %>%
                         costs =  median(tw.rep$costs)
                       )
 
+treat.het.num <- tw.rep %>%
+                  group_by(het.group) %>%
+                  summarize(
+                    n = n()
+                  )
+
 pred.treat.het <- predictions(tw.treat.het,
                               newdata = grid.treat.het) %>%
   posterior_draws()
@@ -191,8 +200,9 @@ ggplot(pred.treat.het, aes(x = draw, y = het.group,
 # slopes- create groups
 slopes.treat.het <- slopes(model = tw.treat.het,
                            variables = "alliance",
-                           newdata = grid.treat.het)
-slopes.treat.het
+                           newdata = grid.treat.het) 
+slopes.treat.het 
+slopes.treat.het <- left_join(slopes.treat.het, treat.het.num)
 
 summary(slopes.treat.het$estimate)
 sd(slopes.treat.het$estimate)
@@ -219,6 +229,8 @@ ggplot(slopes.treat.het, aes(y = estimate, x = factor(male),
        y = "Marginal Effect of Alliance")
 ggsave("figures/tw-treat-het.png", height = 8, width = 10)
 
+# number and median
+
 # alternative presenation
 treat.het.all <- posterior_draws(slopes.treat.het)
 
@@ -226,10 +238,42 @@ ggplot(treat.het.all, aes(x = draw, y = het.group)) +
   stat_pointinterval() +
   labs(x = "Marginal effect of Alliance", y = "")
 
+sd(treat.het.all$draw)
+ggplot(treat.het.all, aes(x = draw, 
+                          fill = het.group,
+                          group = het.group)) +
+  geom_density(alpha = .25) +
+  scale_fill_grey() +
+  annotate("text", label = "Mimimum Effect: .05\n(-.16, .27)",
+           x = -.1, y = 4) +
+  annotate("text", label = "Maximum Effect: .53\n(.34, .73)",
+           x = .7, y = 4.25) +
+  annotate("text", label = "Median Effect: .31\n(.17, .45)",
+           x = .31, y = 7.75) +
+  annotate("text", label = "SD of All Draws: .13",
+           x = -.4, y = 7.75) +
+  annotate("text", label = "Unexplained Variation: .05 (.00, .13)",
+           x = -.35, y = 7) +
+  theme_classic(base_size = 14) +
+  theme(legend.position = "none") +
+  labs(x = "Marginal Effect of Alliance", y = "",
+       title = "Variation in Alliance Impact Across Demographic Groups")
+ggsave("figures/tw-treat-het-sum.png", height = 6, width = 9)
 
 ggplot(treat.het.all, aes(x = draw, 
                           fill = het.group,
                           group = het.group)) +
+  facet_grid(rows = vars(intl)) +
+  geom_density(alpha = .25) +
+  scale_fill_grey() +
+  theme(legend.position = "none") +
+  labs(x = "Marginal effect of Alliance", y = "")
+
+ggplot(treat.het.all, aes(x = draw, 
+                          fill = het.group,
+                          group = het.group)) +
+  facet_grid(rows = vars(hawk), cols = vars(intl)) +
+  geom_vline(xintercept = 0) +
   geom_density(alpha = .25) +
   scale_fill_grey() +
   theme(legend.position = "none") +
