@@ -180,11 +180,18 @@ grid.treat.het <- tw.rep %>%
                         costs =  median(tw.rep$costs)
                       )
 
+# number of respondents
 treat.het.num <- tw.rep %>%
                   group_by(het.group) %>%
                   summarize(
                     n = n()
                   )
+
+ggplot(treat.het.num, aes(x = n)) +
+  geom_bar() +
+  ylim(0, 10) +
+  labs(y = "Number of Groups",
+       x = "Size of Group")
 
 pred.treat.het <- predictions(tw.treat.het,
                               newdata = grid.treat.het) %>%
@@ -230,6 +237,10 @@ ggplot(slopes.treat.het, aes(y = estimate, x = factor(male),
 ggsave("figures/tw-treat-het.png", height = 8, width = 10)
 
 # number and median
+ggplot(slopes.treat.het, aes(x = n, y = estimate,
+                             group = het.group)) +
+  geom_pointrange(aes(ymin = conf.low, ymax = conf.high),
+                  position = position_dodge(width = 1)) 
 
 # alternative presenation
 treat.het.all <- posterior_draws(slopes.treat.het)
@@ -238,7 +249,10 @@ ggplot(treat.het.all, aes(x = draw, y = het.group)) +
   stat_pointinterval() +
   labs(x = "Marginal effect of Alliance", y = "")
 
+# relevant summary infor 
+summary(treat.het.all$draw)
 sd(treat.het.all$draw)
+
 ggplot(treat.het.all, aes(x = draw, 
                           fill = het.group,
                           group = het.group)) +
@@ -252,8 +266,10 @@ ggplot(treat.het.all, aes(x = draw,
            x = .31, y = 7.75) +
   annotate("text", label = "SD of All Draws: .13",
            x = -.4, y = 7.75) +
+  # annotate("text", label = "Median of All Draws: .31",
+  #          x = -.4, y = 7.25) +
   annotate("text", label = "Unexplained Variation: .05 (.00, .13)",
-           x = -.35, y = 7) +
+           x = -.35, y = 7.25) +
   theme_classic(base_size = 14) +
   theme(legend.position = "none") +
   labs(x = "Marginal Effect of Alliance", y = "",
