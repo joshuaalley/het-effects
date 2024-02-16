@@ -44,85 +44,6 @@ tw.rep <- tw.rep %>%
             ) 
 
 
-# model with heterogeneous treatments
-het.treat.prior <- c(
-  prior(normal(0, .5), class = "b"),
-  prior(normal(0, 1), class = "sd")
-)
-tw.het.treat <- brm(bf(force ~ 1 + white + male + hawk + intl + 
-                         alliance*(regime + stakes + costs + region.txt) +
-                      (1 + alliance | treat.group) ),
-                    data = tw.rep,
-                    prior = het.treat.prior,
-                    family = gaussian(),
-                    cores = 4,
-                    control = list(adapt_delta = .95),
-                    backend = "cmdstanr",
-                    refresh = 500
-                    )
-summary(tw.het.treat)
-
-# Using marginaleffects out of the box 
-
-grid.het.treat <- tw.rep %>%
-  select(alliance, regime, stakes,
-         costs, region.txt, treat.group) %>%
-  distinct() %>%
-  mutate(
-    white = median(tw.rep$white),
-    male = median(tw.rep$male),
-    hawk = median(tw.rep$hawk),
-    intl =  median(tw.rep$intl)
-  )
-
-# predictions 
-pred.het.treat <- predictions(tw.het.treat,
-            newdata = grid.het.treat) %>%
-                       posterior_draws()
-
-ggplot(pred.het.treat, aes(x = draw, y = treat.group, 
-                           fill = factor(alliance))) +
-  stat_halfeye(slab_alpha = .5) +
-  labs(x = "Predicted Support for Force",
-       y = "",
-       fill = "Alliance")
-
-# slopes- create groups
-slopes.het.treat <- slopes(model = tw.het.treat,
-                           variables = "alliance",
-                           newdata = grid.het.treat)
-slopes.het.treat
-
-ggplot(slopes.het.treat, aes(y = estimate, x = factor(regime),
-                             shape = factor(costs),
-                             color = factor(stakes))) +
-  facet_wrap(~ region.txt, ncol = 5,
-             labeller = labeller(regime = c(`0` = "Autocracy",
-                                            `1` = "Democracy"))) +
-  geom_hline(yintercept = 0) +
-  geom_pointrange(aes(ymin = conf.low, ymax = conf.high),
-                  position = position_dodge(width = 1)) +
-  scale_x_discrete(labels = c(`0` = "Autocracy",
-                              `1` = "Democracy")) +
-  scale_color_grey(name = "Stakes",
-                   labels = c(`0` = "Low",
-                              `1` = "High")) +
-  scale_shape_discrete(name = "Costs",
-                       labels = c(`0` = "High",
-                                  `1` = "Low")) +
-  labs(title = "Heterogeneous Treatments",
-       subtitle = c("Region, Regime, Stakes, Cost"),
-       x = "Regime", 
-       y = "Marginal Effect of Alliance")
-ggsave("appendix/tw-het-treat.png", height = 8, width = 10)
-
-# give posterior mass
-het.treat.all <- posterior_draws(slopes.het.treat)
-
-ggplot(het.treat.all, aes(x = draw, y = treat.group)) +
-  stat_halfeye() +
-  labs(x = "Marginal effect", y = "")
-
 
 
 ### model with treatment heterogeneity
@@ -130,41 +51,52 @@ tw.rep$het.group <- paste(tw.rep$white, tw.rep$male,
                           tw.rep$intl, tw.rep$hawk,
                             sep = "_")
 treat.het.prior <- c(
-  prior(normal(0, 1), class = "Intercept"),
-  prior(normal(0, .5), class = "b"),
-  prior(normal(0, 1), class = "sd"),
+  prior(normal(0, .75), class = "Intercept"),
+  prior(normal(0, .25), class = "b"),
+  prior(normal(0, .75), class = "sd"),
   prior(normal(0, 1), class = "sigma")
 )
 tw.treat.het <- brm(bf(force ~ 1 +
                          regime + stakes + costs + region.txt +
-                         alliance*(white + male + intl + hawk) +
-                         (1 + alliance | het.group) ),
+                         alliance +
+                         #white + male + intl + hawk +
+                         #alliance*(white + male + intl + hawk) +
+                         (1 + alliance | white:male:intl:hawk) +
+                         (1 + alliance | white:male) +
+                       (1 + alliance | white) +
+                       (1 + alliance | male) +
+                         (1 + alliance | intl:hawk) +
+                         (1 + alliance | intl) +
+                       (1 + alliance | hawk) 
+                       #  (1 + alliance | het.group) 
+                       ),
                     data = tw.rep,
                     prior = treat.het.prior,
                     family = gaussian(),
                     cores = 4,
-                    control = list(adapt_delta = .95),
+                    control = list(adapt_delta = .99,
+                                   max_treedepth = 20),
                     backend = "cmdstanr",
                     refresh = 500
 )
-summary(tw.treat.het)
+ summary(tw.treat.het)
 
 
 # parameters
-modelplot(tw.treat.het,
-          coef_map =
-            c("b_alliance:hawk" = "Hawkishness and\nAlliance Impact",
-              "b_alliance:intl" = "Internationalism and\nAlliance Impact",
-              "b_alliance:male" = "Male and\nAlliance Impact",
-              "b_alliance:white" = "White and\nAlliance Impact",
-              "b_alliance" = "Alliance"),
-          size = 1, linewidth = 2 # to geom_pointrange
-          ) +
-  geom_vline(xintercept = 0) +
-  theme_bw(base_size = 14) +
-  labs(title = "Demographic Sources of Heterogeneous Alliance Effects",
-      x = "Estimate and 95% Credible Intervals")
-ggsave("figures/tw-het-source.png", height = 6, width = 8)
+# modelplot(tw.treat.het,
+#           coef_map =
+#             c("b_alliance:hawk" = "Hawkishness and\nAlliance Impact",
+#               "b_alliance:intl" = "Internationalism and\nAlliance Impact",
+#               "b_alliance:male" = "Male and\nAlliance Impact",
+#               "b_alliance:white" = "White and\nAlliance Impact",
+#               "b_alliance" = "Alliance"),
+#           size = 1, linewidth = 2 # to geom_pointrange
+#           ) +
+#   geom_vline(xintercept = 0) +
+#   theme_bw(base_size = 14) +
+#   labs(title = "Demographic Sources of Heterogeneous Alliance Effects",
+#       x = "Estimate and 95% Credible Intervals")
+
 
 
 # predictions
@@ -239,17 +171,17 @@ ggsave("figures/tw-treat-het.png", height = 8, width = 10)
 # number and median
 ggplot(slopes.treat.het, aes(x = n, y = estimate,
                              group = het.group)) +
+  geom_hline(yintercept = 0) +
+    geom_hline(yintercept = median(slopes.treat.het$estimate),
+             linetype = "dashed") +
   geom_pointrange(aes(ymin = conf.low, ymax = conf.high),
                   position = position_dodge(width = 1)) 
 
-# alternative presenation
+# alternative presentation
 treat.het.all <- posterior_draws(slopes.treat.het)
 
-ggplot(treat.het.all, aes(x = draw, y = het.group)) +
-  stat_pointinterval() +
-  labs(x = "Marginal effect of Alliance", y = "")
-
-# relevant summary infor 
+# relevant summary info
+summary(slopes.treat.het$estimate)
 summary(treat.het.all$draw)
 sd(treat.het.all$draw)
 
@@ -258,40 +190,242 @@ ggplot(treat.het.all, aes(x = draw,
                           group = het.group)) +
   geom_density(alpha = .25) +
   scale_fill_grey() +
-  annotate("text", label = "Mimimum Effect: .05\n(-.16, .27)",
-           x = -.1, y = 4) +
-  annotate("text", label = "Maximum Effect: .53\n(.34, .73)",
+  annotate("text", label = "Mimimum Effect: -0.02\n(-.27, .21)",
+           x = -.05, y = 4) +
+  annotate("text", label = "Maximum Effect: .56\n(.36, .67)",
            x = .7, y = 4.25) +
-  annotate("text", label = "Median Effect: .31\n(.17, .45)",
-           x = .31, y = 7.75) +
-  annotate("text", label = "SD of All Draws: .13",
-           x = -.4, y = 7.75) +
+  annotate("text", label = "Median Effect: .31\n(.11, .49)",
+           x = .31, y = 6.75) +
+  annotate("text", label = "SD of All Draws: .15",
+           x = -.4, y = 6.75) +
   # annotate("text", label = "Median of All Draws: .31",
   #          x = -.4, y = 7.25) +
-  annotate("text", label = "Unexplained Variation: .05 (.00, .13)",
-           x = -.35, y = 7.25) +
+  # annotate("text", label = "Unexplained Variation: .05 (.00, .13)",
+  #          x = -.35, y = 7.25) +
   theme_classic(base_size = 14) +
   theme(legend.position = "none") +
   labs(x = "Marginal Effect of Alliance", y = "",
-       title = "Variation in Alliance Impact Across Demographic Groups")
+       title = "Posterior Distributions of Alliance Impact")
 ggsave("figures/tw-treat-het-sum.png", height = 6, width = 9)
 
-ggplot(treat.het.all, aes(x = draw, 
-                          fill = het.group,
-                          group = het.group)) +
-  facet_grid(rows = vars(intl)) +
-  geom_density(alpha = .25) +
-  scale_fill_grey() +
-  theme(legend.position = "none") +
-  labs(x = "Marginal effect of Alliance", y = "")
 
-ggplot(treat.het.all, aes(x = draw, 
-                          fill = het.group,
-                          group = het.group)) +
-  facet_grid(rows = vars(hawk), cols = vars(intl)) +
-  geom_vline(xintercept = 0) +
-  geom_density(alpha = .25) +
-  scale_fill_grey() +
-  theme(legend.position = "none") +
-  labs(x = "Marginal effect of Alliance", y = "")
+### look at splits by variable
+slopes.treat.het.long <- slopes.treat.het %>% 
+                          select(
+                            estimate, conf.low, conf.high,
+                            white, male, intl, hawk
+                          ) %>%
+                          pivot_longer(cols = -c(conf.low, conf.high,
+                                                 estimate),
+                                       names_to = "variable") %>%
+                          mutate(
+                            variable = case_when(
+                              variable == "intl" ~ "Internationalism",
+                              variable == "hawk" ~ "Militant Assertiveness",
+                              variable == "white" ~ "White",
+                              variable == "male" ~ "Male"
+                            )
+                          )
 
+ggplot(slopes.treat.het.long, aes(x = factor(value), y = estimate)) +
+  facet_wrap(~ variable, scales = "free_x") +
+  geom_hline(yintercept = 0) +
+  geom_pointrange(aes(ymin = conf.low, ymax = conf.high),
+                  position = position_jitter(width = .33)) +
+  labs(
+    y = "Estimate and 95% Credible Interval",
+    x = "Modifier Value"
+  )
+
+
+ggplot(slopes.treat.het.long, aes(x = factor(value), y = estimate)) +
+  facet_wrap(~ variable, scales = "free_x") +
+  geom_hline(yintercept = 0) +
+  geom_boxplot(outlier.shape = NA) +
+  geom_point(position = position_jitter(width = .25)) +
+  labs(
+    y = "Alliance Treatment Estimate",
+    x = "Modifier Value",
+    title = "Variation in Alliance Impact by Grouping Variable"
+  )
+ggsave("figures/tw-het-source.png", height = 6, width = 8)
+
+
+# model: OLS with interactions 
+lm.treat.het <- lm(force ~ 
+    regime + stakes + costs + region.txt +
+    alliance*(white + male + intl + hawk),
+  data = tw.rep
+)
+
+slopes.lm <- slopes(model = lm.treat.het,
+       variables = "alliance",
+       newdata = grid.treat.het)
+
+# RE with pred
+tw.treat.het.pred <- brm(bf(force ~ 1 +
+                         regime + stakes + costs + region.txt +
+                         alliance +
+                           alliance*(white + male + intl + hawk) +
+                         (1 + alliance | white:male:intl:hawk) +
+                         (1 + alliance | white:male) +
+                         (1 + alliance | white) +
+                         (1 + alliance | male) +
+                         (1 + alliance | intl:hawk) +
+                         (1 + alliance | intl) +
+                         (1 + alliance | hawk) 
+),
+data = tw.rep,
+prior = treat.het.prior,
+family = gaussian(),
+cores = 4,
+control = list(adapt_delta = .99,
+               max_treedepth = 20),
+backend = "cmdstanr",
+refresh = 500
+)
+summary(tw.treat.het.re)
+
+slopes.re.pred <- slopes(model = tw.treat.het.pred,
+                    variables = "alliance",
+                    newdata = grid.treat.het)
+
+# model with predictors, simple RE
+tw.treat.het.pred <- brm(bf(force ~ 1 +
+                            regime + stakes + costs + region.txt +
+                            alliance*(white + male + intl + hawk) +
+                            (1 + alliance | white:male:intl:hawk) 
+),
+data = tw.rep,
+prior = treat.het.prior,
+family = gaussian(),
+cores = 4,
+control = list(adapt_delta = .99,
+               max_treedepth = 20),
+backend = "cmdstanr",
+refresh = 500
+)
+summary(tw.treat.het.pred)
+
+slopes.pred <- slopes(model = tw.treat.het.pred,
+                    variables = "alliance",
+                    newdata = grid.treat.het)
+
+# comparison- use RE median as baseline 
+slopes.comp <- bind_rows("More RE with Group Pred" = slopes.re.pred,
+                         "Group Pred and\n(white:male:hawk:intl) RE" = slopes.pred,
+                         "More RE: (alliance | white), etc" = slopes.treat.het,
+                        "OLS with Inter" = slopes.lm,
+                         .id = "model")
+
+ggplot(slopes.comp, aes(y = estimate,
+                        x = het.group,
+                        color = model,
+                        shape = model)) +
+  geom_pointrange(aes(ymin = conf.low, ymax = conf.high),
+                  position = position_dodge(width = .25)) +
+  theme_classic() +
+  theme(axis.title.x=element_blank(),
+        axis.text.x=element_blank(),
+        axis.ticks.x=element_blank())
+
+
+ggplot(slopes.comp, aes(y = estimate,
+                        x = het.group)) +
+  facet_wrap(~ model) +
+  geom_hline(yintercept = median(slopes.re$estimate)) +
+  geom_pointrange(aes(ymin = conf.low, ymax = conf.high),
+                  position = position_dodge(width = .25)) +
+  theme_classic() +
+  theme(axis.title.x=element_blank(),
+        axis.text.x=element_blank(),
+        axis.ticks.x=element_blank())
+ggsave("figures/RE-spec.png", height = 6, width = 8)
+
+
+
+
+
+
+### model with heterogeneous treatments
+het.treat.prior <- c(
+  prior(normal(0, .5), class = "b"),
+  prior(normal(0, 1), class = "sd")
+)
+tw.het.treat <- brm(bf(force ~ 1 + white + male + hawk + intl + 
+                         #alliance*(regime + stakes + costs + region.txt) +
+                         (1 + alliance | regime) +
+                         (1 + alliance | stakes) +
+                         (1 + alliance | costs) +
+                         (1 + alliance | region.txt) ),
+                    data = tw.rep,
+                    prior = het.treat.prior,
+                    family = gaussian(),
+                    cores = 4,
+                    control = list(adapt_delta = .99,
+                                   max_treedepth = 15),
+                    backend = "cmdstanr",
+                    refresh = 500
+)
+summary(tw.het.treat)
+
+# Using marginaleffects out of the box 
+grid.het.treat <- tw.rep %>%
+  select(alliance, regime, stakes,
+         costs, region.txt, treat.group) %>%
+  distinct() %>%
+  mutate(
+    white = median(tw.rep$white),
+    male = median(tw.rep$male),
+    hawk = median(tw.rep$hawk),
+    intl =  median(tw.rep$intl)
+  )
+
+# predictions 
+pred.het.treat <- predictions(tw.het.treat,
+                              newdata = grid.het.treat) %>%
+  posterior_draws()
+
+ggplot(pred.het.treat, aes(x = draw, y = treat.group, 
+                           fill = factor(alliance))) +
+  stat_halfeye(slab_alpha = .5) +
+  labs(x = "Predicted Support for Force",
+       y = "",
+       fill = "Alliance")
+
+# slopes- create groups
+slopes.het.treat <- slopes(model = tw.het.treat,
+                           variables = "alliance",
+                           newdata = grid.het.treat)
+slopes.het.treat
+
+ggplot(slopes.het.treat, aes(y = estimate, x = factor(regime),
+                             shape = factor(costs),
+                             color = factor(stakes))) +
+  facet_wrap(~ region.txt, ncol = 5,
+             labeller = labeller(regime = c(`0` = "Autocracy",
+                                            `1` = "Democracy"))) +
+  geom_hline(yintercept = 0) +
+  geom_pointrange(aes(ymin = conf.low, ymax = conf.high),
+                  size = .75, linewidth = 1.5,
+                  position = position_dodge(width = 1)) +
+  scale_x_discrete(labels = c(`0` = "Autocracy",
+                              `1` = "Democracy")) +
+  scale_color_grey(name = "Stakes",
+                   labels = c(`0` = "Low",
+                              `1` = "High")) +
+  scale_shape_discrete(name = "Costs",
+                       labels = c(`0` = "High",
+                                  `1` = "Low")) +
+  labs(title = "Heterogeneous Treatments",
+       subtitle = c("Region, Regime, Stakes, Cost"),
+       x = "Regime", 
+       y = "Marginal Effect of Alliance")
+ggsave("appendix/tw-het-treat.png", height = 8, width = 10)
+
+# give posterior mass
+het.treat.all <- posterior_draws(slopes.het.treat)
+
+ggplot(het.treat.all, aes(x = draw, y = treat.group)) +
+  stat_halfeye() +
+  labs(x = "Marginal effect", y = "")

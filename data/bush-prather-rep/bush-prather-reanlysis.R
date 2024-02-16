@@ -66,19 +66,27 @@ class(bp.us.key)
 bp.us.key <- sjlabelled::remove_all_labels(bp.us.key)
 
 # simple brms model
-formula.bp <- bf(ipe_support ~ 1 + treat_germrus +
-                   treat_germrus*(
-                   w2_vote_hill + pol_engage +
-                   invest_cond +
-                   woman) +
-                   (1 + treat_germrus | 
-                      treat_gr))
+het.bp.prior <- c(
+  prior(normal(0, .5), class = "b"),
+  prior(normal(0, 1), class = "sd")
+)
+formula.bp <- bf(ipe_support ~ 1 + college_educ + employ_dum +
+                   # treat_germrus*(
+                   # w2_vote_hill + pol_engage +
+                   # invest_cond +
+                   # woman) +
+                   (1 + treat_germrus | w2_vote_hill) +
+                   (1 + treat_germrus | pol_engage) +
+                   (1 + treat_germrus | invest_cond) +
+                   (1 + treat_germrus | woman))
 bp.mod.vars <- brm(formula.bp, 
                    data = bp.us.key,
                    family = gaussian(link = "identity"),
                    backend = "cmdstanr",
+                   prior = het.bp.prior,
                    cores = 4,
-                   control = list(adapt_delta = .9),
+                   control = list(adapt_delta = .99,
+                                  max_treedepth = 15),
                    refresh = 500)
 summary(bp.mod.vars)
 
@@ -90,7 +98,11 @@ grid.het.treat <- bp.us.key %>%
   select(treat_germrus, invest_cond,
          w2_vote_hill, woman, pol_engage,
          treat_gr) %>%
-  distinct() 
+  distinct() %>%
+  mutate(
+    college_educ = 1,
+    employ_dum = 1,
+  )
 
 pred.bp <- predictions(bp.mod.vars, newdata = grid.het.treat) %>%
   posterior_draws()
