@@ -101,7 +101,7 @@ grid.het.treat <- bp.us.key %>%
   distinct() %>%
   mutate(
     college_educ = 1,
-    employ_dum = 1,
+    employ_dum = 1
   )
 
 pred.bp <- predictions(bp.mod.vars, newdata = grid.het.treat) %>%

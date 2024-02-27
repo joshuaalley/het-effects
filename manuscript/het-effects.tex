@@ -67,10 +67,10 @@ joshua.alley@ucd.ie
 \begin{abstract} 
 %Heterogeneous effects are common in social science. 
 This note describes how and when to use Bayesian hierarchical models to estimate heterogeneous effects. 
-While an ample literature suggests that hierarchical models provide helpful regularization and information about how effects vary, political scientists rarely use them to estimate heterogeneous effects. 
+While an ample literature suggests that hierarchical models provide helpful regularization and information about variation, political scientists rarely use them to estimate heterogeneous effects. 
 Doing so is simple, however. 
-To start, researchers specify groups based on quantities of interest such as demographics, context, and policy relevance.  
-Then, researchers fit a hierarchical model where treatment slopes and intercepts vary across groups.
+To start, specify groups based on quantities of interest such as demographics, context, and policy relevance.  
+Then, fit a hierarchical model where treatment slopes and intercepts vary across groups.
 This captures systematic and random variation in heterogeneous effects, estimates effects within each group, and measures effect variance. 
 Hierarchical modeling provides an intermediate tool between interactions or subgroup analyses and machine learning approaches to discovering complex heterogeneity. 
 It is more flexible than interactions and reduces the risk of underpowered subgroup comparisons.
@@ -89,7 +89,7 @@ Researchers can thus use hierarchical models alongside other approaches to under
 % one: het effects matter
 Whether in observational or experimental studies, every independent variable social scientists examine impacts some units differently than others. 
 Common estimands aggregate heterogeneous effects.\footnote{For instance, \citet{Abramsonetal2022} note that the average marginal component effect (AMCE) of conjoint experiments gives more weight to intense preferences.} 
-Average effects can be useful, but they often obscure interesting and important variation. 
+These average effects are useful, but they often obscure interesting and important variation. 
 
 
 As a result, understanding heterogeneous effects is essential for policy and scholarship. 
@@ -102,8 +102,7 @@ Policymakers can maximize the impact of finite resources with targeted intervent
 This letter explains how and when to use hierarchical models to estimate heterogeneous effects. 
 I identify when researchers can profitably use hierarchical models, and when other tools make more sense. 
 A large statistics literature suggests that Bayesian hierarchical models are a useful tool for  heterogeneous effects estimation (e.g., \cite{FellerGelman2015, McElreath2016, Dorieetal2022}).
-Hierarchical models are particularly good at capturing variation across groups and levels when there are multiple potential modifiers, which is becoming more plausible as social scientists examine a variety of conditional theories. % may need to expand or find a new home 
-Political scientists tend to rely on interactions or machine learning tools instead. 
+Political scientists tend to rely on interactions or machine learning tools instead, however.  
 For instance, of the three applied political science citations of \citet{FellerGelman2015}, only \citet{Marquardt2022} models treatment effects. 
 
 
@@ -119,7 +118,12 @@ Using a hierarchical model is more flexible than parametric interactions but eas
 It preserves a simple and interpretable structure, while accommodating more factors and ameliorating the downsides of subgroup analysis via partial pooling. 
 This facilitates argument testing.
 Unlike machine learning, the hierarchical approach lacks the flexibility to discover high-dimensional heterogeneity, however.  
-Hierarchical modeling therefore works well when there are more than two modifying factors and therefore many subgroups of interest, as well as less emphasis on discovery. 
+
+
+
+Hierarchical modeling therefore works best when there are more than two modifying factors and therefore many subgroups of interest, as well as less emphasis on discovery. 
+These models are best at capturing variation across groups and levels when there are multiple potential modifiers.
+Considering multiple modifiers is important because social scientists often posit conditional theories with a single modifier. % may need to expand or find a new home 
 
 
 There are two key steps when theory and data make using hierarchical models worthwhile.
@@ -129,10 +133,10 @@ Modeling heterogeneous effects in this way produces interpretable results, which
 It also allows researchers to examine effects within groups, compare different sources of heterogeneous effects and describe how much an effect varies.  
 
 
-While frequentist estimation of hierarchical models is possible, Bayesian estimation is worthwhile and preferable. 
+While frequentist estimation of hierarchical models is possible, Bayesian estimation is straightforward and more informative.
 Bayesian estimation provides crucial information by connecting parameters through common prior distributions, thereby regularizing estimates and propagating uncertainty. 
 Working with posterior distributions also gives researchers more flexibility to present diverse information about how and when effects vary. 
-While computation and coding were once a barrier to wider use of Bayesian methods, fitting a wide range of hierarchical models is straightforward with the brms package in \textsf{R} \citep{Buerkner2017}.\footnote{I provide example code in this note and the appendix.}
+While computation and coding were once a barrier to employing Bayesian methods, fitting a wide range of hierarchical models is straightforward with the brms package in \textsf{R} \citep{Buerkner2017}.\footnote{I provide example code in this note and the appendix.}
 Calculating substantive effects is also simple \citep{ArelBundockme}.
 
 
@@ -166,16 +170,19 @@ There are three general approaches to defining groups.
 First, researchers can set groups using combinations of other treatments, especially when an intervention has several dimensions but theory emphasizes one of them. 
 The experimental design determines groups, and the model estimates heterogeneous treatment effects.   
 If researchers want to know how different issues shape the impact of elite foreign policy cues \citep{GuisingerSaunders2017}, they could define groups by issues, for instance.
+Hierarchical estimators for topic-sampling experiments apply this idea to estimate how a treatment varies across different topics \citep{CliffordRainey2023}. 
+Researchers sometime use fully crossed interactions to estimate the impact of a treatment across experimental strata. 
 
 
 A second approach uses unit, demographic and contextual factors to create groups and estimate  effect heterogeneity. 
 Here, researchers examine what factors within or around units shape their response to an independent variable.
 For example, \citet{Alley2021isq} uses alliance characteristics to examine when alliance membership increases or decreases military spending.
 Other use cases include estimating how different demographic groups or geographic units respond to an intervention.
+One might examine how the impact of a national-level intervention varied across states, for example.\footnote{Extrapolation to a representative sample for such units might require poststratification.}
 
 
-Third, researchers might emphasize policy concerns.
-Understanding how an intervention impacts a specific population is a common problem.
+Third, researchers might use hierarchical models to address specific policy concerns.
+Policy analysts often want to know how an intervention impacts a specific population. 
 Researchers might want to know if a job-training program improves employment outcomes for black women in the South, for instance.  
 
 
@@ -183,16 +190,17 @@ Researchers might want to know if a job-training program improves employment out
 Whether researchers use other treatments, context, or policy to determine groups, the number of grouping factors depends first on theory.
 There are some practical constraints, however.
 Using too many factors can lead to model fitting and interpretation problems by creating many small groups.
-How many factors is too many depends on theory and the data- some datasets can support reasonably large groups for many factors. 
-At the other extreme, using only one grouping factor will create an unidentified model, and two will give similar results to standard interactions. 
+How many factors is too many depends especially on the data- some datasets can support reasonably large groups for many factors. 
+At the other extreme, using only one grouping factor will add relatively little value compared to interactions. 
 
 
 
 After defining groups, the second step is fitting a hierarchical model of effects within groups.
-The first equation links the independent variable and outcome.
-The second equation estimates heterogeneous effects as a function of group characteristics.
-The second equation is essential, as group variables add substantial information and avoid simply pooling small groups towards the overall mean.
-Without the group predictors, the random effects of each treatment will shift towards the mean because the information about each group depends only on how many data points it contains. 
+The model employs a mix of varying intercepts and slopes to estimate the impact of an intervention in each group.\footnote{If other units such as states define the groups, rather than combinations of modifying variables, then adding group-level predictors is essential. For examine, in a model where an effect varies by state, adding state-level variables like ideology, population and GDP would avoid partially pooling small groups too far towards the overall mean.}
+%The first equation links the independent variable and outcome.
+%The second equation estimates heterogeneous effects as a function of group characteristics.
+%The second equation is essential, as group variables add substantial information and avoid simply pooling small groups towards the overall mean.
+%Without the group predictors, the random effects of each treatment will shift towards the mean because the information about each group depends only on how many data points it contains. 
 
 
 This approach can address diverse problems, but for ease of exposition consider making between-unit comparisons based on an experimental treatment.    

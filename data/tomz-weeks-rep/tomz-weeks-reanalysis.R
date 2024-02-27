@@ -28,10 +28,15 @@ tw.rep <- tw.rep %>%
               male = ifelse(gender == 1, 1, 0),
               hawk = abs(6 - hawk),
               natl.sup = nat1 + nat2,
-              alliance = as.integer(recode(alliance, `1` = 0, `2` = 1)),
-              regime = as.integer(recode(regime, `1` = 0, `2` = 1)),
-              stakes = as.integer(recode(stakes, `1` = 1, `2` = 0)),
-              costs = as.integer(recode(costs, `1` = 0, `2` = 1)),
+              ed4 = case_when(educ ==  1 | educ == 2 ~ 1,
+                              educ ==  3 | educ == 4 ~ 2,
+                              educ ==  5 ~ 3,
+                              educ ==  6 ~ 4),
+              age = (2016-birthyr) / 10,
+              alliance = factor(recode(alliance, `1` = 0, `2` = 1)),
+              regime = factor(recode(regime, `1` = 0, `2` = 1)),
+              stakes = factor(recode(stakes, `1` = 1, `2` = 0)),
+              costs = factor(recode(costs, `1` = 0, `2` = 1)),
               region = as.integer(region),
               region.txt = case_when(
                 region == 1 ~ "Africa",
@@ -106,10 +111,10 @@ grid.treat.het <- tw.rep %>%
                            intl, hawk, het.group) %>%
                       distinct() %>%
                       mutate(
-                        regime = median(tw.rep$regime),
-                        stakes = median(tw.rep$stakes),
+                        regime = 1,
+                        stakes = 1,
                         region.txt = "Africa",
-                        costs =  median(tw.rep$costs)
+                        costs =  1
                       )
 
 # number of respondents
@@ -254,9 +259,10 @@ ggsave("figures/tw-het-source.png", height = 6, width = 8)
 # model: OLS with interactions 
 lm.treat.het <- lm(force ~ 
     regime + stakes + costs + region.txt +
-    alliance*(white + male + intl + hawk),
+    alliance*(white*male + intl*hawk),
   data = tw.rep
 )
+summary(lm.treat.het)
 
 slopes.lm <- slopes(model = lm.treat.het,
        variables = "alliance",
@@ -353,10 +359,15 @@ het.treat.prior <- c(
   prior(normal(0, 1), class = "sd")
 )
 tw.het.treat <- brm(bf(force ~ 1 + white + male + hawk + intl + 
+                         pid7 + age + ed4 +
                          #alliance*(regime + stakes + costs + region.txt) +
                          (1 + alliance | regime) +
                          (1 + alliance | stakes) +
                          (1 + alliance | costs) +
+                         (1 + alliance | regime:stakes) +
+                         (1 + alliance | regime:costs) +
+                         (1 + alliance | regime:stakes:costs) +
+                         (1 + alliance | costs:stakes) +
                          (1 + alliance | region.txt) ),
                     data = tw.rep,
                     prior = het.treat.prior,
@@ -372,13 +383,17 @@ summary(tw.het.treat)
 # Using marginaleffects out of the box 
 grid.het.treat <- tw.rep %>%
   select(alliance, regime, stakes,
-         costs, region.txt, treat.group) %>%
+         costs, region.txt, treat.group,
+         region) %>%
   distinct() %>%
   mutate(
     white = median(tw.rep$white),
     male = median(tw.rep$male),
     hawk = median(tw.rep$hawk),
-    intl =  median(tw.rep$intl)
+    intl =  median(tw.rep$intl),
+    pid7 = median(tw.rep$pid7),
+    age = median(tw.rep$age),
+    ed4 = median(tw.rep$ed4)
   )
 
 # predictions 
@@ -429,3 +444,80 @@ het.treat.all <- posterior_draws(slopes.het.treat)
 ggplot(het.treat.all, aes(x = draw, y = treat.group)) +
   stat_halfeye() +
   labs(x = "Marginal effect", y = "")
+
+
+
+# set up OLS model to compare
+tw.het.treat.ols <- lm(force ~ 1 + white + male + hawk + intl + 
+                         pid7 + age + ed4 +
+                         alliance*regime*stakes*costs*region.txt,
+                       data = tw.rep)
+summary(tw.het.treat.ols)
+
+# slopes- create groups
+grid.het.treat.context <- tw.rep %>%
+  select(alliance, regime, stakes,
+         costs, region.txt, treat.group) %>%
+  distinct() %>%
+  mutate(
+    white = median(tw.rep$white),
+    male = median(tw.rep$male),
+    hawk = median(tw.rep$hawk),
+    intl =  median(tw.rep$intl),
+    pid7 = median(tw.rep$pid7),
+    age = median(tw.rep$age),
+    ed4 = median(tw.rep$ed4)
+  )
+
+slopes.het.treat.lm <- slopes(model = tw.het.treat.ols,
+                           variables = "alliance",
+                           newdata = grid.het.treat.context)
+
+slopes.het.treat.vs <- slopes(model = tw.het.treat,
+                              variables = "alliance",
+                              newdata = grid.het.treat.context) 
+# comparison
+slopes.het.treat.comp <- bind_rows(
+  "Hierarchical"= slopes.het.treat.vs,
+  "OLS Interactions" = slopes.het.treat.lm,
+  .id = "model"
+) %>%
+  mutate(
+    estimate = round(estimate, digits = 2)
+  )
+
+
+ggplot(slopes.het.treat.comp, aes(y = estimate, x = model,
+                                  label = estimate)) +
+  facet_grid(region.txt ~ stakes + regime + costs, 
+             labeller = labeller(regime = c(`0` = "Autocracy",
+                                     `1` = "Democracy"),
+                          stakes = c(`0` = "Low Stakes",
+                                     `1` = "High Stakes"),
+                          costs = c(`0` = "High Costs",
+                                    `1` = "Low Costs"))) +
+  geom_hline(yintercept = 0) +
+  geom_pointrange(aes(ymin = conf.low, ymax = conf.high),
+                  size = .75, linewidth = 1.5) +
+  geom_label() +
+  labs(title = "Heterogeneous Treatments",
+       subtitle = c("Region, Regime, Stakes, Cost"),
+       x = "Regime", 
+       y = "Marginal Effect of Alliance")
+ggsave("figures/tw-het-treat-comp1.png", height = 8, width = 10)
+
+
+ggplot(slopes.het.treat.comp, aes(y = as.numeric(factor(treat.group)),
+                                  x = estimate)) +
+  facet_grid(region.txt ~ model) +
+  geom_vline(xintercept = 0) +
+  geom_pointrange(aes(xmin = conf.low, xmax = conf.high),
+                  size = .75, linewidth = 1.5,
+                  position = position_dodge(width = 1)) +
+  #scale_color_manual(values = wesanderson::wes_palette("Royal1")) +
+  theme(legend.position = "bottom") +
+  labs(title = "Heterogeneous Alliance Treatments",
+       subtitle = c("Divided By Experimental Group"),
+       x = "Estimate and 95% Credible Interval", 
+       y = "Treatment Group")
+ggsave("figures/tw-het-treat-comp2.png", height = 8, width = 10)
