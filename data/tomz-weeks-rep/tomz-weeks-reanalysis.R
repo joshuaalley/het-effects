@@ -64,16 +64,21 @@ treat.het.prior <- c(
 tw.treat.het <- brm(bf(force ~ 1 +
                          regime + stakes + costs + region.txt +
                          alliance +
+                         (1 + alliance | white*male*intl*hawk)
+                         
                          #white + male + intl + hawk +
                          #alliance*(white + male + intl + hawk) +
-                         (1 + alliance | white:male:intl:hawk) +
-                         (1 + alliance | white:male) +
-                       (1 + alliance | white) +
-                       (1 + alliance | male) +
-                         (1 + alliance | intl:hawk) +
-                         (1 + alliance | intl) +
-                       (1 + alliance | hawk) 
-                       #  (1 + alliance | het.group) 
+                         #  (1 + alliance | het.group) 
+                         
+                       #   (1 + alliance | white:male:intl:hawk) +
+                       #   (1 + alliance | white:male) +
+                       # (1 + alliance | white) +
+                       # (1 + alliance | male) +
+                       #   (1 + alliance | intl:hawk) +
+                       #   (1 + alliance | intl) +
+                       # (1 + alliance | hawk) 
+                         
+
                        ),
                     data = tw.rep,
                     prior = treat.het.prior,
@@ -84,7 +89,7 @@ tw.treat.het <- brm(bf(force ~ 1 +
                     backend = "cmdstanr",
                     refresh = 500
 )
- summary(tw.treat.het)
+  summary(tw.treat.het)
 
 
 # parameters
@@ -109,6 +114,10 @@ tw.treat.het <- brm(bf(force ~ 1 +
 grid.treat.het <- tw.rep %>%
                       select(alliance, white, male,
                            intl, hawk, het.group) %>%
+                      group_by(het.group) %>%
+                      mutate(
+                        n = n()
+                      ) %>%
                       distinct() %>%
                       mutate(
                         regime = 1,
@@ -116,6 +125,10 @@ grid.treat.het <- tw.rep %>%
                         region.txt = "Africa",
                         costs =  1
                       )
+
+grid.treat.het$regime <- factor(grid.treat.het$regime)
+grid.treat.het$stakes <- factor(grid.treat.het$stakes)
+grid.treat.het$costs <- factor(grid.treat.het$costs)
 
 # number of respondents
 treat.het.num <- tw.rep %>%
@@ -195,13 +208,13 @@ ggplot(treat.het.all, aes(x = draw,
                           group = het.group)) +
   geom_density(alpha = .25) +
   scale_fill_grey() +
-  annotate("text", label = "Mimimum Effect: -0.02\n(-.27, .21)",
+  annotate("text", label = "Mimimum Effect: -0.08\n(-.27, .21)",
            x = -.05, y = 4) +
-  annotate("text", label = "Maximum Effect: .56\n(.36, .67)",
+  annotate("text", label = "Maximum Effect: .55\n(.36, .67)",
            x = .7, y = 4.25) +
   annotate("text", label = "Median Effect: .31\n(.11, .49)",
            x = .31, y = 6.75) +
-  annotate("text", label = "SD of All Draws: .15",
+  annotate("text", label = "SD of All Draws: .19",
            x = -.4, y = 6.75) +
   # annotate("text", label = "Median of All Draws: .31",
   #          x = -.4, y = 7.25) +
@@ -259,7 +272,7 @@ ggsave("figures/tw-het-source.png", height = 6, width = 8)
 # model: OLS with interactions 
 lm.treat.het <- lm(force ~ 
     regime + stakes + costs + region.txt +
-    alliance*(white*male + intl*hawk),
+    alliance*(white*male*intl*hawk),
   data = tw.rep
 )
 summary(lm.treat.het)
@@ -267,6 +280,90 @@ summary(lm.treat.het)
 slopes.lm <- slopes(model = lm.treat.het,
        variables = "alliance",
        newdata = grid.treat.het)
+
+# comparison
+slopes.treat.het.comp <- bind_rows(
+  "Hierarchical"= slopes.treat.het,
+  "OLS Interactions" = slopes.lm,
+  .id = "model"
+) %>%
+  mutate(
+    estimate = round(estimate, digits = 2),
+    size_n = case_when(
+      n <= fivenum(n)[2] ~ "1st Quartile",
+      n > fivenum(n)[2] & n <= fivenum(n)[3] ~ "2nd Quartile",
+      n > fivenum(n)[3] & n <= fivenum(n)[4] ~ "3rd Quartile",
+      n > fivenum(n)[4] ~ "4th Quartile",
+    )
+  )
+
+ggplot(slopes.treat.het.comp, aes(y = model,
+                                  color = model,
+                                  x = estimate)) +
+  facet_wrap(~ het.group) +
+  geom_vline(xintercept = 0) +
+  geom_pointrange(aes(xmin = conf.low, xmax = conf.high),
+                  size = .75, linewidth = 1.5) +
+  scale_color_manual(values = wesanderson::wes_palette("Royal1")) +
+  theme(legend.position = "bottom") +
+  labs(title = "Heterogeneous Alliance Treatments",
+       subtitle = c("Divided By Experimental Group"),
+       x = "Estimate and 95% Credible Interval", 
+       y = "Treatment Group")
+
+
+# look at regularization by group size
+ggplot(slopes.treat.het.comp, aes(y = estimate,
+                                  group = estimate,
+                                  color = model,
+                                  x = model)) +
+  facet_wrap(~ n, scales = "free_x") +
+  geom_hline(yintercept = 0) +
+  geom_pointrange(aes(ymin = conf.low, ymax = conf.high),
+                  size = .75, linewidth = 1.5,
+                  position = position_dodge(width = .5)) +
+  scale_color_manual(values = wesanderson::wes_palette("Royal1")) +
+  theme(legend.position = "bottom") +
+  labs(title = "Heterogeneous Alliance Treatments",
+       subtitle = c("Divided By Experimental Group"),
+       y = "Estimate and 95% Credible Interval", 
+       x = "Group Size")
+
+ggplot(slopes.treat.het.comp, aes(x = n,
+                                  group = interaction(model, estimate),
+                                  color = model,
+                                  y = estimate)) +
+  facet_wrap(~ size_n, scales = "free_x") +
+  geom_hline(yintercept = 0) +
+  geom_pointrange(aes(ymin = conf.low, ymax = conf.high),
+                  size = .75, linewidth = 1.5,
+                  position = position_dodge(width = .5)) +
+  scale_color_manual(values = wesanderson::wes_palette("Royal1")) +
+  theme(legend.position = "bottom") +
+  labs(title = "Heterogeneous Alliance Treatments",
+       subtitle = c("Divided By Heterogeneity Group"),
+       y = "Estimate and 95% Credible Interval", 
+       x = "Group Size")
+
+# less effective 
+ggplot(slopes.treat.het.comp, aes(y = as.numeric(factor(het.group)),
+                                  x = estimate)) +
+  facet_grid(model ~ size_n, scales = "free_y") +
+  geom_vline(xintercept = 0) +
+  geom_pointrange(aes(xmin = conf.low, xmax = conf.high),
+                  size = .75, linewidth = 1.5) +
+  #scale_color_manual(values = wesanderson::wes_palette("Royal1")) +
+  theme(legend.position = "bottom") +
+  labs(title = "Heterogeneous Alliance Treatments",
+       subtitle = c("Divided By Size of Group"),
+       x = "Estimate and 95% Credible Interval", 
+       y = "Heterogeneity Group")
+
+
+
+
+# check regularization 
+
 
 # RE with pred
 tw.treat.het.pred <- brm(bf(force ~ 1 +
@@ -361,14 +458,17 @@ het.treat.prior <- c(
 tw.het.treat <- brm(bf(force ~ 1 + white + male + hawk + intl + 
                          pid7 + age + ed4 +
                          #alliance*(regime + stakes + costs + region.txt) +
-                         (1 + alliance | regime) +
-                         (1 + alliance | stakes) +
-                         (1 + alliance | costs) +
-                         (1 + alliance | regime:stakes) +
-                         (1 + alliance | regime:costs) +
-                         (1 + alliance | regime:stakes:costs) +
-                         (1 + alliance | costs:stakes) +
-                         (1 + alliance | region.txt) ),
+                         (1 + alliance | regime*stakes*costs*region.txt) 
+                       
+                         # (1 + alliance | regime) +
+                         # (1 + alliance | stakes) +
+                         # (1 + alliance | costs) +
+                         # (1 + alliance | regime:stakes) +
+                         # (1 + alliance | regime:costs) +
+                         # (1 + alliance | regime:stakes:costs) +
+                         # (1 + alliance | costs:stakes) +
+                         # (1 + alliance | region.txt) 
+                       ),
                     data = tw.rep,
                     prior = het.treat.prior,
                     family = gaussian(),
@@ -448,7 +548,7 @@ ggplot(het.treat.all, aes(x = draw, y = treat.group)) +
 
 
 # set up OLS model to compare
-tw.het.treat.ols <- lm(force ~ 1 + white + male + hawk + intl + 
+tw.het.treat.ols <- lm(force ~ white + male + hawk + intl + 
                          pid7 + age + ed4 +
                          alliance*regime*stakes*costs*region.txt,
                        data = tw.rep)
