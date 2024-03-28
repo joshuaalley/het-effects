@@ -120,15 +120,20 @@ This facilitates argument testing.
 Unlike machine learning, the hierarchical approach lacks the flexibility to discover high-dimensional heterogeneity, however.  
 
 
-
 Hierarchical modeling therefore works best when there are more than two modifying factors and therefore many subgroups of interest, as well as less emphasis on discovery. 
 These models are best at capturing variation across groups and levels when there are multiple potential modifiers.
-Considering multiple modifiers is important because social scientists often posit conditional theories with a single modifier. % may need to expand or find a new home 
+This also works best when researchers have a clear sense of the relevant groups.\footnote{\citep{Goplerud2021} introduces a model that uses Bayesian structured sparsity to estimate which group coefficients are similar and which are different. In this researchers use theory to inform the potential sets of groups, but common estimates for groups are data driven.} 
+
+
+Considering multiple modifiers is important because social scientists often posit conditional theories.
+Most conditional arguments consider a single modifier, but the accumulation of singe-modifier arguments suggests that multiple factors generate heterogeneous effects.
+For example, scholarship on audience costs has considered how foreign policy dispositions \citep{KertzerBrutger2016}, partisanship \citep{LevenduskyHorowitz2012}, gender \citep{Barnhartetal2020, SchwartzBlair2020} and policy preferences \citep{Chaudoin2014} all modify individual reactions to a leader backing down from a threat. 
+
 
 
 There are two key steps when theory and data make using hierarchical models worthwhile.
 First, researchers should define groups based on potential sources of heterogeneity such as other treatments, context, demographics, or policy concerns. 
-Second, they should estimate heterogeneous effects across those groups using a hierarchical model with varying slopes and intercepts, along with covariates that predict slopes.
+Second, they should estimate heterogeneous effects across those groups using a hierarchical model with varying slopes and intercepts for every unique group. 
 Modeling heterogeneous effects in this way produces interpretable results, which facilitates argument testing.
 It also allows researchers to examine effects within groups, compare different sources of heterogeneous effects and describe how much an effect varies.  
 
@@ -206,7 +211,7 @@ The model employs a mix of varying intercepts and slopes to estimate the impact 
 This approach can address diverse problems, but for ease of exposition consider making between-unit comparisons based on an experimental treatment.    
 Start with \textit{N} units indexed by \textit{i}, some of which receive a binary treatment \textit{T}.
 Assume that the outcome variable ${y}$ is normally distributed with mean $\mu_i$ and standard deviation $\sigma$.\footnote{Researchers should use binary, categorical and other outcome likelihoods.}
-\textit{g} indexes the researcher-defined groups, which include two variables \textit{v1} and \textit{v2}. 
+\textit{g} indexes the researcher-defined groups, which include two variables \textit{v1} and \textit{v2} and their interaction.
 
 
 %The first equation predicts the outcome mean. 
@@ -218,7 +223,7 @@ To capture correlations between the random intercepts and varying slopes $\rho \
 
 \begin{align*}
 y_i &\sim N(\mu_i, \sigma) &\text{(Likelihood)} \\
-\mu_i &= \alpha + \alpha_{v1} + \theta_{v1} + \textit{T} + \alpha_{v2} + \theta_{v2} \textit{T} + \textbf{X} \beta &\text{(Outcome Equation)}  \\ 
+\mu_i &= \alpha + \alpha_{v1} + \theta_{v1} \textit{T} + \alpha_{v2} + \theta_{v2} \textit{T} + \alpha_{v1*v2} + \theta_{v1*v2} \textit{T} + \textbf{X} \beta &\text{(Outcome Equation)}  \\ 
 \begin{pmatrix} 
 \alpha_{v1} \\
 \theta_{v1} \\
@@ -232,7 +237,7 @@ y_i &\sim N(\mu_i, \sigma) &\text{(Likelihood)} \\
 \sigma^2_\alpha & \rho \sigma^\alpha_{v1} \sigma^\theta_{v1} \\
 \rho \sigma^\alpha_{v1} \sigma^\theta_{v1} & \sigma^2_\theta \\
 \end{pmatrix}
-\end{bmatrix} & \text{(Correlated Intercepts and Slopes: V1)} \\ 
+\end{bmatrix} & \text{(Common Prior: V1)} \\ 
 \begin{pmatrix} 
 \alpha_{v2} \\
 \theta_{v2} \\
@@ -246,16 +251,30 @@ y_i &\sim N(\mu_i, \sigma) &\text{(Likelihood)} \\
 \sigma^2_\alpha & \rho \sigma^\alpha_{v2} \sigma^\theta_{v2} \\
 \rho \sigma^\alpha_{v2} \sigma^\theta_{v2} & \sigma^2_\theta \\
 \end{pmatrix}
-\end{bmatrix} & \text{(Correlated Intercepts and Slopes: V2)} \\ 
-\theta_g &= \theta_{v1} \textit{V1} + \theta_{v2} \textit{V2} & \text{(Group Slopes)} \\
-\alpha_g &= \alpha_{v1} + \alpha_{v2} & \text{(Group Intercepts)} \\
+\end{bmatrix} & \text{(Common Prior: V2)} \\ 
+\begin{pmatrix} 
+\alpha_{v1*v2} \\
+\theta_{v1*v2} \\
+\end{pmatrix} &\sim  N
+\begin{bmatrix}
+\begin{pmatrix}
+\mu^\alpha_{v1*v2} \\
+\mu^\theta_{v1*v2} \\
+\end{pmatrix}\!\!,&
+\begin{pmatrix}
+\sigma^2_\alpha & \rho \sigma^\alpha_{v1*v2} \sigma^\theta_{v1*v2} \\
+\rho \sigma^\alpha_{v1*v2} \sigma^\theta_{v1*v2} & \sigma^2_\theta \\
+\end{pmatrix}
+\end{bmatrix} & \text{(Common Prior: V1*V2)} \\ 
+\theta_g &= \theta_{v1} \textit{V1} + \theta_{v2} \textit{V2} + \theta_{v1*v2} \textit{V1*V2} & \text{(Group Slopes)} \\
+\alpha_g &= \alpha_{v1} + \alpha_{v2} + alpha_{v1*v2} & \text{(Group Intercepts)} \\
 %\mu_\theta &= \lambda_0 + \textbf{Z} \lambda &\text{(Heterogeneous Effects)} 
 \end{align*}
 
 
 This approach lets slopes vary across multiple variables within a group. 
 The net impact of the treatment in each group depends on the linear combination of slopes in that group, specifically the $\theta$ parameters and values of each variable. 
-Similarly, the group intercepts can be calculated as the sum of the corresponding random intercepts for each grouping variable.\footnote{In brms for a model with no controls and two variables modifying the impact of a treatment, the model formula is y $\sim$ 1 + (1 + treat | var1) + (1 + treat | var2). If joint variation across variables 1 and 2 is also of interest, append (1 + treat | var1:var2).}  
+Similarly, the group intercepts can be calculated as the sum of the corresponding random intercepts for each grouping variable.\footnote{In brms for a model with no controls and two variables modifying the impact of a treatment, the model formula is y $\sim$ 1 + (1 + treat | var1*var2)}  
 
 
 %The heterogeneous effects equation then predicts the treatment effects with the matrix \textbf{Z}, which contains unique combinations of whatever variables define the groups.  
@@ -263,7 +282,7 @@ Similarly, the group intercepts can be calculated as the sum of the correspondin
 %The second equation also includes an intercept $\lambda_0$ that estimates the impact of treatment when all sources of heterogeneity are zero.\footnote{In brms for a model with no controls and two variables modifying the impact of a treatment, the model formula is y $\sim$ 1 + treat*(var1 + var2) + (1 + treat | var1:var2). treat*(var1 + var2) expresses part of the second equation, while (1 + treat | var1:var2) lets slopes vary by group.}
 
 
-The above model can be fit with Bayesian or frequentist methods, but Bayesian estimation offers some useful advantages.
+The above model can be fit with Bayesian or frequentist methods, but Bayesian estimation offers important advantages.
 First, it is more flexible, and including prior information can facilitate model fitting and convergence. 
 Priors also help regularize estimates by pulling extreme groups towards the overall mean.
 Working with posterior distributions also also provides a wealth of information about effect heterogeneity and propagates uncertainty.  
@@ -279,8 +298,8 @@ The random variation is similar to the error term in regression- it expresses ho
 
 % additional information 
 In addition to group-specific effect estimates, a hierarchical model facilitates rich description of effects across groups. 
-It estimates how specific factors drive differences between groups via the $\lambda$ parameters.
-Researchers can also calculate variance in the $\theta$ parameters across groups and compare the posteriors of different $\theta$s. 
+%It estimates how specific factors drive differences between groups via the $\lambda$ parameters.
+Researchers can calculate variance in the $\theta$ parameters across groups and compare the posteriors of different $\theta$s. 
 The $\sigma_\theta$ parameter summarizes the random variation. 
 Other techniques such as interactions in OLS with robust standard errors provide less information.
 
@@ -364,29 +383,8 @@ Following TW's OLS analysis, I use a Gaussian likelihood, although the outcome i
 
 
 I describe the results in two steps. 
-First, I summarize the predictors of the alliance effect in \autoref{fig:tw-het-source}.
-I then present the resulting heterogeneous effects for every group in \autoref{fig:tw-treat-het}.
-
-
-\begin{figure}[htpb]
-	\centering
-		\includegraphics[width=0.95\textwidth]{../figures/tw-het-source.png}
-	\caption{Heterogeneous effects equation coefficients from a hierarchical model of how military alliances impact public support for war. Hawkishness, internationalism, white race and male gender predict the impact of alliances.}
-	\label{fig:tw-het-source}
-\end{figure}
-
-
-\autoref{fig:tw-het-source} plots how support for international engagement, willingness to use force, race and gender modify the impact of alliances.\footnote{These are the $\lambda$ parameters above.}
-These group-level predictors modify the treatment effect.
-Each coefficient therefore expresses whether a variable increases, decreases, or has no relationship with the impact of alliances on support for military intervention.  
-
-
-The top coefficient estimate, ``Alliance'' indicates that when all group variables are 0, alliances increase support for intervention by 20\%. 
-The white race coefficient suggests that alliances increase support for intervention by 12\% more among white respondents than non-white respondents. 
-Next, men are marginally more responsive to alliances than women, but this difference has positive, negative and zero values.  
-As internationalism increases, the impact of alliances rises by 4\% in expectation.
-Conversely, greater hawkishness marginally attenuates the impact of an alliance. 
-
+First, I summarize the distribution of alliance effects. 
+After this, I summarize the sources of variation in the alliance effect in \autoref{fig:tw-het-source} and present the resulting heterogeneous effects for every group in \autoref{fig:tw-treat-het}.
 
 \begin{figure}[htpb]
 	\centering
@@ -396,7 +394,7 @@ Conversely, greater hawkishness marginally attenuates the impact of an alliance.
 \end{figure}
 
 
-As a result of random variation and the systematic modification of group level variables I summarize in \autoref{fig:tw-het-source}, how alliances impact support for using force varies widely. 
+How alliances impact support for using force varies widely. 
 \autoref{fig:tw-treat-het-sum} provides an initial summary of that variation, and highlights several noteworthy estimates. 
 
 
@@ -408,15 +406,37 @@ The median group treatment effect estimate is .31, and this group of respondents
 Alliances never clearly decrease support for intervention, but how much they increase support varies widely. 
 
 
-\autoref{fig:tw-treat-het-sum} also presents the variation in how alliances impact demographic groups 
+\autoref{fig:tw-treat-het-sum} also presents the variation in how alliances impact demographic groups.
 The standard deviation of all posterior draws is .13. 
 Roughly 5\% of variation in the alliance effect is not explained by systematic regression components in \autoref{fig:tw-het-source}.\footnote{This is $\sigma_\theta$ above.}
 
 
+\autoref{fig:tw-het-source} plots how the impact of alliances varies across support for international engagement, willingness to use force, race and gender. 
+These variables define the groups, so differences in the alliance slope follows their individual and joint variation. 
+Because there are many groups, the impact of alliances varies widely within each level of these variables, but there are some clear patterns. 
 
-\autoref{fig:tw-treat-het} provides an alternative presentation of the impact of alliances on support for using force that bridges \autoref{fig:tw-het-source} and \autoref{fig:tw-treat-het-sum}. 
-As \autoref{fig:tw-het-source} and \autoref{fig:tw-treat-het-sum} suggest, alliances increase support for foreign intervention most among white men, especially those with low hawkishness and high internationalism.
-By contrast, alliances have little impact on support for war among non-white females who are also skeptical of international engagement.
+
+\begin{figure}[htpb]
+	\centering
+		\includegraphics[width=0.95\textwidth]{../figures/tw-het-source.png}
+	\caption{Variation in the impact of alliances on support for military intervention across four variables that set groups. Each point marks the impact of alliances on a specific group, and boxplots summarize the median and interquartile range of the slopes within each level of the variable. All slopes are present in each facet.}
+	\label{fig:tw-het-source}
+\end{figure}
+
+
+Individuals with minimal interest in international engagement are less responsive to alliances, while any greater support for internationalism leads to a fairly consistent response to alliances. 
+Similarly, alliances exert less impact on individuals who have minimal militant assertiveness. 
+Alliances are very influential for individuals with low but greater than minimal hawkishness, however. 
+Among those with moderate or high hawkishness, alliances have a fairly consistent impact. 
+The media alliance impact is also greater for men, and among white respondents. 
+
+
+Crucially, parameteric interactions would not capture as clearly the non-linear steps across the levels of different grouping variables. 
+Letting slopes vary across each level of the grouping variables generates more flexibility, and clearly shows the difference between individuals with very low internationalism or low militant assertiveness and others. 
+
+
+As \autoref{fig:tw-het-source} suggests, alliances increase support for foreign intervention most among white men, especially those with low hawkishness and some internationalism.
+By contrast, alliances have little impact on support for war among non-white females who are also skeptical of international engagement and unwilling to use force.
 Individuals with more ambivalent foreign policy views respond more typically to TW's alliance treatment. 
 
 
@@ -430,7 +450,7 @@ Individuals with more ambivalent foreign policy views respond more typically to 
 
 All these estimates suggest that internationalism matters more than than hawkishness for understanding who is willing to fight for U.S. allies. 
 Alliances may impact hawks less because these individuals support intervention regardless. 
-Military alliances matter most to backers of international engagement who are otherwise less inclined to use force. 
+Military alliances matter most to backers of international engagement who less willing to use force, but not entirely averse to military intervention.
 
 
 % variation

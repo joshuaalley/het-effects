@@ -2,17 +2,6 @@
 # reanalyze Tomz and Weeks 2021
 
 
-# key packages
-library(tidyverse)
-library(haven)
-library(brms)
-library(bayesplot)
-library(marginaleffects)
-library(modelsummary)
-library(ggdist)
-
-# set ggplot theme
-theme_set(theme_bw(base_size = 14))
 
 
 # load data: appendix data with all controls
