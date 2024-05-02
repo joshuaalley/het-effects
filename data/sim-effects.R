@@ -133,7 +133,6 @@ sum(slopes.vs$in.interval)
 pred.vs <- posterior_epred(object = vs.mod) 
 pred.vs.med <- apply(pred.vs, 2, median)
 
-
 # RMSE OLS:
 # outcome
 sqrt(mean(ols.inter$residuals^2))
@@ -175,17 +174,100 @@ output
 # end comparison function
 }
 
-results.list <- vector(mode = "list",
-                       length = length(n.sim)*length(sd.coef))
-
 combos <- expand.grid(n.sim, sd.coef)
 colnames(combos) <- c("sample.size", "sd.impact")
 combos$combo <- rownames(combos)
-  
+combos$pair <- paste0(combos$sample.size, "_", combos$sd.impact)  
 
 combos.list <- split(combos, f = combos$combo)
 
 simulation.all <- lapply(combos.list,
                          simulation.inter.comp)
+
+names(simulation.all) <- combos$pair
 # save results
 saveRDS(simulation.all, file = "data/simulation-res.rds")
+
+
+# calculate RMSE and group coef bias 
+sim.res <- vector(mode = "list", length = length(simulation.all))
+
+# for loop given nested lists
+for(i in 1:length(simulation.all)){
+  
+  est <- unlist(simulation.all[[i]], recursive = FALSE)
+  names(est) <- c("outcome", "beta", "group.effects",
+                  "ols.mod", "slopes.ols",
+                  "vs.mod", "slopes.vs",
+                  "time.vs")
+  
+  # predictions
+  pred.vs <- posterior_epred(object = est$vs.mod) 
+  pred.vs.med <- apply(pred.vs, 2, median)
+
+  
+  # RMSE OLS:
+  # outcome
+  rmse.ols <- sqrt(mean(est$ols.mod$residuals^2))
+  # group coefs
+  ols.est <- est$slopes.ols$estimate
+  bias.ols <- sqrt(mean((est$group.effects - ols.est)^2))
+  mean(bias.ols)
+  
+  # RMSE VS: 
+  # outcome
+  resid.vs <- est$outcome - pred.vs.med
+  rmse.vs <- sqrt(mean((est$outcome - pred.vs.med)^2))
+  
+  # group coefs
+  bias.vs <- sqrt(mean((est$group.effects - est$slopes.vs$estimate)^2))
+  mean(bias.vs)
+  
+  # results
+  model <- c("OLS", "VS")
+  rmse <- c(rmse.ols, rmse.vs)
+  bias <- c(bias.ols, bias.vs)
+
+  res <- data.frame(model = model,
+                    rmse = rmse,
+                    bias = bias,
+                    sample.size = combos$sample.size[i],
+                    sd.impact = str_remove(as.character(
+                      combos$sd.impact[i]),
+                      "^0+"))
+  
+  sim.res[[i]] <- res
+  
+}
+
+sim.res.data <- bind_rows(sim.res,
+                          .id = "sim") %>%
+                mutate(
+                  sd.impact = paste0("SD Coef=", sd.impact),
+                  scen = paste0("N=", sample.size, ",\n",
+                                sd.impact)
+                )
+
+ggplot(sim.res.data, aes(x = factor(sample.size), y = rmse,
+                         color = model)) +
+  facet_wrap(~ sd.impact, scales = "free_x") +
+  geom_point(size = 3) +
+  labs(title = "RMSE of Varying Slopes and OLS",
+       x = "Sample Size",
+       y = "RMSE",
+       color = "Model") +
+  scale_color_grey(start = .6, end = .1) +
+  theme(legend.position = "bottom")
+ggsave("figures/sim-rmse.png", height = 6, width = 8)
+
+ggplot(sim.res.data, aes(x = factor(sample.size), y = bias,
+                         color = model)) +
+  facet_wrap(~ sd.impact) +
+  geom_point(size = 3) +
+  labs(title = "Group Coefficient Estimate Bias of Varying Slopes and OLS",
+       x = "Sample Size",
+       y = "Average Bias",
+       color = "Model") +
+  scale_color_grey(start = .6, end = .1) +
+  theme(legend.position = "bottom")
+ggsave("figures/sim-bias.png", height = 6, width = 8)
