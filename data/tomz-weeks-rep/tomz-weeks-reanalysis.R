@@ -200,11 +200,11 @@ ggplot(treat.het.all, aes(x = draw,
   annotate("text", label = "Mimimum Effect: -0.08\n(-.27, .21)",
            x = -.05, y = 4) +
   annotate("text", label = "Maximum Effect: .55\n(.36, .67)",
-           x = .7, y = 4.25) +
+           x = .8, y = 4.25) +
   annotate("text", label = "Median Effect: .31\n(.11, .49)",
-           x = .31, y = 6.75) +
+           x = .31, y = 6) +
   annotate("text", label = "SD of All Draws: .19",
-           x = -.4, y = 6.75) +
+           x = -.4, y = 6) +
   # annotate("text", label = "Median of All Draws: .31",
   #          x = -.4, y = 7.25) +
   # annotate("text", label = "Unexplained Variation: .05 (.00, .13)",
@@ -446,7 +446,6 @@ het.treat.prior <- c(
 )
 tw.het.treat <- brm(bf(force ~ 1 + white + male + hawk + intl + 
                          pid7 + age + ed4 +
-                         #alliance*(regime + stakes + costs + region.txt) +
                          (1 + alliance | regime*stakes*costs*region.txt) 
                        
                          # (1 + alliance | regime) +

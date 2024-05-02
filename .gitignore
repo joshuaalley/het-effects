@@ -79,3 +79,5 @@ rsconnect/
 # don't ignore the .gitignore file
 !.gitignore
 
+# ignore old folder
+old-files/

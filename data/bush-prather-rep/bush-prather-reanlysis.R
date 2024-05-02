@@ -2,17 +2,6 @@
 # reanalyze Bush and Prather 2020
 
 
-# key packages
-library(tidyverse)
-library(haven)
-library(brms)
-library(bayesplot)
-library(marginaleffects)
-library(ggdist)
-
-# set ggplot theme
-theme_set(theme_bw(base_size = 14))
-
 
 # load data: appendix data with all controls
 bp.us <- read_dta("data/bush-prather-rep/bush-prather-us-data-all.dta")
