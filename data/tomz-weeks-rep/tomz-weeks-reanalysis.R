@@ -286,37 +286,41 @@ slopes.treat.het.comp <- bind_rows(
     )
   )
 
-ggplot(slopes.treat.het.comp, aes(y = model,
+ggplot(slopes.treat.het.comp, aes(y = het.group,
                                   color = model,
                                   x = estimate)) +
-  facet_wrap(~ het.group) +
+  facet_wrap(~ model) +
   geom_vline(xintercept = 0) +
   geom_pointrange(aes(xmin = conf.low, xmax = conf.high),
-                  size = .75, linewidth = 1.5) +
-  scale_color_manual(values = wesanderson::wes_palette("Royal1")) +
-  theme(legend.position = "bottom") +
-  labs(title = "Heterogeneous Alliance Treatments",
+                  size = .35, linewidth = 1) +
+  #scale_color_manual(values = wesanderson::wes_palette("Royal1")) +
+  scale_color_grey(start = .2, end = .4) +
+  theme_classic() +
+  theme(legend.position = "none",
+        axis.text.y = element_blank()) +
+  labs(title = "Alliance Treatment Heterogeneity",
        subtitle = c("Divided By Experimental Group"),
        x = "Estimate and 95% Credible Interval", 
-       y = "Treatment Group")
+       y = "Respondent Group")
+ggsave("figures/tw-treat-het-comp.png", height = 8, width = 8)
 
 
 # look at regularization by group size
-ggplot(slopes.treat.het.comp, aes(y = estimate,
-                                  group = estimate,
+ggplot(slopes.treat.het.comp, aes(y = het.group,
                                   color = model,
-                                  x = model)) +
-  facet_wrap(~ n, scales = "free_x") +
+                                  x = estimate)) +
+  facet_wrap(~ n, scales = "free_y") +
   geom_hline(yintercept = 0) +
-  geom_pointrange(aes(ymin = conf.low, ymax = conf.high),
-                  size = .75, linewidth = 1.5,
-                  position = position_dodge(width = .5)) +
+  geom_pointrange(aes(xmin = conf.low, xmax = conf.high),
+                  size = .4, linewidth = 1,
+                  position = position_dodge(width = 1)) +
   scale_color_manual(values = wesanderson::wes_palette("Royal1")) +
-  theme(legend.position = "bottom") +
+  theme(legend.position = "bottom",
+        axis.text.y = element_blank()) +
   labs(title = "Heterogeneous Alliance Treatments",
        subtitle = c("Divided By Experimental Group"),
-       y = "Estimate and 95% Credible Interval", 
-       x = "Group Size")
+       x = "Estimate and 95% Credible Interval", 
+       y = "Group")
 
 ggplot(slopes.treat.het.comp, aes(x = n,
                                   group = interaction(model, estimate),
@@ -334,20 +338,6 @@ ggplot(slopes.treat.het.comp, aes(x = n,
        y = "Estimate and 95% Credible Interval", 
        x = "Group Size")
 
-# less effective 
-ggplot(slopes.treat.het.comp, aes(y = as.numeric(factor(het.group)),
-                                  x = estimate)) +
-  facet_grid(model ~ size_n, scales = "free_y") +
-  geom_vline(xintercept = 0) +
-  geom_pointrange(aes(xmin = conf.low, xmax = conf.high),
-                  size = .75, linewidth = 1.5) +
-  #scale_color_manual(values = wesanderson::wes_palette("Royal1")) +
-  theme(legend.position = "bottom") +
-  labs(title = "Heterogeneous Alliance Treatments",
-       subtitle = c("Divided By Size of Group"),
-       x = "Estimate and 95% Credible Interval", 
-       y = "Heterogeneity Group")
-
 
 
 
@@ -359,14 +349,7 @@ tw.treat.het.pred <- brm(bf(force ~ 1 +
                          regime + stakes + costs + region.txt +
                          alliance +
                            alliance*(white + male + intl + hawk) +
-                         (1 + alliance | white:male:intl:hawk) +
-                         (1 + alliance | white:male) +
-                         (1 + alliance | white) +
-                         (1 + alliance | male) +
-                         (1 + alliance | intl:hawk) +
-                         (1 + alliance | intl) +
-                         (1 + alliance | hawk) 
-),
+                         (1 + alliance | white*male*intl*hawk)),
 data = tw.rep,
 prior = treat.het.prior,
 family = gaussian(),
