@@ -75,6 +75,7 @@ This captures systematic and random variation in heterogeneous effects, estimate
 Hierarchical modeling provides an intermediate tool between interactions or subgroup analyses and machine learning approaches to discovering complex heterogeneity. 
 It is more flexible than interactions and reduces the risk of underpowered subgroup comparisons.
 At the same time, it is more theoretically informed and interpretable than some machine learning approaches, as well as easier to implement in small datasets. 
+I document these claims with a simulation analysis and extension of a published study. 
 Researchers can thus use hierarchical models alongside other approaches to understand heterogeneous effects for scholarship and policy.
 \end{abstract} 
 
@@ -267,7 +268,7 @@ y_i &\sim N(\mu_i, \sigma) &\text{(Likelihood)} \\
 \end{pmatrix}
 \end{bmatrix} & \text{(Common Prior: V1*V2)} \\ 
 \theta_g &= \theta_{v1} \textit{V1} + \theta_{v2} \textit{V2} + \theta_{v1*v2} \textit{V1*V2} & \text{(Group Slopes)} \\
-\alpha_g &= \alpha_{v1} + \alpha_{v2} + alpha_{v1*v2} & \text{(Group Intercepts)} \\
+\alpha_g &= \alpha_{v1} + \alpha_{v2} + \alpha_{v1*v2} & \text{(Group Intercepts)} \\
 %\mu_\theta &= \lambda_0 + \textbf{Z} \lambda &\text{(Heterogeneous Effects)} 
 \end{align*}
 
@@ -367,16 +368,80 @@ Modifiers            & Specified          & Specified      & Discovered or Speci
 \end{table}
 
 
-\section{Example Application} 
+\section{Performance on Simulated Data}
+
+To assess the performance of hierarchical models compared to OLS interactions, I first compare their performance on simulated data. 
+Simulating varying effects across multiple groups is challenging. 
+To begin, I define a binary treatment variable as randomly drawn from a binomial distribution with a probability of .5.
+I then define three randomly generated grouping variables; one four category multinomial variable with equal probability of drawing each category, a binomial variable with a 70\% chance of drawing one, and second binomial variable with a 30\% chance of drawing one. 
+There are 16 unique combinations of the values in these groups. 
 
 
-In the following, I demonstrate how the hierarchical approach works by reanalyzing a study by \citet{TomzWeeks2021} (TW hereafter). 
+The corresponding 16 group-level effects are a function of fully crossed interactions between the grouping variables and treatment.
+I simulate the interaction effects by drawing them from a normal distribution with a mean of .15 and standard deviation of either .05, .25 or .75. 
+Increasing the standard deviation adds greater variation to the group-level effects.
+
+
+Those interactions predict the mean of the outcome variable, $\mu_y$, which has a standard deviation of .25. 
+I vary the sample size of this outcome and the predictors from 1,000, 2,500, or 5,000 observations. 
+This provides more data to compare estimator performance and assess potential speed tradeoffs with a hierarchical model.
+
+
+In total, the simulation varies both the standard deviation of the interactions and the sample size. 
+This assesses the regularization benefits of varying slopes in situations where more data and greater effect variability may make it more necessary.
+More variation in effects may make regularization more impactful, while larger datasets will make it less helpful.
+
+
+\begin{figure}[htpb]
+	\centering
+		\includegraphics[width=0.95\textwidth]{../figures/sim-rmse.png}
+	\caption{.}
+	\label{fig:sim-rmse}
+\end{figure}
+
+
+\section{Example Application: Alliances and Public Support for War} 
+
+
+In the following, I further demonstrate how the hierarchical approach works and the benefits of regularizing effect estimates by reanalyzing a study by \citet{TomzWeeks2021} (TW hereafter). 
 TW examine whether the public is more willing to go to war for an allied country.
 In a factorial experiment with vignettes, they find a 33\% average increase in support for military intervention on behalf of another country if that country is an ally. 
-This is a large and potentially important effect, so I estimate who responds to alliances.\footnote{See the appendix for a heterogeneous treatments analysis that corroborates TW's results.}
+This is a large and potentially important effect, so I estimate who responds to alliances, and examine differences in scenarios.
 
 
-I used race, gender, hawkishness and internationalism to define demographic groups and predict treatment heterogeneity across those groups. 
+\subsection{Differences by Experimental Scenario}
+
+
+First, I examine how other experimental conditions modify the impact of alliances on public support for intervention.
+Along with alliances, TW randomly assign whether the potential beneficiary of U.S. intervention is a democracy or not, the stakes of intervention, the potential costs, and the region of the world. 
+This creates 32 unique treatment conditions, and they estimate the impact of alliances by calculating marginal effects from an OLS model that fully crosses interactions between the treatments. 
+I keep the same fully crossed structure in the treatment interactions, but use a varying slopes model to estimate the impact of alliances in each treatment group.
+
+\begin{figure}[htpb]
+	\centering
+		\includegraphics[width=0.95\textwidth]{../figures/tw-het-treat-comp2.png}
+	\caption{Comparison of OLS and hierarchical estimates of the impact of alliance across experimental conditions. Estimates divided based on the regional treatment variable for ease of presentation.}
+	\label{fig:tw-het-treat-comp}
+\end{figure}
+
+
+\autoref{fig:tw-het-treat-comp} compares the estimated alliance treatment effects across the experimental groups with the OLS and hierarchical models.
+Two aspects of \autoref{fig:tw-het-treat-comp} show the regularization benefits of hierarchical modeling.
+First, the hierarchical estimates are more precise. 
+There is less variation in every alliance treatment effect estimate in the hierarchical model. 
+
+
+Reduced variance in the estimates comes with potential bias from pooling treatment slopes towards common means.
+This is most obvious if we compare estimates within regions. 
+The OLS interactions are more dispersed, while the hierarchical estimates hew more closely to the regional mean.
+This is especially notable in the African and Latin American scenarios. 
+Inasmuch as differences across scenarios are driven by noise, the hierarchical model smooths out some of that random variation.
+
+
+
+\subsection{Who Responds to Alliances}
+
+I used race, gender, hawkishness and internationalism to define demographic groups across which the impact of alliances might vary. 
 I selected these variables because foreign policy dispositions like militant assertiveness shape general willingness to use force \citep{Kertzeretal2014} as do gender \citep{Barnhartetal2020} and race. 
 I also control for other experimental manipulations.\footnote{See the appendix for priors.} 
 Following TW's OLS analysis, I use a Gaussian likelihood, although the outcome is a binary variable. 
