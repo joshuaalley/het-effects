@@ -16,62 +16,64 @@ sd.impact = data$sd.impact
 
 # predictors
 predictors.sim <- data.frame( 
-group1 = rmultinom(n = sample.size, size = 4, 
-                    prob = c(.25, .25, .25, .25))[1 ,],
-group2 = rbinom(sample.size, size = 1, prob = .3),
-group3 = rbinom(sample.size, size = 1, prob = .7),
+# group1 = factor(
+#             sample(size = sample.size, 
+#                x = c(0, 1, 2, 3, 4),
+#                replace = TRUE,
+#                prob = c(.2, .2, .2, .2, .2))
+#             ),
+group1 = rbinom(sample.size, size = 1, prob = .3),
+group2 = rbinom(sample.size, size = 1, prob = .4),
+group3 = rbinom(sample.size, size = 1, prob = .5),
+group4 = rbinom(sample.size, size = 1, prob = .6),
 
 treat = rbinom(sample.size, size = 1, prob = .5)
 )
 
 
 # Create interaction terms
-predictors.sim.inter <- as.data.frame(model.matrix( ~ treat*group1*group2*group3,
-                                      data = predictors.sim))
+predictors.sim.inter <- as.data.frame(
+                       model.matrix( ~ treat*group1*group2*group3*group4,
+                                      data = predictors.sim)) 
 
 # coefficients will want to vary SD 
-beta <- rnorm(ncol(predictors.sim.inter), mean = .25, sd = sd.impact)
+beta <- rnorm(ncol(predictors.sim.inter), mean = 0, sd = sd.impact)
 
 # group indices
-predictors.sim.inter$group.ind <- predictors.sim.inter %>%
-                            group_by(group1, group2, group3) %>%
-                            group_indices()
-table(predictors.sim.inter$group.ind)
-
-n.group <- max(predictors.sim.inter$group.ind)
+# predictors.sim.inter$group.ind <- predictors.sim.inter %>%
+#                             group_by(group1, group2, group3) %>%
+#                             group_indices()
+# table(predictors.sim.inter$group.ind)
+# 
+# n.group <- max(predictors.sim.inter$group.ind)
+# print(n.group)
 
 # outcome- normally distributed
-mu.y <- as.numeric(as.matrix(select(predictors.sim.inter,
-                                    -group.ind)) %*% beta)
+mu.y <- as.numeric(as.matrix(predictors.sim.inter) %*% beta)
 
 y <- rnorm(sample.size, mean = mu.y, sd = .25)
 
 
 # simulated data
-sim.data <- bind_cols(y = y, mu.y = mu.y, predictors.sim.inter)
-
-
+sim.data <- bind_cols(y = y, mu.y = mu.y, predictors.sim)
 
 
 # fit model
-ols.inter <- lm(y ~ treat*group1*group2*group3,
+ols.inter <- lm(y ~ treat*group1*group2*group3*group4,
                 data = sim.data)
 summary(ols.inter)
 
 # hypothetical data
-grid.sim <- predictors.sim.inter %>%
-  # select(treat, group1, group2, group3,
-  #        group.ind) %>%
-  group_by(group.ind) %>%
-  mutate(
-    n = n()
-  ) %>%
-  distinct() %>%
-  ungroup() %>%
-  filter(treat == 1)
+grid.sim <- sim.data %>%
+   ungroup() %>% 
+   select(group1, group2, group3, group4) %>%
+   distinct() 
 
-# top-end betas  
-beta.group <- rowSums(as.matrix(select(grid.sim, -c(n, group.ind))) * beta)
+#top-end betas
+ beta.group <- rowSums(as.matrix(grid.sim) * beta)
+ 
+#  list(grid.sim, predictors.sim.inter, beta, beta.group)
+# } 
 
 # get slopes
 slopes.ols <- slopes(model = ols.inter,
@@ -87,8 +89,7 @@ sum(slopes.ols$in.interval)
 
 # look at constituent terms
 bias.ols.coef <- coef(ols.inter) - beta
-mean(bias.ols.coef)
-
+print(mean(bias.ols.coef))
 
 # VS model
 sim.het.prior <- c(
@@ -99,7 +100,7 @@ sim.het.prior <- c(
 
 start.time <- Sys.time()
 vs.mod <- brm(bf(y ~ 1 +
-                         (1 + treat | group1*group2*group3)),
+                         (1 + treat | group1*group2*group3*group4)),
             data = sim.data,
             prior = sim.het.prior,
             family = gaussian(),
@@ -125,50 +126,15 @@ slopes.vs <- slopes(model = vs.mod,
     bias = estimate - true,
     in.interval = ifelse(true > conf.low & true < conf.high, 1, 0)
   )
-table(slopes.vs$bias)
-mean(slopes.vs$bias)
-sum(slopes.vs$in.interval)
-
-# predictions
-pred.vs <- posterior_epred(object = vs.mod) 
-pred.vs.med <- apply(pred.vs, 2, median)
-
-# RMSE OLS:
-# outcome
-sqrt(mean(ols.inter$residuals^2))
-# group coefs
-sqrt(mean((beta.group - slopes.ols$estimate)^2))
-mean(slopes.ols$bias)
-
-# RMSE VS: 
-# outcome
-sqrt(mean((sim.data$y - pred.vs.med)^2))
-# group coefs
-sqrt(mean((beta.group - slopes.vs$estimate)^2))
-mean(slopes.vs$bias)
-
-
-# 90% interval coverage
-ggplot(slopes.vs, aes(x = true, y = group.ind)) +
-  geom_vline(xintercept = .25,
-             linetype = "dashed") +
-  geom_point() +
-  geom_errorbarh(aes(xmin = conf.low, xmax = conf.high))
-
-
-# 90% interval coverage
-ggplot(slopes.ols, aes(x = true, y = group.ind)) +
-  geom_vline(xintercept = .25,
-             linetype = "dashed") +
-  geom_point() +
-  geom_errorbarh(aes(xmin = conf.low, xmax = conf.high))
 
 # output everything in a list
-sim.data <- list("outcome" = y, "beta"= beta, "group.effects" = beta.group)
-ols.res <- list(ols.inter, slopes.ols)
-vs.res <- list(vs.mod, slopes.vs, time.taken)
+sim.input <- list("outcome" = y, "data" = sim.data,
+                  "beta" = beta, "group.effects" = beta.group)
+ols.res <- list("ols.mod" = ols.inter, "slopes.ols" = slopes.ols)
+vs.res <- list("vs.mod" = vs.mod, "slopes.vs" = slopes.vs,
+               "time.vs" = time.taken)
 
-output  <- list(sim.data, ols.res, vs.res)
+output  <- list(sim.input, ols.res, vs.res)
 output 
 
 # end comparison function
@@ -191,15 +157,16 @@ saveRDS(simulation.all, file = "data/simulation-res.rds")
 
 # calculate RMSE and group coef bias 
 sim.res <- vector(mode = "list", length = length(simulation.all))
+sim.slopes.res <- vector(mode = "list", length = length(simulation.all))
 
 # for loop given nested lists
 for(i in 1:length(simulation.all)){
   
   est <- unlist(simulation.all[[i]], recursive = FALSE)
-  names(est) <- c("outcome", "beta", "group.effects",
-                  "ols.mod", "slopes.ols",
-                  "vs.mod", "slopes.vs",
-                  "time.vs")
+  
+  distinct(est$slopes.vs, group1, group2, group3,
+           .keep_all = TRUE) %>%
+     glimpse()
   
   # predictions
   pred.vs <- posterior_epred(object = est$vs.mod) 
@@ -237,7 +204,14 @@ for(i in 1:length(simulation.all)){
                       "^0+"))
   
   sim.res[[i]] <- res
-  
+  sim.slopes.res[[i]] <- bind_rows("OLS" = est$slopes.ols,
+                             "VS" = est$slopes.vs,
+                             .id = "model") %>%
+                    mutate(
+                      sample.size = combos$sample.size[i],
+                      sd.impact = str_remove(as.character(
+                      combos$sd.impact[i]),
+                      "^0+"))
 }
 
 sim.res.data <- bind_rows(sim.res,
@@ -258,16 +232,41 @@ ggplot(sim.res.data, aes(x = factor(sample.size), y = rmse,
        color = "Model") +
   scale_color_grey(start = .6, end = .1) +
   theme(legend.position = "bottom")
-ggsave("figures/sim-rmse.png", height = 6, width = 8)
+ggsave("figures/sim-rmse-out.png", height = 6, width = 8)
 
 ggplot(sim.res.data, aes(x = factor(sample.size), y = bias,
                          color = model)) +
   facet_wrap(~ sd.impact) +
   geom_point(size = 3) +
-  labs(title = "Group Coefficient Estimate Bias of Varying Slopes and OLS",
+  labs(title = "RMSE Treatment Estimate: Varying Slopes and OLS",
        x = "Sample Size",
-       y = "Average Bias",
+       y = "Estimate RMSE",
        color = "Model") +
   scale_color_grey(start = .6, end = .1) +
   theme(legend.position = "bottom")
-ggsave("figures/sim-bias.png", height = 6, width = 8)
+ggsave("figures/sim-rmse-coef.png", height = 6, width = 8)
+
+
+
+# futher treatment data- slopes 
+sim.slopes.data <- bind_rows(sim.slopes.res,
+                          .id = "sim") %>%
+  mutate(
+    sd.impact = paste0("SD Coef=", sd.impact),
+    scen = paste0("N=", sample.size, ",\n",
+                  sd.impact)
+  )
+
+ggplot(sim.slopes.data, aes(x = rowid, y = bias,
+                            color = model)) +
+  geom_hline(yintercept = 0) +
+  facet_wrap(sd.impact ~ sample.size,
+             scales = "free_y") +
+  geom_point() 
+
+
+ggplot(sim.slopes.data, aes(x = factor(in.interval),
+                            fill = model)) +
+  facet_grid(sd.impact ~ sample.size) +
+  geom_bar(position = position_dodge(width = 1)) 
+
