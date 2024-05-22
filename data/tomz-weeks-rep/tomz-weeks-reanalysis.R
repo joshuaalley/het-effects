@@ -34,9 +34,15 @@ tw.rep <- tw.rep %>%
                 region == 4 ~ "South America"
               ),
               treat.group = paste(regime, stakes, costs, region.txt,
-                            sep = "_")
+                            sep = "_"),
+              treat.group.all = paste(alliance, regime, stakes, costs, region.txt,
+                                  sep = "_")
             ) 
+# number by group
+sort(table(tw.rep$treat.group.all), decreasing = FALSE)
+length(unique(tw.rep$treat.group.all))
 
+sort(table(tw.rep$treat.group), decreasing = FALSE)
 
 
 
@@ -284,6 +290,10 @@ slopes.treat.het.comp <- bind_rows(
       n > fivenum(n)[3] & n <= fivenum(n)[4] ~ "3rd Quartile",
       n > fivenum(n)[4] ~ "4th Quartile",
     )
+  ) %>%
+  group_by(model) %>%
+  mutate(
+    median.est = median(estimate, na.rm = TRUE)
   )
 
 ggplot(slopes.treat.het.comp, aes(y = het.group,
@@ -338,6 +348,19 @@ ggplot(slopes.treat.het.comp, aes(x = n,
        y = "Estimate and 95% Credible Interval", 
        x = "Group Size")
 
+ggplot(slopes.treat.het.comp, aes(x = n,
+                                  y = estimate)) +
+  facet_grid(size_n ~ model, scales = "free_x") +
+  geom_hline(yintercept = 0) +
+  geom_hline(aes(yintercept = median.est),
+             linetype = "dashed") +
+  geom_pointrange(aes(ymin = conf.low, ymax = conf.high),
+                  size = .75, linewidth = 1.5) +
+  scale_color_manual(values = wesanderson::wes_palette("Royal1")) +
+  theme(legend.position = "bottom") +
+  labs(title = "Heterogeneous Alliance Treatments",
+       y = "Estimate and 95% Credible Interval", 
+       x = "Group Size")
 
 
 
@@ -430,15 +453,6 @@ het.treat.prior <- c(
 tw.het.treat <- brm(bf(force ~ 1 + white + male + hawk + intl + 
                          pid7 + age + ed4 +
                          (1 + alliance | regime*stakes*costs*region.txt) 
-                       
-                         # (1 + alliance | regime) +
-                         # (1 + alliance | stakes) +
-                         # (1 + alliance | costs) +
-                         # (1 + alliance | regime:stakes) +
-                         # (1 + alliance | regime:costs) +
-                         # (1 + alliance | regime:stakes:costs) +
-                         # (1 + alliance | costs:stakes) +
-                         # (1 + alliance | region.txt) 
                        ),
                     data = tw.rep,
                     prior = het.treat.prior,
@@ -575,8 +589,24 @@ ggplot(slopes.het.treat.comp, aes(y = estimate, x = model,
        subtitle = c("Region, Regime, Stakes, Cost"),
        x = "Regime", 
        y = "Marginal Effect of Alliance")
-ggsave("figures/tw-het-treat-comp1.png", height = 8, width = 10)
 
+ggplot(slopes.het.treat.comp, aes(y = as.numeric(factor(treat.group)),
+                                  color = model,
+                                  group = model,
+                                  x = estimate)) +
+  facet_wrap(~ region.txt, scales = "free_y") +
+  geom_vline(xintercept = 0) +
+  geom_pointrange(aes(xmin = conf.low, xmax = conf.high),
+                  size = .75, linewidth = 1.5,
+                  position = position_dodge(width = 2)) +
+  scale_color_manual(values = wesanderson::wes_palette("Royal1")) +
+  theme(legend.position = "bottom") +
+  labs(title = "Heterogeneous Alliance Treatments",
+       subtitle = "Divided By Experimental Conditions",
+       color = "Model",
+       x = "Estimate and 95% Interval", 
+       y = "Group")
+ggsave("figures/tw-het-treat-comp.png", height = 6, width = 8)
 
 ggplot(slopes.het.treat.comp, aes(y = as.numeric(factor(treat.group)),
                                   x = estimate)) +
@@ -588,7 +618,7 @@ ggplot(slopes.het.treat.comp, aes(y = as.numeric(factor(treat.group)),
   #scale_color_manual(values = wesanderson::wes_palette("Royal1")) +
   theme(legend.position = "bottom") +
   labs(title = "Heterogeneous Alliance Treatments",
-       subtitle = c("Divided By Experimental Group"),
-       x = "Estimate and 95% Credible Interval", 
-       y = "Treatment Group")
-ggsave("figures/tw-het-treat-comp2.png", height = 8, width = 10)
+       subtitle = c("Divided By Experimental Conditions"),
+       x = "Estimate and 95% Interval", 
+       y = "Group")
+ggsave("figures/tw-het-treat-comp.png", height = 8, width = 10)
