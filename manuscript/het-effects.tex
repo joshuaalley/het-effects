@@ -377,26 +377,41 @@ Modifiers            & Specified          & Specified      & Discovered or Speci
 
 \section{Performance on Simulated Data}
 
-To assess the performance of hierarchical models compared to OLS interactions, I first compare their performance on simulated data. 
+To assess how hierarchical models compare to OLS interactions, I first assess their performance on simulated data. 
 Simulating varying effects across multiple groups is challenging. 
 To begin, I define a binary treatment variable as randomly drawn from a binomial distribution with a probability of .5.
-I then define three randomly generated grouping variables; one four category multinomial variable with equal probability of drawing each category, a binomial variable with a 70\% chance of drawing one, and second binomial variable with a 30\% chance of drawing one. 
-There are 16 unique combinations of the values in these groups. 
+I then define four randomly generated grouping variables; one binomial with 30\% probability on one, another with 40\% probability and third with 50\% odds, and a fourth with a 60\% chance of drawing one.
+Including the treatment, there are 32 unique groups of varying size.
 
 
-The corresponding 16 group-level effects are a function of fully crossed interactions between the grouping variables and treatment.
-I simulate the interaction effects by drawing them from a normal distribution with a mean of .15 and standard deviation of either .05, .25 or .75. 
+Next, I simulate coefficients. 
+Because each group is a unique combination of five binary variables, I estimate fully crossed interactions. 
+To set a common baseline effect, I fix the treatment effect when all grouping variables are zero at .5, which is equivalent to a two-standard deviation shift in the outcome.
+I simulate the remaining interaction effects by drawing them from a normal distribution with a mean of .5 and standard deviation of either .05, .25 or .75. 
 Increasing the standard deviation adds greater variation to the group-level effects.
+This captures the degree of heterogeneity in the relationship.
 
 
 Those interactions predict the mean of the outcome variable, $\mu_y$, which has a standard deviation of .25. 
 I vary the sample size of this outcome and the predictors from 1,000, 2,500, or 5,000 observations. 
-This provides more data to compare estimator performance and assess potential speed tradeoffs with a hierarchical model.
+This provides more data to inform estimates and assess potential speed tradeoffs with a hierarchical model.
 
 
-In total, the simulation varies both the standard deviation of the interactions and the sample size. 
-This assesses the regularization benefits of varying slopes in situations where more data and greater effect variability may make it more necessary.
-More variation in effects may make regularization more impactful, while larger datasets will make it less helpful.
+In total, the simulation varies the standard deviation of the interactions and the sample size. 
+This assesses the regularization benefits of varying slopes in situations where more data and greater effect variability alter its potential usefulness.
+More variation in effects may make regularization more important, while larger datasets will make it less helpful.
+
+
+I then fit two models. 
+First, I fit an OLS model that uses fully crossed interactions of the grouping factors to modify the treatment effect.
+Then, I fit a hierarchical model that estimates varying intercepts and slopes across groups defined by the same combination of fully crossed grouping factor interactions.
+
+
+There are several potential metrics for comparing performance. 
+One is bias; the gap between the estimated treatment effects in each group and the true treatment effects. 
+Hierarchical models can be biased on average, however \citep{CliffordRainey2024}, and the question is whether reduced variance in the estimates offsets bias. 
+To assess that, I compare the root mean squared error of the group treatment effect estimates for each model.
+I also assess model fit by comparing root mean squared error of the predicted outcome values. 
 
 
 %\begin{figure}[htpb]
@@ -521,11 +536,13 @@ By contrast, alliances have little impact on support for war among non-white fem
 Individuals with more ambivalent foreign policy views respond more typically to TW's alliance treatment. 
 
 
+
+
 \begin{figure}[htpb]
 	\centering
-		\includegraphics[width=0.95\textwidth]{../figures/tw-treat-het.png}
-	\caption{Estimates of the impact of military alliances on support for using force within demographic groups. Column facets are values of internationalism, and row facets are levels of hawkishness. X-axis divided by gender and colors demarcate gender. Points mark the posterior median and bars summarize the 95\% credible interval.}
-	\label{fig:tw-treat-het}
+		\includegraphics[width=0.95\textwidth]{../figures/tw-treat-het-comp.png}
+	\caption{.}
+	\label{fig:tw-treat-het-comp}
 \end{figure}
 
 

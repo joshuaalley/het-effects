@@ -7,12 +7,32 @@ n.sim <- c(1000, 2500, 5000)
 # vary SD of coefficients
 sd.coef <- c(.05, .25, .75)
 
+# # scale of interactions compared to main effect
+# scale <- c(1, .5, .25)
+# 
+# 
+# # create coefficient vector outside of loop
+# # coefficients will want to vary SD 
+# beta.list <- vector(mode = "list", length = 3)
+# treat <- .5
+# intercept <- .05
+# 
+# inter <- rnorm((32 - 2), 
+#                mean = treat*scale, 
+#                sd = treat / scale)
+# beta <- c(intercept, treat, inter)
+
+for(i in 1:length(beta.list)){
+beta.list[[i]] <- rnorm(32, mean = 0.5, sd = sd.coef[i])
+beta.list[[i]][2] <- .5
+}
+
 
 
 simulation.inter.comp <- function(data){
   
-sample.size = data$sample.size
-sd.impact = data$sd.impact
+sample.size <- data$sample.size
+beta <- unlist(data$beta)
 
 # predictors
 predictors.sim <- data.frame( 
@@ -36,18 +56,6 @@ predictors.sim.inter <- as.data.frame(
                        model.matrix( ~ treat*group1*group2*group3*group4,
                                       data = predictors.sim)) 
 
-# coefficients will want to vary SD 
-beta <- rnorm(ncol(predictors.sim.inter), mean = 0, sd = sd.impact)
-
-# group indices
-# predictors.sim.inter$group.ind <- predictors.sim.inter %>%
-#                             group_by(group1, group2, group3) %>%
-#                             group_indices()
-# table(predictors.sim.inter$group.ind)
-# 
-# n.group <- max(predictors.sim.inter$group.ind)
-# print(n.group)
-
 # outcome- normally distributed
 mu.y <- as.numeric(as.matrix(predictors.sim.inter) %*% beta)
 
@@ -57,24 +65,22 @@ y <- rnorm(sample.size, mean = mu.y, sd = .25)
 # simulated data
 sim.data <- bind_cols(y = y, mu.y = mu.y, predictors.sim)
 
+# hypothetical data
+grid.sim <- sim.data %>%
+  ungroup() %>% 
+  select(group1, group2, group3, group4) %>%
+  distinct() 
 
+#top-end betas for each group
+beta.group <- rowSums(as.matrix(grid.sim) * beta)
+
+
+### OLS regression
 # fit model
 ols.inter <- lm(y ~ treat*group1*group2*group3*group4,
                 data = sim.data)
 summary(ols.inter)
-
-# hypothetical data
-grid.sim <- sim.data %>%
-   ungroup() %>% 
-   select(group1, group2, group3, group4) %>%
-   distinct() 
-
-#top-end betas
- beta.group <- rowSums(as.matrix(grid.sim) * beta)
  
-#  list(grid.sim, predictors.sim.inter, beta, beta.group)
-# } 
-
 # get slopes
 slopes.ols <- slopes(model = ols.inter,
                            variables = "treat",
@@ -89,8 +95,9 @@ sum(slopes.ols$in.interval)
 
 # look at constituent terms
 bias.ols.coef <- coef(ols.inter) - beta
-print(mean(bias.ols.coef))
 
+
+### hierarchical regression
 # VS model
 sim.het.prior <- c(
   prior(normal(0, .75), class = "Intercept"),
@@ -140,13 +147,17 @@ output
 # end comparison function
 }
 
-combos <- expand.grid(n.sim, sd.coef)
-colnames(combos) <- c("sample.size", "sd.impact")
+
+# set combinations
+combos <- expand.grid(n.sim, beta.list)
+colnames(combos) <- c("sample.size", "beta")
+combos$sd.coef <- rep(sd.coef, each = 3)
 combos$combo <- rownames(combos)
-combos$pair <- paste0(combos$sample.size, "_", combos$sd.impact)  
+combos$pair <- paste0(combos$sample.size, "_", combos$sd.coef)  
 
 combos.list <- split(combos, f = combos$combo)
 
+# run it
 simulation.all <- lapply(combos.list,
                          simulation.inter.comp)
 
@@ -165,11 +176,11 @@ for(i in 1:length(simulation.all)){
   est <- unlist(simulation.all[[i]], recursive = FALSE)
   
   distinct(est$slopes.vs, group1, group2, group3,
-           .keep_all = TRUE) %>%
-     glimpse()
-  
+            .keep_all = TRUE) %>%
+      glimpse()
+
   # predictions
-  pred.vs <- posterior_epred(object = est$vs.mod) 
+  pred.vs <- posterior_epred(object = est$vs.mod)
   pred.vs.med <- apply(pred.vs, 2, median)
 
   
@@ -178,53 +189,62 @@ for(i in 1:length(simulation.all)){
   rmse.ols <- sqrt(mean(est$ols.mod$residuals^2))
   # group coefs
   ols.est <- est$slopes.ols$estimate
-  bias.ols <- sqrt(mean((est$group.effects - ols.est)^2))
+  bias.ols <- est$group.effects - ols.est
+  rmse.coef.ols <- sqrt(mean((est$group.effects - ols.est)^2))
   mean(bias.ols)
   
-  # RMSE VS: 
+  # RMSE VS:
   # outcome
   resid.vs <- est$outcome - pred.vs.med
   rmse.vs <- sqrt(mean((est$outcome - pred.vs.med)^2))
-  
+
   # group coefs
-  bias.vs <- sqrt(mean((est$group.effects - est$slopes.vs$estimate)^2))
+  bias.vs <- est$group.effects - est$slopes.vs$estimate
+  rmse.coef.vs <- sqrt(mean((est$group.effects - est$slopes.vs$estimate)^2))
   mean(bias.vs)
-  
+
   # results
-  model <- c("OLS", "VS")
-  rmse <- c(rmse.ols, rmse.vs)
+  model <- c("OLS", "Hierarchical")
+  rmse.out <- c(rmse.ols, rmse.vs)
   bias <- c(bias.ols, bias.vs)
+  rmse.coef <- c(rmse.coef.ols, rmse.coef.vs)
 
   res <- data.frame(model = model,
-                    rmse = rmse,
+                    rmse.out = rmse.out,
                     bias = bias,
+                    rmse.coef = rmse.coef,
                     sample.size = combos$sample.size[i],
-                    sd.impact = str_remove(as.character(
-                      combos$sd.impact[i]),
-                      "^0+"))
-  
+                    sd.coef = combos$sd.coef[i]
+                    # scale = str_remove(as.character(
+                    #   combos$scale[i]),
+                    #   "^0+")
+                    )
+
   sim.res[[i]] <- res
   sim.slopes.res[[i]] <- bind_rows("OLS" = est$slopes.ols,
-                             "VS" = est$slopes.vs,
+                             "Hierarchical" = est$slopes.vs,
                              .id = "model") %>%
                     mutate(
                       sample.size = combos$sample.size[i],
-                      sd.impact = str_remove(as.character(
-                      combos$sd.impact[i]),
-                      "^0+"))
+                      sd.coef = combos$sd.coef[i]
+                      # scale = str_remove(as.character(
+                      # combos$scale[i]),
+                      # "^0+")
+                      )
 }
 
 sim.res.data <- bind_rows(sim.res,
                           .id = "sim") %>%
                 mutate(
-                  sd.impact = paste0("SD Coef=", sd.impact),
+                  #scale = paste0("Scale=", scale),
+                  sd.coef = paste0("Coef SD=", sd.coef),
                   scen = paste0("N=", sample.size, ",\n",
-                                sd.impact)
+                                scale)
                 )
 
 ggplot(sim.res.data, aes(x = factor(sample.size), y = rmse,
                          color = model)) +
-  facet_wrap(~ sd.impact, scales = "free_x") +
+  facet_wrap(~ sd.coef, scales = "free_x") +
   geom_point(size = 3) +
   labs(title = "RMSE of Varying Slopes and OLS",
        x = "Sample Size",
@@ -236,7 +256,7 @@ ggsave("figures/sim-rmse-out.png", height = 6, width = 8)
 
 ggplot(sim.res.data, aes(x = factor(sample.size), y = bias,
                          color = model)) +
-  facet_wrap(~ sd.impact) +
+  facet_wrap(~ sd.coef) +
   geom_point(size = 3) +
   labs(title = "RMSE Treatment Estimate: Varying Slopes and OLS",
        x = "Sample Size",
@@ -252,7 +272,7 @@ ggsave("figures/sim-rmse-coef.png", height = 6, width = 8)
 sim.slopes.data <- bind_rows(sim.slopes.res,
                           .id = "sim") %>%
   mutate(
-    sd.impact = paste0("SD Coef=", sd.impact),
+    sd.impact = paste0("SD Coef=", sd.coef),
     scen = paste0("N=", sample.size, ",\n",
                   sd.impact)
   )
