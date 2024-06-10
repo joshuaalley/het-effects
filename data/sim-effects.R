@@ -3,7 +3,7 @@
 
 
 # vary sample size
-n.sim <- c(1000, 2500, 5000)
+n.sim <- c(1000, 2500, 4000)
 # vary SD of coefficients
 sd.coef <- c(.05, .25, .75)
 
@@ -13,7 +13,7 @@ sd.coef <- c(.05, .25, .75)
 # 
 # # create coefficient vector outside of loop
 # # coefficients will want to vary SD 
-# beta.list <- vector(mode = "list", length = 3)
+beta.list <- vector(mode = "list", length = 3)
 # treat <- .5
 # intercept <- .05
 # 
@@ -23,8 +23,7 @@ sd.coef <- c(.05, .25, .75)
 # beta <- c(intercept, treat, inter)
 
 for(i in 1:length(beta.list)){
-beta.list[[i]] <- rnorm(32, mean = 0.5, sd = sd.coef[i])
-beta.list[[i]][2] <- .5
+beta.list[[i]] <- rnorm(32, mean = 0, sd = sd.coef[i])
 }
 
 
@@ -164,6 +163,8 @@ simulation.all <- lapply(combos.list,
 names(simulation.all) <- combos$pair
 # save results
 saveRDS(simulation.all, file = "data/simulation-res.rds")
+# load 
+simulation.all <- readRDS(file = "data/simulation-res.rds")
 
 
 # calculate RMSE and group coef bias 
@@ -239,10 +240,17 @@ sim.res.data <- bind_rows(sim.res,
                   #scale = paste0("Scale=", scale),
                   sd.coef = paste0("Coef SD=", sd.coef),
                   scen = paste0("N=", sample.size, ",\n",
-                                scale)
+                                sd.coef)
+                ) %>%
+                select(-bias) %>%
+                distinct() %>%
+                group_by(scen) %>%
+                mutate(
+                  change.rmse.coef = rmse.coef - lag(rmse.coef),
+                  change.rmse.out = rmse.out - lag(rmse.out)
                 )
 
-ggplot(sim.res.data, aes(x = factor(sample.size), y = rmse,
+ggplot(sim.res.data, aes(x = factor(sample.size), y = rmse.out,
                          color = model)) +
   facet_wrap(~ sd.coef, scales = "free_x") +
   geom_point(size = 3) +
@@ -252,15 +260,43 @@ ggplot(sim.res.data, aes(x = factor(sample.size), y = rmse,
        color = "Model") +
   scale_color_grey(start = .6, end = .1) +
   theme(legend.position = "bottom")
+
+ggplot(sim.res.data, aes(x = factor(sample.size), 
+                         y = change.rmse.out)) +
+  facet_wrap(~ sd.coef) +
+  geom_point(size = 3) +
+  labs(title = "Coefficient RMSE",
+       subtitle = "Improvement with Hierarchical Model",
+       x = "Sample Size",
+       y = "Change in Coefficient RMSE",
+       color = "Model") +
+  scale_color_grey(start = .6, end = .1) +
+  theme(legend.position = "bottom")
 ggsave("figures/sim-rmse-out.png", height = 6, width = 8)
 
-ggplot(sim.res.data, aes(x = factor(sample.size), y = bias,
+ggplot(sim.res.data, aes(x = factor(sample.size), 
+                         y = rmse.coef,
                          color = model)) +
   facet_wrap(~ sd.coef) +
   geom_point(size = 3) +
   labs(title = "RMSE Treatment Estimate: Varying Slopes and OLS",
        x = "Sample Size",
        y = "Estimate RMSE",
+       color = "Model") +
+  scale_color_grey(start = .6, end = .1) +
+  theme(legend.position = "bottom")
+ggsave("figures/sim-rmse-coef-level.png", height = 6, width = 8)
+
+
+# present this in a different way- change in R
+ggplot(sim.res.data, aes(x = factor(sample.size), 
+                         y = change.rmse.coef)) +
+  facet_wrap(~ sd.coef) +
+  geom_point(size = 3) +
+  labs(title = "Coefficient RMSE",
+  subtitle = "Improvement with Hierarchical Model",
+       x = "Sample Size",
+       y = "Change in Coefficient RMSE",
        color = "Model") +
   scale_color_grey(start = .6, end = .1) +
   theme(legend.position = "bottom")
@@ -280,9 +316,18 @@ sim.slopes.data <- bind_rows(sim.slopes.res,
 ggplot(sim.slopes.data, aes(x = rowid, y = bias,
                             color = model)) +
   geom_hline(yintercept = 0) +
-  facet_wrap(sd.impact ~ sample.size,
+  facet_grid(sd.impact ~ sample.size,
              scales = "free_y") +
   geom_point() 
+
+ggplot(sim.slopes.data, aes(x = bias,
+                            fill = model)) +
+  geom_hline(yintercept = 0) +
+  facet_grid(sd.impact ~ sample.size,
+             scales = "free_y") +
+  geom_histogram(#position = position_dodge(width = .5),
+                 bins = 16) 
+
 
 
 ggplot(sim.slopes.data, aes(x = factor(in.interval),
