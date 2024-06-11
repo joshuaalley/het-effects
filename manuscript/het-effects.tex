@@ -67,7 +67,7 @@ joshua.alley@ucd.ie
 \begin{abstract} 
 %Heterogeneous effects are common in social science. 
 This note describes why, when, and how to use Bayesian hierarchical models to estimate heterogeneous effects. 
-While an ample literature suggests that hierarchical models provide helpful regularization and information about variation, political scientists rarely use them to estimate heterogeneous effects. 
+While an ample literature suggests that hierarchical models provide helpful regularization and information about effect variation, political scientists rarely use them to estimate heterogeneous effects. 
 Doing so is simple, however. 
 To start, specify groups based on quantities of interest such as demographics, context, and policy relevance.  
 Then, fit a hierarchical model where treatment slopes and intercepts vary across groups.
@@ -525,9 +525,6 @@ Similarly, alliances exert less impact on individuals who have minimal militant 
 Alliances are very influential for individuals with low but greater than minimal hawkishness, however. 
 Among those with moderate or high hawkishness, alliances have a fairly consistent impact. 
 The media alliance impact is also greater for men, and among white respondents. 
-
-
-Crucially, parameteric interactions would not capture as clearly the non-linear steps across the levels of different grouping variables. 
 Letting slopes vary across each level of the grouping variables generates more flexibility, and clearly shows the difference between individuals with very low internationalism or low militant assertiveness and others. 
 
 
@@ -536,14 +533,22 @@ By contrast, alliances have little impact on support for war among non-white fem
 Individuals with more ambivalent foreign policy views respond more typically to TW's alliance treatment. 
 
 
+Finally, I illustrate the regularization benefits of a hierarchical model in \autoref{fig:tw-het-treat-comp}. 
+Again, the hierarchical estimates are more precise and less variable than OLS with fully crossed interactions. 
+This occurs because the model partially pools information across groups, which reduces uncertainty and pulls the estimated impact of an alliance towards the overall mean.
 
 
 \begin{figure}[htpb]
 	\centering
 		\includegraphics[width=0.95\textwidth]{../figures/tw-treat-het-comp.png}
-	\caption{.}
+	\caption{Estimated impact of alliance on support for military intervention in different subgroups of respondents. Groups defined based on fully cross interactions between the demographic variables. Error bars give the 95\% credible interval in the hierarchical model and 95\% confidence interval in the OLS interactions model.}
 	\label{fig:tw-treat-het-comp}
 \end{figure}
+
+
+The other noteworthy concern is that OLS estimation with fully crossed interactions can engage in wild extrapolations.
+In some groups, the estimated impact of an alliance rises to 80 or 90\%. 
+This reflects linear interactions that might easily be picking up noise in the data.
 
 
 All these estimates suggest that internationalism matters more than than hawkishness for understanding who is willing to fight for U.S. allies. 
@@ -554,7 +559,7 @@ Military alliances matter most to backers of international engagement who less w
 % variation
 These results show some of the strengths and weaknesses of the hierarchical approach to heterogeneous effects.\footnote{In the appendix, I analyze \citet{BushPrather2020}.}
 A simple model based on demographic groups provides precise insights about who heeds alliances in supporting using force abroad. 
-At the same time, because some demographic groups are small, the within-group effect estimates have substantial uncertainty and powerful comparisons between most groups is challenging. 
+At the same time, because some demographic groups are small, powerful comparisons between most groups is challenging. 
 Fewer groups would have more data and less uncertainty but perhaps obscure variation across key demographic characteristics. 
 
 

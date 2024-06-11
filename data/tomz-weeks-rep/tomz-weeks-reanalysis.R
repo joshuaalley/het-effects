@@ -597,7 +597,7 @@ ggplot(slopes.het.treat.comp, aes(y = as.numeric(factor(treat.group)),
   facet_wrap(~ region.txt, scales = "free_y") +
   geom_vline(xintercept = 0) +
   geom_pointrange(aes(xmin = conf.low, xmax = conf.high),
-                  size = .75, linewidth = 1.5,
+                  size = .6, linewidth = 1.2,
                   position = position_dodge(width = 2)) +
   scale_color_manual(values = wesanderson::wes_palette("Royal1")) +
   theme(legend.position = "bottom") +
@@ -606,7 +606,7 @@ ggplot(slopes.het.treat.comp, aes(y = as.numeric(factor(treat.group)),
        color = "Model",
        x = "Estimate and 95% Interval", 
        y = "Group")
-ggsave("figures/tw-het-treat-comp.png", height = 6, width = 8)
+ggsave("figures/tw-het-treat-comp.png", height = 8, width = 8)
 
 ggplot(slopes.het.treat.comp, aes(y = as.numeric(factor(treat.group)),
                                   x = estimate)) +
