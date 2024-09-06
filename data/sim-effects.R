@@ -3,25 +3,33 @@
 
 
 # vary sample size
-n.sim <- c(1000, 2000, 3000)
-# vary SD of coefficients
-sd.coef <- c(.05, .25, .75)
+n.sim <- c(1000)
+# vary SD of outcome
+sd.sim <- c(.05, .25, .75)
+sd.out <- c(.05, .25, .75)
 
 
 # create coefficient vector outside of estimation function
-# 3 vectors- one for each SD
-beta.list <- vector(mode = "list", length = 3)
-
+beta.sim <- vector(mode = "list", length = length(sd.out))
 for(i in 1:length(beta.list)){
-beta.list[[i]] <- rnorm(32, mean = 0, sd = sd.coef[i])
+beta.sim[[i]] <- rnorm(32, mean = 0, sd = sd.sim[[i]])
 }
 
+
+# set combinations
+# beta.sim.list <- vector(mode = "list")
+# beta.sim.list[[1]] <- beta.sim
+combos <- expand.grid(sd.sim, sd.out)
+colnames(combos) <- c("beta.sd", "sd.sim")
+combos$combo <- rownames(combos)
+combos$pair <- paste0(combos$beta.sd, "_", combos$sd.sim)
+combos$beta <- rep(beta.sim, each = 3)
+combos$data <- vector(mode = "list", length = nrow(combos))
+
 # simulation data
-sim.data <- vector(mode = "list", 
-                   length = length(beta.list))
-for(i in 1:length(beta.list)){
+for(i in 1:nrow(combos)){
   
-sample.size <- n.sim[i]  
+sample.size <- 1000
 # predictors
 predictors.sim <- data.frame( 
   group1 = rbinom(sample.size, size = 1, prob = .3),
@@ -39,15 +47,20 @@ predictors.sim.inter <- as.data.frame(
                 data = predictors.sim)) 
 
 # outcome- normally distributed
-mu.y <- as.numeric(as.matrix(predictors.sim.inter) %*% beta.list[[i]])
+beta <- unlist(combos$beta[i])
+mu.y <- as.numeric(as.matrix(predictors.sim.inter) %*% beta)
 
-y <- rnorm(sample.size, mean = mu.y, sd = .75)
+y <- rnorm(sample.size, mean = mu.y, sd = combos$sd.sim[i])
 
 
 # simulated data
-sim.data[[i]] <- bind_cols(y = y, mu.y = mu.y, predictors.sim)
+combos$data[[i]] <- bind_cols(y = y, mu.y = mu.y, predictors.sim)
 
 }
+
+# break out into a list
+combos.list <- split(combos, f = combos$combo)
+
 
 
 # function for simulation
@@ -142,6 +155,8 @@ slopes.vs <- slopes(model = vs.mod,
 
 # output everything in a list
 sim.input <- list("outcome" = sim.data$y, "data" = sim.data,
+                  "sample.size" = nrow(sim.data),
+                  "sd.sim" = list$sd.sim,
                   "beta" = beta, "group.effects" = grid.calc$true)
 ols.res <- list("ols.mod" = ols.inter, "slopes.ols" = slopes.ols)
 vs.res <- list("vs.mod" = vs.mod, "slopes.vs" = slopes.vs,
@@ -154,16 +169,6 @@ output
 }
 
 
-# set combinations
-combos <- expand.grid(sim.data, beta.list)
-colnames(combos) <- c("data", "beta")
-combos$sample.size <- rep(n.sim, times = 3)
-combos$sd.coef <- rep(sd.coef, each = 3)
-combos$combo <- rownames(combos)
-combos$pair <- paste0(combos$sample.size, "_", combos$sd.coef)  
-
-combos.list <- split(combos, f = combos$combo)
-
 # run it
 simulation.all <- lapply(combos.list,
                          simulation.inter.comp)
@@ -175,17 +180,18 @@ saveRDS(simulation.all, file = "data/simulation-res.rds")
 simulation.all <- readRDS(file = "data/simulation-res.rds")
 
 
-# return data
-combos.ret <- bind_rows(combos.list)
-
 # calculate RMSE and group coef bias 
 sim.res <- vector(mode = "list", length = length(simulation.all))
 sim.slopes.res <- vector(mode = "list", length = length(simulation.all))
+
+combos.split <- str_split(names(simulation.all), "_")
 
 # for loop given nested lists
 for(i in 1:length(simulation.all)){
   
   est <- unlist(simulation.all[[i]], recursive = FALSE)
+  sd.beta <- combos.split[[i]][1]
+  sd.out <- combos.split[[i]][2]
   
   data <- est$data
   data$group.var <- data %>%
@@ -238,8 +244,8 @@ for(i in 1:length(simulation.all)){
                     rmse.out = rmse.out,
                     bias = bias,
                     rmse.coef = rmse.coef,
-                    sample.size = combos.ret$sample.size[i],
-                    sd.coef = combos.ret$sd.coef[i]
+                    sd.coef = sd.beta,
+                    sd.sim = sd.out
                     )
 
   sim.res[[i]] <- res
@@ -247,8 +253,9 @@ for(i in 1:length(simulation.all)){
                              "Hierarchical" = est$slopes.vs,
                              .id = "model") %>%
                     mutate(
-                      sample.size = combos.ret$sample.size[i],
-                      sd.coef = combos.ret$sd.coef[i],
+                      sample.size = est$sample.size,
+                      sd.coef = sd.beta,
+                      sd.sim = sd.out,
                       n = group.sum$n
                       )
 } # finish comparison
@@ -258,9 +265,9 @@ for(i in 1:length(simulation.all)){
 sim.res.data <- bind_rows(sim.res,
                           .id = "sim") %>%
                 mutate(
-                  sd.coef = paste0("Coef SD=", sd.coef),
-                  scen = paste0("N=", sample.size, ",\n",
-                                sd.coef)
+                  sd.sim = paste0("Outcome SD=", sd.sim),
+                  scen = paste0("Coef SD=", sd.coef, ",\n",
+                                sd.sim)
                 ) %>%
                 select(-bias) %>%
                 distinct() %>%
@@ -270,9 +277,9 @@ sim.res.data <- bind_rows(sim.res,
                   change.rmse.out = rmse.out - lag(rmse.out)
                 )
 
-ggplot(sim.res.data, aes(x = factor(sample.size), y = rmse.out,
+ggplot(sim.res.data, aes(x = factor(sd.coef), y = rmse.out,
                          color = model)) +
-  facet_wrap(~ sd.coef, scales = "free_x") +
+  facet_wrap(~ sd.sim, scales = "free_x") +
   geom_point(size = 3) +
   labs(title = "RMSE of Varying Slopes and OLS",
        x = "Sample Size",
@@ -281,9 +288,9 @@ ggplot(sim.res.data, aes(x = factor(sample.size), y = rmse.out,
   scale_color_grey(start = .6, end = .1) +
   theme(legend.position = "bottom")
 
-ggplot(sim.res.data, aes(x = factor(sample.size), 
+ggplot(sim.res.data, aes(x = factor(sd.coef), 
                          y = change.rmse.out)) +
-  facet_wrap(~ sd.coef) +
+  facet_wrap(~ sd.sim) +
   geom_point(size = 3) +
   labs(title = "Coefficient RMSE",
        subtitle = "Improvement with Hierarchical Model",
@@ -293,14 +300,15 @@ ggplot(sim.res.data, aes(x = factor(sample.size),
   scale_color_grey(start = .6, end = .1) +
   theme(legend.position = "bottom")
 
-# present this in a different way- change in R
-ggplot(sim.res.data, aes(x = factor(sample.size), 
+# present this in a different way- change in RMSE
+ggplot(sim.res.data, aes(x = factor(sd.coef), 
                          y = change.rmse.coef)) +
-  facet_wrap(~ sd.coef) +
+  facet_wrap(~ sd.sim) +
+  geom_hline(yintercept = 0) +
   geom_point(size = 3) +
   labs(title = "Coefficient RMSE",
   subtitle = "Improvement with Hierarchical Model",
-       x = "Sample Size",
+       x = "Coefficient SD",
        y = "Change in Coefficient RMSE",
        color = "Model") +
   scale_color_grey(start = .6, end = .1) +
@@ -313,22 +321,22 @@ ggsave("figures/sim-rmse-coef-nsd.png", height = 6, width = 8)
 sim.slopes.data <- bind_rows(sim.slopes.res,
                           .id = "sim") %>%
   mutate(
-    sd.impact = paste0("SD Coef=", sd.coef),
-    scen = paste0("N=", sample.size, ",\n",
-                  sd.impact)
+    sd.sim = paste0("Outcome SD=", sd.sim),
+    scen = paste0("Coef SD=", sd.coef, ",\n",
+                  sd.sim)
   )
 
 ggplot(sim.slopes.data, aes(x = rowid, y = bias,
                             color = model)) +
   geom_hline(yintercept = 0) +
-  facet_grid(sd.impact ~ sample.size,
+  facet_grid(sd.coef ~ sd.sim,
              scales = "free_y") +
   geom_point() 
 
 ggplot(sim.slopes.data, aes(x = bias,
                             fill = model)) +
   geom_hline(yintercept = 0) +
-  facet_grid(sd.impact ~ sample.size,
+  facet_grid(sd.coef ~ sd.sim,
              scales = "free_y") +
   geom_histogram(#position = position_dodge(width = .5),
                  bins = 16) 
@@ -337,7 +345,7 @@ ggplot(sim.slopes.data, aes(x = bias,
 
 ggplot(sim.slopes.data, aes(x = factor(in.interval),
                             fill = model)) +
-  facet_grid(sd.impact ~ sample.size) +
+  facet_grid(sd.coef ~ sd.sim) +
   geom_bar(position = position_dodge(width = 1)) 
 
 
