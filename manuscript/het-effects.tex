@@ -68,10 +68,9 @@ Joshua\_Alley@baylor.edu
 %Heterogeneous effects are common in social science. 
 This note describes why, when, and how to use Bayesian hierarchical models to estimate heterogeneous effects. 
 While an ample literature suggests that hierarchical models provide helpful regularization and information about effect variation, political scientists rarely use them to estimate heterogeneous effects. 
-Doing so is simple, however. 
-To start, identify potential sources of heterogeneity. 
-Then, fit a hierarchical model with two linked regressions, one connecting treatment with the outcome, and another that models the treatment effects with potential sources of heterogeneity partially pools individuals.
-This captures systematic group-level variation and random individual variation in heterogeneous effects, encompasses the diversity of interactions in theories, and fits commonly used modeling frameworks. 
+Doing so is simple, however, and starts with identify the key sources of heterogeneity. 
+Then, researchers should fit a hierarchical model with two linked regressions, one connecting treatment with the outcome, and another that models the treatment effects with potential sources of heterogeneity and partially pools individual estimates.
+This captures systematic and random variation in heterogeneous effects, encompasses the diversity of interactions in theories, and fits commonly used modeling frameworks. 
 Hierarchical modeling is more flexible than linear interactions and reduces the risk of underpowered subgroup comparisons.
 It also provides a more interpretable framework for testing theories than machine-learning tools. 
 I document these claims with a simulation analysis and extension of a published study. 
@@ -93,7 +92,7 @@ Such average effects are useful, but they often obscure interesting and importan
 
 
 Understanding heterogeneous effects is essential for policy and scholarship. 
-Estimating heterogeneity allows scholars to clarify when their independent variable most or least impacts some outcome.
+Estimating heterogeneity allows scholars to clarify when an independent variable most or least impacts some outcome.
 Policymakers can maximize the impact of finite resources with targeted interventions, for example by providing job training to individuals who are more likely to benefit. 
 % expand/sharpen this, if there is space. (There is not for PA) 
 
@@ -107,52 +106,60 @@ For instance, of the three applied political science citations of \citet{FellerG
 % power problems
 This oversight matters because there are few tools that are well-suited to test the proliferation of conditional arguments in the social science. 
 Social scientists often propose conditional theories \citep{ClarkGolder2023} and are interested in how different people respond to the same stimulus for normative or policy reasons.
-Many theories proposing a singe modifier for the same relationship and interest in diverse subgroups suggest that multiple modifiers are the rule, not the exception.  
+Many theories proposing distinct modifiers for the same independent variable and interest in diverse subgroups suggest that multiple modifiers are the rule, not the exception.  
 For example, scholarship on audience costs has considered how foreign policy dispositions \citep{KertzerBrutger2016}, partisanship \citep{LevenduskyHorowitz2012}, gender \citep{Barnhartetal2020, SchwartzBlair2020} and policy preferences \citep{Chaudoin2014} modify individual reactions to a leader backing down from a threat.
-Such a multiplicity of theoretically informed modifiers complicates empirical testing, however. 
+Such proliferation of theoretically informed modifiers complicates empirical testing, however. 
 
 
 Scholars cannot ignore heterogeneity, but the most common tools either increase the risk of spurious results or are hard to interpret and use. 
-Interaction terms and subgroup analysis are perhaps the most common tool, but can mislead. 
-Simple interactions and subgroup analyses are ubiquitous because they are relatively easy to interpret, but these have serious power concerns. 
+Interaction terms and subgroup analysis are the most common tool. 
+Simple interactions and subgroup analyses are ubiquitous because they are relatively easy to interpret, but they have serious power concerns. 
 Many political science analyses have low power even to detect main effects \citep{ArelBundocketal2022}.
 Adequate power for estimates of even a single interaction can require significantly more data \citep{Gelman2018}, which may be prohibitively expensive or impossible.
 As a result, statistically significant heterogeneous effect estimates may be far too large--- the result of noise in the data, not systematic differences. 
 This problem is partially responsible for widespread issues replicating findings based on interactions \citep{Simmonsetal2011}. 
 
 
-Scaling up the number of modifiers is therefore something that theory suggests scholars should do, but doing so with interactions is not easy. 
-The interpretation benefits of parametric interactions diminish as the number of modifiers increase- the different terms in interactions of three or four variables can be difficult to parse.
-It also further raises the risk of spurious inferences due to power concerns and picking up noise in ever more finely sliced subgroups.
+Even when theory implies that scaling up the number of modifiers is necessary, doing so with interactions is not easy. 
+The interpretation benefits of interactions diminish as researchers add modifiers.
+Adding variables to an interaction further raises the risk of spurious inferences due to power concerns and picking up noise in ever more finely sliced subgroups.
 
 
 % three: loads of techniques
 Given multiple sources of heterogeneity, machine-learning tools such as random forests \citep{GreenKern2012, WagerAthey2018}, support vector machines \citep{ImaiRatkovic2013}, and ensemble methods \citep{Grimmeretal2017, Kuenzeletal2019, Dorieetal2022} are more likely to avoid over-fitting.
 These machine learning algorithms usually have some regularization component and can discover complex patterns and high-dimensional variation across multiple modifiers.\footnote{\citet{BlackwellOlson2022} describe a lasso approach to interactions that sits between machine learning and linear regressions.}
-These tools can be difficult to interpret and implement, especially in smaller social science datasets. 
+These tools can be difficult to interpret and implement, however, especially in smaller social science datasets. 
 A lack of interpretability is especially problematic for testing the relative weight of multiple modifiers. 
 
 
-The hierarchical strategy I propose here addresses the problems of interactions with regularization, and issues of interpretation in machine learning.
-I do this by showing how scholars can use two connected regressions to estimate theoretically informed models of multiple heterogeneous effects.
+The hierarchical strategy I propose here addresses the power shortcomings of interactions while retaining more theoretical structure than machine learning.
+I do this by showing how scholars can use two connected regressions to estimate theoretically informed models of heterogeneous effects.
 Using hierarchical models is more flexible than standard interactions but easier to implement and interpret than machine learning approaches.  
 It preserves a straightforward structure while accommodating more factors and ameliorating the downsides of subgroup analysis. 
 This facilitates argument testing.
-The main downside is that unlike machine learning, the hierarchical approach lacks the flexibility to discover high-dimensional heterogeneity.  
+The main downside is that unlike machine learning, the hierarchical approach lacks the flexibility to discover high-dimensional heterogeneity. 
+It also may not scale to very large datasets, depending on the underlying sampler.
 Hierarchical modeling therefore works best when theory indicates more than two modifying factors and there is less emphasis on discovery.\footnote{\citet{Goplerud2021} introduces a model that uses Bayesian structured sparsity to estimate which group coefficients are similar and which are different. In this approach, researchers use theory to inform potential groups, but the data determines common estimates for groups.} 
 
 
+Hierarchical modeling has an additional benefit of bridging the disparate estimates of interactions and machine learning. 
+Many interactions functionally estimate grouped effects--- individuals with the same values of the modifiers will have the same effect estimate. 
+Machine learning models usually estimate individual effects. 
+The model I propose here gives individual estimates with the systematic group component and a way to account for and regularize individual deviations from those groups.
+
+
 There are two key steps when theory and data make using hierarchical models worthwhile.
-First, researchers should identify potential modifiers of a treatment, and determine the most theoretically appropriate model of treatment effects. 
-Second, they should take that model of treatment effects and connect it to a model with individual effects linking a treatment and outcome.
+First, researchers should identify potential modifiers of a treatment and use them to model treatment effects.
+Second, they should take that model of treatment effects and connect it to a model linking individual treatment effects and the outcome.
 Modeling heterogeneous effects in this way produces interpretable results, which facilitates argument testing.
 It also allows researchers to compare different sources of heterogeneous effects and describe how much an effect varies.  
+These are crucial advantages in a world with many conditional theories.
 
 
-While frequentist estimation of hierarchical models is possible, Bayesian estimation is straightforward and more informative.
+While frequentist estimation of hierarchical models is possible, Bayesian estimation is easy, usually fast, and more informative.
 Bayesian estimation provides crucial information by connecting parameters through common prior distributions, thereby regularizing estimates and propagating uncertainty. 
 Working with posterior distributions also gives researchers more flexibility to describe how and when effects vary. 
-While computation and coding were once a barrier to employing Bayesian methods, fitting a wide range of hierarchical models is straightforward with the brms package in \textsf{R} \citep{Buerkner2017}.\footnote{I provide example code in this note and the appendix.}
+While computation and coding were once a barrier to employing Bayesian methods, fitting a wide range of hierarchical models is straightforward with the brms package in \textsf{R} \citep{Buerkner2017}.\footnote{I provide example code below and in the appendix.}
 %Calculating substantive effects is also simple \citep{ArelBundockme}.
 
 
@@ -161,7 +168,8 @@ While computation and coding were once a barrier to employing Bayesian methods, 
 In the remainder of this paper, I describe how and when to estimate hierarchical models of heterogeneous effects.
 I then employ a simulation study to compare OLS and hierarchical estimates of individual treatment effects under different conditions.
 Finally, I demonstrate the process by analyzing a study of how military alliances shape public support for war by \citet{TomzWeeks2021}. 
-The reanalysis reveals that alliances increase support for intervention most among white men who support international engagement but are otherwise skeptical of using force. 
+The reanalysis reveals that alliances exert the strongest impact on respondents with high internationalism and interest in the news. 
+It also documents how regularization can shift conclusions about small subgroups based on combinations of experimental treatment.
 %Alliances increase mass support for war by impacting individuals who otherwise prefer peaceful collaboration. 
 
 
@@ -170,7 +178,7 @@ The reanalysis reveals that alliances increase support for intervention most amo
 
 
 There are two steps in hierarchical models of heterogeneous effects. 
-First, researchers must identify potential sources of heterogeneity, and think about the right model of how those factors shape heterogeneity.
+First, researchers must identify potential sources of heterogeneity, and think about the right model of heterogeneity.
 This will also depend on what variation is most important and interesting. 
 Theory, policy concerns, or normative factors are all possible motivations. 
 
@@ -182,33 +190,37 @@ Not thinking carefully about sources of heterogeneity will obfuscate results and
    
 
 % three ways to set groups
-There are three general approaches to defining groups.  
-First, researchers can set groups using combinations of other treatments, especially when an intervention has several dimensions but theory emphasizes one of them. 
+There are three general approaches to defining key modifiers.  
+First, researchers can use combinations of other treatments, especially when an intervention has several dimensions but theory emphasizes one of them. 
 The experimental design determines modifiers, and the model estimates heterogeneous treatment effects.   
 If researchers want to know how different issues shape the impact of elite foreign policy cues \citep{GuisingerSaunders2017}, they could include indicators of issues, for instance.
-Hierarchical estimators for topic-sampling experiments estimate how a treatment effect varies across different topics \citep{CliffordRainey2023}. 
+A similar application of hierarchical estimators for topic-sampling experiments estimates how a treatment effect varies across different topics \citep{CliffordRainey2023}. 
 
 
-Researchers sometime use fully crossed regression interactions to estimate the impact of a treatment across experimental strata, but this approach risks spurious results by functionally estimating subgroup results, most of which do not have adequate power. 
+The most common practice in estimating heterogeneous treatment effects is fully crossed interactions.
+This estimates the impact of a treatment across experimental strata, but risks spurious results by functionally estimating subgroup results.
+Most social science experiments do not have adequate power for main effects \citep{ArelBundocketal2022}, let alone small subgroups that may only include 50 or fewer data points.
 
 
 A second approach uses unit, demographic and contextual factors to estimate effect heterogeneity. 
 Here, researchers examine what factors within or around units shape their response to an independent variable.
-For example, one could use a mix of individual and state-level factors to predict divergent consequences of a survey experiment treatment. 
-Other use cases include estimating how different geographic units respond to an intervention.\footnote{Extrapolation to a representative sample for such units might require poststratification.}
+Researchers could use a mix of individual and contextual factors to predict divergent consequences of a survey experiment treatment. 
+Such a model might include factors such as an indicator of state of residence, age, gender, and race.\footnote{Extrapolation to a representative sample for geographic might require poststratification.}
 
 
 For example, \citet{Alley2021isq} uses alliance characteristics to examine when alliance membership increases or decreases military spending.
 He models the impact of alliance participation as a function of treaty depth, partner democracy, conditions on military support, issue linkages, democratic membership, foreign policy concessions and other factors. 
 All of these variables are potential sources of credibility or confounding factors.
-Democratic alliances have higher depth, so this model of heterogeneity accounts for potential confounding, and finds that after accounting for depth, democracy does not impact the relationship between alliances and defense spending. 
+Democratic alliances have higher depth \citep{Martin2005}, so this model of heterogeneity accounts for potential confounding, and finds that after accounting for depth, democracy does not impact the relationship between alliances and defense spending, contrary to \citet{DiGiuseppePoast2018}.
 
 
 Third, researchers might use hierarchical models to address specific policy concerns.
 Policy analysts often want to know how an intervention impacts a specific population. 
 Researchers might want to know if a job-training program improves employment outcomes for black women in the South, for instance.  
-To do this, a researcher might specify a heterogeneous effects model with interactions of race, gender and region, plus additional controls or other factors. 
+To do this, a researcher might specify a heterogeneous effects model with race, gender and region, plus additional controls or other factors.
 
+%CUT CANDIDATE
+%Interacting modifiers can be a useful component of this hierarchical approach.
 
 % grouping factors: numbers 
 %Whether researchers use other treatments, context, or policy to determine what drives heterogeneity, group composition should depend first on the research question.
@@ -218,7 +230,7 @@ To do this, a researcher might specify a heterogeneous effects model with intera
 %At the other extreme, using only one grouping factor in a hierarchical model will usually add relatively little value compared to interactions. 
 
 
-After defining groups, the second step is fitting a hierarchical model that links a model of the outcome with a model of heterogeneity.
+After defining moderators and how they relate to individual effects, the second step is fitting a hierarchical model that links a model of the outcome with a model of heterogeneity.
 Essentially, researchers model the outcome and the process that produces heterogeneous treatments. 
 The model employs two connected regressions.
 One regression deals with the outcome.
@@ -321,13 +333,13 @@ y_i &\sim N(\mu_i, \sigma) &\text{(Likelihood)} \\
 
 The heterogeneity equation then models those individual treatment effects with a systematic and random component. 
 The systematic component is a matrix of predictors \textbf{Z} and associated parameters $\gamma$. 
-$Z$ can mirror any regression specification researchers might use for an outcome; linear combinations of variables, interactions, or other terms. 
+$Z$ can mirror any regression specification researchers might use for an outcome; linear combinations of variables, interactions, or other terms such as varying intercepts. 
 Researchers might use interactions to capture processes where combinations of modifiers produce non-additive jumps in heterogeneity. 
 
 
 The random component of the heterogeneity equation is a series of individual-specific varying intercepts $\theta_i$.
 These are critical, because they capture individual-specific deviations from the systematic trends expressed in the design matrix \textbf{Z}. 
-Outliers that otherwise might bias the $\lambda$ estimates are partially pooled back towards the overall mean $\mu_\theta$.\footnote{In brms, using non-linear syntax can express a model with a treatment, two controls, and three modifiers as: y ~ lambda * treat + control1 + control2, lambda ~ mod1 + mod2 + mod3, nl = TRUE}
+Individual outliers that otherwise might bias the $\lambda$ estimates are partially pooled back towards the overall mean $\mu_\theta$.\footnote{In brms, using non-linear syntax can express a model with a treatment, two controls, and three modifiers as: y $\sim$ lambda * treat + controls, lambda $\sim$ mod1 + mod2 + mod3, controls $\sim$ coutrol1 + control2, nl = TRUE}
 
 
 The above model can be fit with Bayesian or frequentist methods, but Bayesian estimation offers important advantages.
@@ -360,34 +372,38 @@ Finally, this approach will be faster than machine learning approaches for many 
 
 % disadvantages
 Like all methods, the hierarchical approach has downsides, some of which can be ameliorated with modifications, while others should lead researchers to use different tools. 
-First, defining many small groups, perhaps by grouping based on a continuous variable, will likely lead to model fitting problems.
-If using continuous variables hinders model convergence, researchers can bin continuous variables.
-In general, fitting a model with many small groups will make it harder to fit a hierarchical model. 
+Extremely complex specifications can lead to model fitting problems.
+Sometimes, fitting problems indicate that the model is misspecified, so these problems can be a blessing in disguise.
 
 
-Furthermore, hierarchical models can show general trends, but will not make powerful comparisons between every group. 
-Researchers who want to compare specific groups may lack empirical leverage, especially for small groups.
+Furthermore, hierarchical models can show general trends, but will not make powerful comparisons between every treatment effect. 
+Researchers who want to compare specific effects will often lack empirical leverage.
 This downside can also apply to other methods, however. 
 
 
 % Relative to interactions
 With these considerations in mind, when should researchers use hierarchical models in place of interactions?
 If only one factor modifies an effect, interactions are best, as the extra information hierarchical models provide is less valuable. 
-Especially if the groups are of similar size and there is one grouping factor, regularization and OLS will give similar answers.
+Researchers should still remember power concerns with interactions, however. 
 
 
 % two modifiers
 With two or more modifiers, hierarchical models begin to add value beyond. 
 Interpreting triple interactions between a variable and two modifiers is challenging. 
-The advantages of hierarchical modeling increase with the number of modifiers, until additional modifiers create small groups that complicate model fitting. 
-The thresholds where the number of modifiers becomes an issue for hierarchical modeling depends on the data, as larger datasets can support more groups. 
-
+The advantages of hierarchical modeling increase with the number of modifiers, so long as model complexity does not hinder accurate fitting and simulation from the posterior. 
 
 % not as well suited for discovery 
 The relative use cases of hierarchical models and machine learning are different. 
 Unlike machine learning approaches, hierarchical models will not discover high-dimensional interactions. 
 Researchers can add flexibility with additional interactions or non-linear specifications in either level of the model, but this requires a priori specification. 
 Therefore, if researchers want to focus on flexible discovery, not testing an argument with multiple sources of treatment heterogeneity, they should rely more on machine-learning. 
+
+
+Data size is relevant to model selection as well. 
+Machine-learning approaches work especially well with large, often massive datasets. 
+Interactions also benefit from more data, as it can help overcome power problems. 
+Hierarchical models also benefit from more data, but are less sensitive to outliers in small samples. 
+In very large datasets, some hierarchical models may take hours to fit. 
 
 
 In summary, researchers should continue to use interactions for single modifiers and machine learning to discover complex interactions. 
@@ -401,9 +417,9 @@ Hierarchical modeling is thus an intermediate tool between interactions and mach
                  & Hierarchical Models & Interactions/Subgroup & Machine Learning \\
 \hline
 Factors              & Two or more          & One or two         & Many \\ \hline
-Sample Size          & Conditional on number of factors            & Medium to large, depending on main effect size    & Large \\ \hline
+Ideal Sample Size          & Medium            & Medium to large, depending on main effect size    & Large \\ \hline
 Complexity           & Medium             & Low                & High \\ \hline
-Computational Cost   & Medium or High             & Low                & High \\ \hline
+Computational Cost   & Model Dependent             & Low                & High \\ \hline
 Interpretability     & High               & High               & Low \\ \hline
 Modifiers            & Specified          & Specified      & Discovered or Specified \\
 \hline
@@ -413,6 +429,7 @@ Modifiers            & Specified          & Specified      & Discovered or Speci
 \end{table}
 
 
+\begin{comment}
 \section{Performance on Simulated Data}
 
 To assess how hierarchical models compare to interactions in OLS models, I first assess their performance on simulated data. 
@@ -487,25 +504,25 @@ With seven grouping variables, there are 7 or 8 observations per group.
 	\label{fig:sim-rmse-coef}
 \end{figure}
 
-
+\end{comment}
 
 
 
 \section{Example Application: Alliances and Public Support for War} 
 
 
-In the following, I further demonstrate how the hierarchical approach works and the benefits of regularizing effect estimates by reanalyzing a study by \citet{TomzWeeks2021}. 
+In the following, I demonstrate how the hierarchical approach works and the benefits of regularizing effect estimates by reanalyzing a study by \citet{TomzWeeks2021}. 
 Tomz and Weeks (TW hereafter) examine whether the public is more willing to go to war for an allied country.
 In a factorial experiment with vignettes, they find a 33\% average increase in support for military intervention on behalf of another country if that country is an ally. 
-This is a large and potentially important relationship, because the United States has a global network of allies. 
+This is a large and potentially important relationship because the United States has a global network of allies. 
 
 
 Given the size of the main effect, TW's paper is an ideal scenario for comparing interactions and hierarchical models. 
 Corresponding interaction effects may be large, and their sample size of 1,200 respondents is not unusual in published work. 
 At the same time, TW estimated an array of interactions to check how other treatments modify the impact of alliances.
 There are 64 unique treatment groups with anywhere from 11 to 32 respondents, so estimates of the impact of alliances in the 32 pairs of alliance treatment and control groups employ at most 54 data points. 
-As such, employing varying slopes for regularization will likely offer substantial benefits, because the small groups will likely lead to noisy estimates.
-I document these gains by analyzing the how other experimental treatments modify the impact of alliances, and then exploring how demographic differences modify the alliance treatment. 
+As such, hierarchical regularization will likely offer substantial benefits, because the small groups will likely lead to noisy estimates.
+I document these gains by analyzing how other experimental treatments modify the impact of alliances, and then exploring how demographic differences modify the alliance treatment. 
 
 
 
@@ -513,142 +530,154 @@ I document these gains by analyzing the how other experimental treatments modify
 
 
 Along with alliances, TW randomly assign whether the potential beneficiary of U.S. intervention is a democracy or not, the stakes of intervention, the potential costs, and the region of the world. 
-They estimate the impact of alliances in the 32 treatment conditions with an OLS model that fully crosses interactions between the treatments, and calculate marginal effects that average over these groups. 
-I keep the same fully crossed structure in the treatment interactions to define groups, but use a varying slopes model to estimate the impact of alliances in each treatment group.
+They estimate the impact of alliances in the 32 treatment conditions with an OLS model that fully crosses interactions between the treatments, and calculate marginal effects over different averages of these groups. 
+I use a hierarchical model to estimate the impact of alliances, with fully crossed experimental treatments as the systematic modifiers of the alliance effect.
+This mirrors TW's model, but adds a regularization component to the heterogeneous effects of alliances.
 
 
 \begin{figure}[htpb]
 	\centering
 		\includegraphics[width=0.95\textwidth]{../figures/tw-het-treat-comp.png}
-	\caption{Comparison of OLS and hierarchical estimates of the impact of alliance across experimental conditions. Estimates divided based on the regional treatment variable for ease of presentation. The y-axis is a numeric indicator of the groups, which there are 32 treatment-control comparisons.}
+	\caption{Comparison of OLS and hierarchical estimates of the impact of alliance across experimental conditions. The top panel gives a histogram of the treatment effects from each model. The bottom panel gives the difference between the hierarchical and OLS estimates for each group.}
 	\label{fig:tw-het-treat-comp}
 \end{figure}
 
 
 \autoref{fig:tw-het-treat-comp} compares the estimated alliance treatment effects across the experimental groups with the OLS and hierarchical models.
-Two aspects of \autoref{fig:tw-het-treat-comp} show the regularization benefits of hierarchical modeling.
-First, the hierarchical estimates are more precise. 
-The credible intervals in the hierarchical model are smaller because they incorporate information from every group. 
+This figure illustrates the regularization benefits of hierarchical modeling by showing the difference between the median hierarchical estimate and the OLS estimate for each combination of treatment groups and plotting the distribution of effects.
+Both facets give a sense of when and how regularization is useful. 
 
 
-Second, the hierarchical estimates are less variable, again due to partial pooling of the slopes.
-This reduces the estimated variation in how alliances impact mass attitudes, and is obvious if we compare estimates within regions. 
-The OLS interactions are more dispersed, while the hierarchical estimates hew more closely to the overall mean.
-This is especially notable in the African and Latin American scenarios. 
-Inasmuch as differences across scenarios are driven by noise in small treatment groups, the hierarchical model smooths out some of that random variation.
-In some cases, this leads to large shifts in the coefficient estimate.
+First, the hierarchical estimates are much less variable, despite producing many more estimates. 
+The hierarchical model estimates 602 non-zero alliance treatment effects, while the OLS model has 184 unique estimates, yet the hierarchical estimates are much more tightly clustered around the overall mean.
+This occurs because the OLS model mechanically forces individual treatment effect estimates to the value of the coefficients and corresponding subgroup means point. 
+Given the size of this sample, the treatment effects are based on comparisons of roughly 25 treatment and 25 control respondents. 
 
+
+Second, the hierarchical estimates pull in unusual values.
+The bottom panel of \autoref{fig:tw-het-treat-comp} shows the difference between the median hierarchical estimate among individuals and a group and the OLS estimate for that group, which applies to all individuals in each group.
+The downward slope from positive to negative values means that the hierarchical estimates are larger than below average OLS estimates, but smaller than above average interaction estimates. 
+This occurs because hierarchical estimates are pulled towards the overall mean, away from extreme and implausible values such as a 60\% effect for alliances when there are low stakes, low costs and a democratic partner in Africa.
+
+
+\begin{figure}[htpb]
+	\centering
+		\includegraphics[width=0.95\textwidth]{../figures/tw-het-treat-source.png}
+	\caption{Comparison of OLS and hierarchical estimates of the impact of alliance across experimental conditions. Each point gives the typical effect estimate, specifically the median of the individual effects in the hierarchical model.}
+	\label{fig:tw-het-treat-source}
+\end{figure}
+
+
+Partially because it regularizes the estimates, the hierarchical model also leads to slightly different conclusions about when alliances matter most.
+I compare the estimates for each group more precisely in \autoref{fig:tw-het-treat-source}.
+For some conditions, such as a high-stakes, high-cost intervention to support a democracy, the hierarchical estimate is as much as 30\% greater than the OLS estimate. 
+
+
+In other groups, regularization pulls down very large estimates. 
+For instance, TW highlight a very large positive effect of alliances on support for low stakes, low cost interventions to help an autocracy, but that effect is closer to 20\% in the hierarchical models, not the 46\% effect that TW report. 
+
+
+These changes, which deal with a very large average effect, do not change the direction of the findings- in some scenarios they even strengthen them. 
+However, the magnitudes of some subgroup estimates do matter, as they might lead observers to misidentify when alliances matter most.
+For other, smaller effects, regularization with a hierarchical model might change the direction of a subgroup analysis. 
 
 
 \subsection{Who Responds to Alliances}
 
 
 To further explore the potential application of hierarchical models, this section examines how demographic factors modify the impact of alliances.
-I used race, gender, hawkishness and internationalism to define demographic groups with fully crossed interactions that produce X number of groups.
-I selected these variables because foreign policy dispositions like militant assertiveness shape willingness to use force \citep{Kertzeretal2014} as do gender \citep{Barnhartetal2020} and race. 
-I also control for other experimental manipulations.\footnote{See the appendix for priors.} 
+I used party, political interest, race, gender, hawkishness, and internationalism to modify the impact of alliances.
+I selected these variables because foreign policy dispositions like militant assertiveness shape willingness to use force \citep{Kertzeretal2014} as do gender \citep{Barnhartetal2020} and race, while Tomz and Weeks examine party and political interest as potential modifiers. 
+I control for other experimental manipulations.
+
+
+The resulting hierarchical model thus encompasses four subgroup comparisons in TW's appendix, as well as additional information about other demographic factors. 
+Doing all of the comparisons encapsulated in the hierarchical model would require at least six pairwise interaction models. 
 Following TW's OLS analysis, I use a Gaussian likelihood, although the outcome is a binary variable. 
 
 
-I describe the results in three steps. 
-First, I summarize the distribution of alliance effects in \autoref{fig:tw-treat-het-sum}. 
-After this, I summarize the sources of variation in the alliance effect.
-Finally, I compare the hierarchical model with an equivalent OLS specification.
+To start, I plot the two regressions of hierarchical model. 
+\autoref{fig:tw-het-source} plots how different variables shape either the impact of an alliance or support for intervention. 
+One facet of this figure gives the coefficient estimates from the model of heterogeneity, and a second gives the control estimates. 
 
-\begin{figure}[htpb]
-	\centering
-		\includegraphics[width=0.95\textwidth]{../figures/tw-treat-het-sum.png}
-	\caption{Posterior distribution of all estimated impacts of alliances on support for using force. Text values give notable point estimates, and parentheses summarize the 95\% credible interval.}
-	\label{fig:tw-treat-het-sum}
-\end{figure}
-
-
-How alliances impact support for using force varies widely across demographic groups.
-\autoref{fig:tw-treat-het-sum} provides an initial summary of that variation, and highlights several noteworthy estimates. 
-Key estimates include the median, maximum and minimum effect estimates, as well as the standard deviation of all posterior draws.
-
-
-First, \autoref{fig:tw-treat-het-sum} notes that the minimum estimated impact of an alliance on a demographic group is -0.08, while the maximum is .53. 
-The maximum effect occurs among white men with high internationalism and low hawkishness.
-The minimum effect applies to non-white women with low internationalism and high hawkishness. 
-There is no overlap in the posteriors of these estimates. 
-
-
-The median group treatment effect estimate is .31, and this group of respondents is non-white men with middling internationalism and hawkishness. 
-This estimate is quite similar to TW's average treatment effect of .33.
-That average summarizes enormous demographic differences, however. 
-The standard deviation of all posterior draws is .19.
-
-
-This variation is the result of demographic differences between groups.
-\autoref{fig:tw-het-source} plots how the impact of alliances varies across support for international engagement, willingness to use force, race and gender. 
-Because there are many groups, the impact of alliances varies widely within each level of these variables, but there are some clear patterns. 
 
 
 \begin{figure}[htpb]
 	\centering
-		\includegraphics[width=0.95\textwidth]{../figures/tw-het-source.png}
+		\includegraphics[width=0.95\textwidth]{../figures/tw-treat-het-source.png}
 	\caption{Variation in the impact of alliances on support for military intervention across four variables that set groups. Each point marks the impact of alliances on a specific group, and boxplots summarize the median and interquartile range of the slopes within each level of the variable. All slopes are present in each facet.}
 	\label{fig:tw-het-source}
 \end{figure}
 
 
-Individuals with minimal interest in international engagement are less responsive to alliances, while any greater support for internationalism leads to a fairly consistent response to alliances. 
-Similarly, alliances exert less impact on individuals who have minimal militant assertiveness. 
-Alliances are very influential for individuals with low but greater than minimal hawkishness, however. 
-Among those with moderate or high hawkishness, alliances have a fairly consistent impact. 
-The media alliance impact is also greater for men, and among white respondents. 
-Letting slopes vary across each level of the grouping variables generates more flexibility, and clearly shows the difference between individuals with very low internationalism or low militant assertiveness and others. 
+Internationalism and news interest most accentuate the impact of alliances on support for war. 
+A one-unit increase in internationalism increases the impact of the alliance treatment on support for war by .1 in expectation, with a 95\% credible interval that ranges between .07 and .14. 
+Hawkishness is also correlated with higher support for war, but not as largely or clearly. 
+Respondents with high news interest also respond to alliances by .1 more than others in this survey, and that relationship could be as small as .03 or as large as .18.
+This differs from TW's conclusion that respondents with high and low news interest respond in roughly the same way, likely because the hierarchical model accounts for other factors that are correlated with news interest.
 
 
-As \autoref{fig:tw-het-source} suggests, alliances increase support for foreign intervention most among white men, especially those with low hawkishness and some internationalism.
-By contrast, alliances have little impact on support for war among non-white females who are also skeptical of international engagement and unwilling to use force.
-Individuals with more ambivalent foreign policy views respond more typically to TW's alliance treatment. 
+Other demographic predictors do not differentiate responses to alliances as clearly. 
+The impact of alliances may be somewhat greater for white and male respondents, but those differences are not clearly different from zero as the 95\% credible intervals include zero and small negative values.
+Similarly, Republicans and Democrats are not all that different from independents in how they respond to alliances.
+This matches TW's conclusion that partisanship does not create substantial differences in alliance effects.
+The intercept in this equation can be theoretically meaningful, but it is not in this case because neither internationalism nor militant assertiveness take a value of zero. 
 
 
-All these estimates suggest that internationalism matters more than than hawkishness for understanding who is willing to fight for U.S. allies. 
-Alliances may impact hawks less because these individuals support intervention regardless. 
-Military alliances matter most to backers of international engagement who less willing to use force, but not entirely averse to military intervention.
+The control equation suggests that high stakes, high costs, and partner democracy all increase support for intervention.
+Region is less consequential, as neither Asia, Eastern Europe nor Africa is clearly different from the reference category of Latin America.
+As with any regression, the intercept here gives the impact of alliances when all the other variables are equal to zero, and this indicates that alliances increase support for war by .26 given low costs, low stakes and an autocracy in Latin America.
+The 95\% credible interval of this intercept estimate includes the corresponding hierarchical estimate of the alliance treatment in \autoref{fig:het-treat-source}.
+
 
 \begin{figure}[htpb]
 	\centering
-		\includegraphics[width=0.95\textwidth]{../figures/tw-treat-het-comp.png}
-	\caption{Estimated impact of alliance on support for military intervention in different subgroups of respondents. Groups defined based on fully crossed interactions between the demographic variables. Error bars give the 95\% credible interval in the hierarchical model and 95\% confidence interval in the OLS interactions model.}
-	\label{fig:tw-demog-comp}
+		\includegraphics[width=0.95\textwidth]{../figures/tw-treat-het-joint.png}
+	\caption{Estimated impact of alliance on support for military intervention in different subgroups of respondents. The shaded area in each tile shows whether the median estimated treatment effect was clearly positive, and the text gives the exact median estimate.}
+	\label{fig:tw-treat-het-joint}
 \end{figure}
 
 
-Finally, I illustrate the regularization benefits of a hierarchical model in \autoref{fig:tw-demog-comp}.
-Again, the hierarchical estimates are more precise and less variable than OLS with fully crossed interactions. 
-This occurs because the model partially pools information across groups, which reduces uncertainty and pulls the estimated alliance impact towards the overall mean.
+While it is possible to construct a rough profile of who responds most to alliances using the estimates in \autoref{fig:tw-het-source}, I provide a more precise summary in \autoref{fig:tw-treat-het-joint}. 
+This figure plots the median estimate in each group of respondents, after grouping respondents based on race, gender, news interest and foreign policy dispositions.
+Darker fill indicates a positive effect that has a credible interval excluding zero and negative values.
+Some combinations of demographic data are blank because they are missing from the data. 
 
 
-The other noteworthy concern is that OLS estimation with fully crossed interactions can make strong extrapolations.
-In some groups, the estimated impact of an alliance rises to 80 or 90\%. 
-This is the result of the purely linear estimation in OLS that stacks additive terms.
-Hierarchical models somewhat relax this, and are less likely to pick up noise in the data.
+Alliances most impact white men with high internationalism, high militant assertiveness, and high interest in the news. 
+The largest median estimate of an alliance impact is .7. 
+At each level of internationalism, alliance impact increases by .1, which was the coefficient value in the heterogeneity regression.
+News interest generates a similar shift in the median alliance impact across all groups. 
+The marginal role of hawkishness is also apparent in substantial differences from low to high hawkishness.
+
+
+The weakest impact of alliances, including some that cannot be distinguished from zero, occur at minimal internationalism and low news interest. 
+Non-white females with these views are especially unlikely to respond to alliances. 
+Otherwise, most demographic groups respond somewhat to TW's alliance treatment, but how much depends on their interest in the news and blanket support for international engagement.
+Alliances are unlikely to decrease support for intervention, at least in this experiment, and that is itself an important consideration.
 
 
 % variation
-These results show some of the strengths and weaknesses of the hierarchical approach to heterogeneous effects.\footnote{In the appendix, I analyze \citet{BushPrather2020}.}
-A simple model based on demographic groups provides precise insights about who heeds alliances in supporting using force abroad. 
-At the same time, because some demographic groups are small and the model pulls groups towards the overall mean, powerful comparisons between most groups is challenging. 
-Fewer groups would have more data and less uncertainty but perhaps obscure variation across key demographic characteristics. 
+These results show some potential uses of the hierarchical approach to heterogeneous effects.\footnote{In the appendix, I analyze \citet{BushPrather2020}.}
+Regularization moderates what might otherwise be extreme inferences about experimental subgroups.
+It also provides useful inferences about treatment heterogeneity that account for overlap among different sources of heterogeneity.
+
 
 
 \section{Conclusion}
 
 
-This note explained how and when to use hierarchical models to estimate heterogeneous effects. 
+This note paper how and when to use hierarchical models to estimate heterogeneous effects. 
 Bayesian modeling can apply to a wide range of outcomes, data structures, and theories. 
 It also details what drives variation in an effect and how much an effect varies. 
 Explicitly modeling how different groups respond to an independent variable can help test arguments and inform policy.  
 
 
 Hierarchical modeling provides an intermediate approach between interactions or subgroup analyses and machine learning algorithms. 
-For interactions with one or two variables, relying on simple interaction tools is best. 
-Similarly, machine learning is best for discovery of complex heterogeneity.
-When there are two or more modifiers and many groups of theoretical interest, hierarchical modeling allows theoretically informed and interpretable estimation of effect variation. 
+For interactions with one or perhaps two modifiers, relying on simple interaction tools is best. 
+Machine learning is best for discovery of complex heterogeneity.
+When there are two or more theoretically informed modifiers, hierarchical modeling allows flexible and interpretable estimation of effect variation. 
+
 
 As a result, hierarchical modeling complements existing tools and should not replace them. 
 Researchers can use hierarchical models to check and inform other techniques, for instance by seeing if a key interaction holds when there are multiple modifiers, or comparing multiple modifiers that past theories have identified. 

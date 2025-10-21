@@ -12,6 +12,8 @@ library(modelsummary)
 library(ggdist)
 library(conflicted)
 library(Matrix)
+library(patchwork)
+
 
 # set ggplot theme
 theme_set(theme_bw(base_size = 14))
