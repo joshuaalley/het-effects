@@ -66,15 +66,16 @@ Joshua\_Alley@baylor.edu
 
 \begin{abstract} 
 %Heterogeneous effects are common in social science. 
-This note describes why, when, and how to use Bayesian hierarchical models to estimate heterogeneous effects. 
+This paper describes why, when, and how to use Bayesian hierarchical models to estimate heterogeneous effects. 
 While an ample literature suggests that hierarchical models provide helpful regularization and information about effect variation, political scientists rarely use them to estimate heterogeneous effects. 
 Doing so is simple, however, and starts with identify the key sources of heterogeneity. 
-Then, researchers should fit a hierarchical model with two linked regressions, one connecting treatment with the outcome, and another that models the treatment effects with potential sources of heterogeneity and partially pools individual estimates.
+Then, researchers should fit a hierarchical model with two linked regressions, one connecting treatment with the outcome, and another that models the treatment effects with potential sources of heterogeneity and partially pools group estimates.
 This captures systematic and random variation in heterogeneous effects, encompasses the diversity of interactions in theories, and fits commonly used modeling frameworks. 
 Hierarchical modeling is more flexible than linear interactions and reduces the risk of underpowered subgroup comparisons.
 It also provides a more interpretable framework for testing theories than machine-learning tools. 
+The downside is that this approach employs very strong regularization, which breaks down if there are many small groups.
 I document these claims with a simulation analysis and extension of a published study. 
-Researchers can thus use hierarchical models alongside other approaches to understand heterogeneous effects for scholarship and policy.
+%Researchers can thus use hierarchical models alongside other approaches to understand heterogeneous effects for scholarship and policy.
 \end{abstract} 
 
 
@@ -114,7 +115,7 @@ Such proliferation of theoretically informed modifiers complicates empirical tes
 Scholars cannot ignore heterogeneity, but the most common tools either increase the risk of spurious results or are hard to interpret and use. 
 Interaction terms and subgroup analysis are the most common tool. 
 Simple interactions and subgroup analyses are ubiquitous because they are relatively easy to interpret, but they have serious power concerns. 
-Many political science analyses have low power even to detect main effects \citep{ArelBundocketal2022}.
+Many political science analyses have low power even to detect main effects \citep{ArelBundocketal2025}.
 Adequate power for estimates of even a single interaction can require significantly more data \citep{Gelman2018}, which may be prohibitively expensive or impossible.
 As a result, statistically significant heterogeneous effect estimates may be far too large--- the result of noise in the data, not systematic differences. 
 This problem is partially responsible for widespread issues replicating findings based on interactions \citep{Simmonsetal2011}. 
@@ -137,7 +138,7 @@ I do this by showing how scholars can use two connected regressions to estimate 
 Using hierarchical models is more flexible than standard interactions but easier to implement and interpret than machine learning approaches.  
 It preserves a straightforward structure while accommodating more factors and ameliorating the downsides of subgroup analysis. 
 This facilitates argument testing.
-The main downside is that unlike machine learning, the hierarchical approach lacks the flexibility to discover high-dimensional heterogeneity. 
+The main downside is that unlike machine learning, the hierarchical approach lacks the flexibility to discover high-dimensional heterogeneity and regularization will break down if there are many small groups.
 It also may not scale to very large datasets, depending on the underlying sampler.
 Hierarchical modeling therefore works best when theory indicates more than two modifying factors and there is less emphasis on discovery.\footnote{\citet{Goplerud2021} introduces a model that uses Bayesian structured sparsity to estimate which group coefficients are similar and which are different. In this approach, researchers use theory to inform potential groups, but the data determines common estimates for groups.} 
 
@@ -169,7 +170,7 @@ In the remainder of this paper, I describe how and when to estimate hierarchical
 I then employ a simulation study to compare OLS and hierarchical estimates of individual treatment effects under different conditions.
 Finally, I demonstrate the process by analyzing a study of how military alliances shape public support for war by \citet{TomzWeeks2021}. 
 The reanalysis reveals that alliances exert the strongest impact on respondents with high internationalism and interest in the news. 
-It also documents how regularization can shift conclusions about small subgroups based on combinations of experimental treatment.
+It also documents the importance of regularization in analyzing subgroups derived from combinations of experimental treatments.
 %Alliances increase mass support for war by impacting individuals who otherwise prefer peaceful collaboration. 
 
 
@@ -253,9 +254,9 @@ For a continuous treatment, the impact of of treatment will depend on the produc
 
 \begin{align*}
 y_i &\sim N(\mu_i, \sigma) &\text{(Likelihood)} \\
-\mu_i &= \alpha + \lambda_i \textit{T} + \textbf{X} \beta &\text{(Outcome Equation)}  \\ 
-\lambda_i &= \theta_i + \textbf{Z} \gamma  &\text{(Heterogeneity Equation)}\\
-\theta_i &\sim N(\mu_\theta, \sigma_\theta) &\text{(Indiviudal Varying Intercepts)} 
+\mu_i &= \alpha + \lambda_g \textit{T} + \textbf{X} \beta &\text{(Outcome Equation)}  \\ 
+\lambda_g &= \theta_g + \textbf{Z} \gamma  &\text{(Heterogeneity Equation)}\\
+\theta_g &\sim N(\mu_\theta, \sigma_\theta) &\text{(Indiviudal Varying Intercepts)} 
 %\gamma &\sim N(0, 1) &\text{Problem-Specific Prior} \\ 
 %\beta &\sim N(0, 1) &\text{Problem-Specific Prior} \\ 
 %\alpha &\sim N(0, 1) &\text{Problem-Specific Prior} \\ 
@@ -419,7 +420,7 @@ Hierarchical modeling is thus an intermediate tool between interactions and mach
 Factors              & Two or more          & One or two         & Many \\ \hline
 Ideal Sample Size          & Medium            & Medium to large, depending on main effect size    & Large \\ \hline
 Complexity           & Medium             & Low                & High \\ \hline
-Computational Cost   & Model Dependent             & Low                & High \\ \hline
+Computational Cost   & Model Dependent             & Low                & Variable \\ \hline
 Interpretability     & High               & High               & Low \\ \hline
 Modifiers            & Specified          & Specified      & Discovered or Specified \\
 \hline
@@ -429,83 +430,117 @@ Modifiers            & Specified          & Specified      & Discovered or Speci
 \end{table}
 
 
-\begin{comment}
+
 \section{Performance on Simulated Data}
 
-To assess how hierarchical models compare to interactions in OLS models, I first assess their performance on simulated data. 
-The first simulation manipulates variation in the treatment effects and outcome, while leaving the number of groups fixed.
-Adjusting these factors changes the potential benefits of regularization.
-To second simulation varies the same aspects of the data-generating process and also manipulates the number of groups.
-Both simulations use 1,000 observations, so increasing or decreasing the number of groups changes the number of data points in each group.
+To assess how this hierarchical model compares to interactions in OLS models, I first assess their performance on simulated data. 
+Each simulation approximates the two most common applications of these models. 
+The first simulates estimating heterogeneous treatments in factorial experiments that have an even number of data points in each group.
+The second simulation deals with imbalanced groups, as would likely be the case in demographic analyses. 
 
 
-The first simulation defines groups based on fully crossed interactions of five binary variables. 
-I base the group treatment effects on interactions between the treatment and a dummy indicator for each group. 
-I simulate the interaction coefficients by drawing them from a normal distribution with a mean of 0 and standard deviation of .05, .25 or .75. 
-Increasing the standard deviation adds greater variation to the group-level effects.
-This captures the degree of heterogeneity in the relationship.
+Both simulations fix the number of observations at 2,000 and manipulate the number of groups.
+In each simulation, the data generating process includes group-specific effects, drawn from a normal distribution with a mean of .2 and variance of .3.
+I also add three control variables with fixed coefficients the predict the mean of the simulated outcome.
+The simulated data has a standard deviation of one.
 
 
-The interactions predict the mean of the outcome variable, $\mu_y$, which has a standard deviation of .05, .25, or .75. 
-The key treatment effect is the difference in $\mu_y$ between treatment and control observations within each group. 
-I use differences in $mu_y$ as the true value because this is the systematic component of the simulation- the observed outcome $y$ has a random component. 
+To compare the models, I use the root-mean squared error of the coefficient estimates compared to the true value. 
+I use root mean squared error because the hierarchical model's reduction of variance may introduce bias \citep{CliffordRainey2024}.
+Less variance may overcome greater bias in some coefficients and make the hierarchical model more accurate on average.
 
 
-I then fit two models. 
-First, I fit an OLS model that uses interactions of the grouping dummies with the treatment variable.
-Next, I fit a hierarchical model that estimates varying intercepts and treatment slopes across groups.
-
-
-There are several potential metrics for comparing model performance \citep{Hopkinsetal2024}.
-One is bias; the gap between the estimated treatment effects in each group and the true treatment effects. 
-Hierarchical models are sometimes biased on average, however \citep{CliffordRainey2024}, and the question is whether reduced variance in the estimates offsets bias enough to improve the estimates.
-To assess that, I compare the root mean squared error of the group treatment effect estimates for each model. 
-Improvements in the root mean squared error suggest that that reduced variance overcomes any bias in the hierarchical estimates, improving overall model performance \citep[pg. 39]{Hopkinsetal2024}.
-In the appendix, I show some other performance statistics, including...
-
-
-\autoref{fig:sim-rmse-coef-nsd} summarizes the results of the first simulation.
-This figure plots the difference in root mean squared error between the hierarchical and OLS estimators. 
-Negative values favor the hierarchical model, while positive values mean OLS performs better.
+In the first simulation, I divide the 2,000 observations into equally sized combinations of three to seven binary variables, each with equal probability. 
+This creates 8 to 128 unique groups, with 250 observations per group at the low end and 16 observations at the high end.
+I then fit OLS models with fully crossed interactions of the group variables, as these estimate treatment effects in each subgroup and are a common approach.
+In the hierarchical model, I also fully cross interactions of the group variables and set a random intercept for each group.
 
 
 \begin{figure}[htpb]
 	\centering
-		\includegraphics[width=0.95\textwidth]{../figures/sim-rmse-coef-nsd.png}
-	\caption{Difference in root mean squared error between hierarchical and OLS estimators of heterogeneous effects with different levels of random variation in the heterogeneous effects and outcome. Positive values favor OLS, and negative values favor hierarchical modeling. Simulations based on 1,000 observations with 32 unique groups.}
-	\label{fig:sim-rmse-coef-nsd}
+		\includegraphics[width=0.95\textwidth]{../figures/sim-spec-rmse.png}
+	\caption{Comparison of OLS and hierarchical root mean squared error in group coefficient estimates. Simulation fixes the sample size at 2,000 observations and varies the number of groups. Each group has the same number of observations.}
+	\label{fig:sim-spec-rmse}
 \end{figure}
 
 
-When the outcome has low variance, OLS and hierarchical models perform similarly. 
-This implies that regularization is most important when the outcome is noisy. 
-Hierarchical models offer slight improvements at the next highest level of outcome variance, regardless of how much variance there is in the coefficients themselves. 
-Hierarchical modeling produces the largest gains at the highest levels of outcome variance, especially when the coefficients vary less than the outcome.
-As is often the case, the regularization benefits of hierarchical modeling are greatest when there is substantial noise in the data-generating process. 
-OLS estimates of heterogeneous effects are more sensitive to random variation in the outcome.
-
-
-In the second simulation, I define between 2 and 6 groups in a dataset with 1,000 observations.
-Each group has the same number of data points, so as the number of groups increases, the number of observations in each group falls. 
-More and smaller groups will likely benefit more from regularization, improving the performance of hierarchical modeling.
-
-
-\autoref{fig:sim-rmse-coef} summarizes the results of the second simulation.
-Again, this figure plots the difference in root mean squared error between the hierarchical and OLS estimators, and negative values mean that the hierarchical models performs better.
-Because the number of observations is fixed, as the number of grouping variables rises, the size of the groups falls. 
-For instance, with two grouping variables, there are 250 observations per group.
-With seven grouping variables, there are 7 or 8 observations per group.
+\autoref{fig:sim-spec-rmse} presents the results of this first simulation.
+When the groups are large because there are thee grouping variables, there is a small gap in model performance. 
+The hierarchical model is marginally better. 
+But as group numbers rise and the number of observations in each group falls, root mean squared error rises for all models, but the OLS with fully crossed interactions performs much worse. 
+With 128 groups and 16 observations per group, the OLS model has a root mean squared error of .5, while the hierarchical model is at .33.  
 
 
 \begin{figure}[htpb]
 	\centering
-		\includegraphics[width=0.95\textwidth]{../figures/sim-rmse-coef.png}
-	\caption{Difference in root mean squared error between hierarchical and OLS estimators of heterogeneous effects with different levels of random variation in the heterogeneous effects and outcome as well as different numbers of grouping variables. Positive values favor OLS, and negative values favor hierarchical modeling. Simulations based on 1,000 observations.}
-	\label{fig:sim-rmse-coef}
+		\includegraphics[width=0.95\textwidth]{../figures/sim-spec-scatter.png}
+	\caption{Comparison of OLS and hierarchical estimates of group-specific treatment effects. Points on the dashed line are unbiased.}
+	\label{fig:sim-spec-scatter}
 \end{figure}
 
-\end{comment}
 
+These benefits are due to strongly reduced variance in the hierarchical estimates, as \autoref{fig:sim-spec-scatter} shows. 
+This figure plots the true group treatment effects against the model estimates.
+Points above the dotted line are over-estimated by the model compared to the true value, while points below are under-estimated.
+
+
+Even with 8 groups and 250 observations per group, more OLS estimates are unbiased, but two groups are dramatically off. 
+This means that even with slight bias for many groups, the hierarchical estimates have lower overall root mean squared error.
+As the number of groups increases and group size falls, the estimates for both models become more noisy, but the hierarchical model estimates are far less variable. 
+
+
+This is essential because the dramatic over and under-estimates in the OLS model are the subgroup estimates with the greatest likelihood of statistical significance. 
+But most of these estimates are very biased and reflect noise in the data, not a true effect. 
+The problems this poses for replication are now well understood, and the hierarchical model offers a clear solution.
+
+
+The second simulation shows similar improvements in an application with unbalanced group sizes. 
+Here, I set the number of groups to 64, using six binary grouping variables. 
+I then vary the probability of each group level and the symmetry of these probabilities across groups.
+Balanced groups are equivalent to the 64 group case in the first simulation. 
+At the strongest imbalance, one group has a 20\% share of ones and 80\% zeros, and another has the opposite extreme, with a range in between.
+Such extreme imbalance can leave as few as one observation in each group, so it is an extreme test of model performance. 
+Again, I compare the models with the root mean squared error of the coefficient estimates, and show these results in \autoref{fig:sim-groupsize-rmse}.
+
+
+\begin{figure}[htpb]
+	\centering
+		\includegraphics[width=0.95\textwidth]{../figures/sim-groupsize-rmse.png}
+	\caption{Comparison of OLS and hierarchical root mean squared error in group coefficient estimates. Simulation fixes the sample size at 2,000 observations and varies the relative size of different groups.}
+	\label{fig:sim-groupsize-rmse}
+\end{figure}
+
+
+Under balanced groups, the hierarchical model has a significant advantage. 
+Greater imbalance reduces this improvement, but the hierarchical model has far lower root-mean squared error.
+The smaller and more numerous the groups, the less valuable the regularization becomes, however. 
+Small groups add far less information and are strongly pulled to the overall mean, which itself is a function of the larger groups.
+Again, the strong imbalance creates conditions where it is wiser to set up less finely-tuned groups or expand the sample size so groups have more observations and information to contribute to partial pooling.
+
+
+\begin{figure}[htpb]
+	\centering
+		\includegraphics[width=0.95\textwidth]{../figures/sim-groupsize-bias.png}
+	\caption{Comparison of OLS and hierarchical model bias in estimates of group-specific treatment effects. Group size gives the number of observations in each group, and bias is expressed as an absolute value. Loess lines give average bias across the range of observations.}
+	\label{fig:sim-groupsize-bias}
+\end{figure}
+
+
+To further illustrate how group size shapes the hierarchical estimates, I plot the bias of the OLS and hierarchical models in \autoref{fig:sim-groupsize-bias}.
+Again, the OLS estimator has significant bias for some groups as the model picks up noise.
+The magnitude of the bias does not depend on group size. 
+In fact, large groups often have more bias because the OLS estimates weight each group equally. 
+
+
+The hierarchical model has much less bias for larger groups. 
+Smaller groups with less than 20 data points have higher bias, while large groups, especially those with 75 or more observations, have much less data.
+This is partial pooling in action.
+
+
+The simulations thus give two crucial inferences.
+First, partial pooling and modeling treatment effects offers significant improvements in inference, as it reduces variance in the estimates. 
+The relative size of groups shapes the magnitude of this benefit, as hierarchical models will be less biased for large groups and more biased with small groups under extreme imbalances in group size. 
+This means that the smaller the group, the less a hierarchical model can tell you, but it will likely be more accurate than OLS. 
 
 
 \section{Example Application: Alliances and Public Support for War} 
@@ -686,7 +721,7 @@ Using hierarchical modeling can thus help scholars and policymakers better under
 
 \section*{Acknowledgements}
 
-Thanks to Taylor Kinsley Chewning, Andrew Gelman and Carlisle Rainey for helpful comments.
+Thanks to Taylor Kinsley Chewning, Andrew Gelman, Carlisle Rainey and Rod Sturdivant for helpful comments.
 
 \singlespace
 \bibliography{../../MasterBibliography} 
