@@ -15,7 +15,7 @@ tw_rep <- tw_rep %>%
                 pid7 == 6 | pid7 == 7 ~ 1,
                 .default = 0
               ),
-              dem = ifelse(pid7 >= 2, 1, 0),
+              dem = ifelse(pid7 <= 2, 1, 0),
               force = ifelse(pref >= 4, 1, 0),
               white = ifelse(race == 1, 1, 0),
               male = ifelse(gender == 1, 1, 0),
@@ -42,7 +42,7 @@ tw_rep <- tw_rep %>%
               asia = ifelse(region_txt == "Asia", 1, 0),
               europe = ifelse(region_txt == "Eastern Europe", 1, 0),
               
-              het_group = paste(dem, rep, high_newsint, white, male, hawk, intl,
+              het_group = paste(dem, rep, high_newsint, white, male,
                                   sep = "_"),
 
               het_group_small = paste(intl, white, male,

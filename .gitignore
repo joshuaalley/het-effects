@@ -81,3 +81,8 @@ rsconnect/
 
 # ignore old folder
 old-files/
+# ignore downloaded replication files
+replication-files/
+
+# ignore jstor metadata
+*jsonl

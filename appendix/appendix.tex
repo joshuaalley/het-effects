@@ -41,75 +41,195 @@
 
 \tableofcontents
 
+\newpage
+
+\section{Replication Analysis Details}
+
+
+To produce Figure 1 in the manuscript, I downloaded all replication files from the Harvard Dataverse for papers in the\textit{American Political Science Review}, \textit{American Journal of Political Science}, and \textit{Journal of Politics}.
+The analysis covers from 2010 to 2024 because of lags in replication data upload and approval for 2025 and 2026. 
+This also means that the analysis covers the year the replication data was uploaded, not the year of publication.
+This is important because publication often lags acceptance by a year. 
+
+
+I then identified code files in the replication materials, downloading scripts in R, Stata, Python and other coding languages. 
+Within those files, I used regular expressions to identify models with an interaction, uses of associated tools such as marginal effects or STATA's margins command, and machine-learning tools for heterogeneous effects. 
+I also parsed comments.
+The two lists below summarize regular expressions for interactions and machine-learning. 
+
+
+\subsection*{Interaction Patterns}                                                                                                                         
+  \begin{itemize}
+      \item \texttt{(lm|glm|felm|feols|plm|ivreg)\textbackslash s*\textbackslash([{\textasciicircum})]* \textasciitilde[{\textasciicircum})]*[*:]}                 \item \texttt{feols?\textbackslash s*\textbackslash([{\textasciicircum})]*\textbackslash|}
+      \item \texttt{[ci]\textbackslash.\textbackslash w+\#}                                                                                                  
+      \item \texttt{\textbackslash w+\#\#\textbackslash w+}
+      \item \texttt{dydx\textbackslash s*\textbackslash(}
+      \item \texttt{margins\textbackslash s*,.*at\textbackslash s*\textbackslash(}
+      \item \texttt{marginaleffects|slopes\textbackslash s*\textbackslash(|comparisons\textbackslash s*\textbackslash(}
+      \item \texttt{heterogen(eous|eity)\textbackslash s*(effect|treatment)?}
+      \item \texttt{conditional\textbackslash s*(average)?\textbackslash s*(treatment)?\textbackslash s*effect}
+      \item \texttt{subgroup\textbackslash s*analysis|stratified\textbackslash s*analysis}
+      \item \texttt{moderat(ion|ing|or)\textbackslash s*(effect|analysis|variable)?}
+      \item \texttt{interaction\textbackslash s*(effect|term|model)}
+      \item \texttt{interplot|interact\_plot|marginsplot|coefplot.*\#}
+  \end{itemize}
+
+\subsection*{ML Heterogeneity Patterns}
+  \begin{itemize}
+      \item \texttt{causal\_forest\textbackslash s*\textbackslash(}
+      \item \texttt{library\textbackslash s*\textbackslash(\textbackslash s*grf\textbackslash s*\textbackslash)|require\textbackslash
+  s*\textbackslash(\textbackslash s*grf\textbackslash s*\textbackslash)}
+      \item \texttt{average\_treatment\_effect|predict.*causal\_forest}
+      \item \texttt{bartc\textbackslash s*\textbackslash(|library\textbackslash s*\textbackslash(\textbackslash s*bartCause\textbackslash s*\textbackslash)} 
+      \item \texttt{bcf\textbackslash s*\textbackslash(|library\textbackslash s*\textbackslash(\textbackslash s*bcf\textbackslash s*\textbackslash)}
+      \item \texttt{\textbackslash bCATE\textbackslash b|conditional\textbackslash s+average\textbackslash s+treatment\textbackslash s+effect}
+      \item \texttt{\textbackslash bITE\textbackslash b|individual(ized)?\textbackslash s+treatment\textbackslash s+effect}
+      \item \texttt{(causal|treatment)\textbackslash s*(forest|tree|learning)}
+      \item \texttt{DoubleML|double.*machine.*learning|dml\_}
+      \item \texttt{[STXR][-\_]?learner|metalearner}
+  \end{itemize}
+
+%  \subsection*{Hierarchical Model Patterns}
+%  \begin{itemize}
+%      \item \texttt{lmer\textbackslash s*\textbackslash(|glmer\textbackslash s*\textbackslash(}
+%      \item \texttt{brm\textbackslash s*\textbackslash(|brms::}
+%      \item \texttt{stan\_lmer|stan\_glmer|stan\_glm\textbackslash s*\textbackslash(}
+%      \item \texttt{\textbackslash([{\textasciicircum}|]+\textbackslash+[{\textasciicircum}|]+\textbackslash|}
+%      \item \texttt{\textbackslash|\textbackslash|}
+%      \item \texttt{\textbackslash.stan\$|\textbackslash.jags\$|stan\_code|stan\_model|rstan::}
+%      \item \texttt{mixed\textbackslash s+|xtmixed|meglm|melogit|xtmelogit}
+%      \item \texttt{\textbackslash|\textbackslash|\textbackslash s*\textbackslash w+:}
+%      \item \texttt{partial\textbackslash s*pool|shrinkage|borrow.*strength}
+%      \item \texttt{varying\textbackslash s*(slope|effect|coefficient|intercept)}
+%      \item \texttt{random\textbackslash s*(slope|effect|coefficient)}
+%      \item \texttt{multilevel|multi-level|hierarchical\textbackslash s*(model|linear|regression)}
+%      \item \texttt{posterior.*effect|effect.*posterior|credible.*interval}
+%  \end{itemize}
+
+
+\section{Simulation Data Generating Process}
+
+This section summarizes the data generating process for the simulations in the main text.
+Both simulations fix the sample size at $n = 2000$ and vary the number of groups, with different numbers of observations in each group.
+
+\subsection{Equal Group Size Simulation}
+
+For the first simulation, I generate $k$ binary grouping variables, where $k \in \{3, 4, 5, 6, 7\}$:
+\begin{align*}
+x_{ij} &\sim \text{Bernoulli}(0.5) \quad \text{for } j = 1, \ldots, k
+\end{align*}
+
+The simulation defines the groups by unique combinations of these variables, producing $2^k$ groups.
+With three modifiers, there are 8 groups, while 7 modifiers produces 128 groups.
+
+
+The treatment indicator is randomly assigned, also with a bernoulli draw:
+\begin{align*}
+T_i &\sim \text{Bernoulli}(0.5)
+\end{align*}
+
+Three control variables predict the baseline outcome but do not modify the treatment effect:
+\begin{align*}
+z_{i1} &\sim N(0, 1) \\
+z_{i2} &\sim \text{Bernoulli}(0.5) \\
+z_{i3} &\sim N(0, 1)
+\end{align*}
+
+True group-specific treatment effects are drawn from a normal distribution with mean $\mu_\tau$ and variance $\sigma_\tau$, both of which are fixed:
+\begin{align*}
+\tau_g &\sim N(\mu_\tau, \sigma_\tau) \quad \text{where } \mu_\tau = 0.2, \sigma_\tau = 0.3
+\end{align*}
+
+The outcome is then generated as:
+\begin{align*}
+y_i &= \beta_1 z_{i1} + \beta_2 z_{i2} + \beta_3 z_{i3} + \tau_{g[i]} T_i + \epsilon_i \\
+\epsilon_i &\sim N(0, \sigma_y) \quad \text{where } \sigma_y = 1
+\end{align*}
+
+I also fix the control coefficients $\boldsymbol{\beta} = (0.4, -0.3, 0.25)$.
+
+\subsection{Unequal Group Size Simulation}
+
+The second simulation uses the same data generating process but fixes $k = 6$ (64 groups) and varies the probability parameter for the grouping variables.
+Rather than fixing all probabilities at 0.5, I vary them symmetrically across groups to create imbalanced group sizes.
+I consider four scenarios: 
+
+\begin{enumerate}
+\item Balanced (all probabilities at 0.5)
+\item Mild imbalance (0.35, 0.4, 0.5, 0.5, 0.6, 0.65) 
+\item moderate imbalance (0.25, 0.35, 0.5, 0.5, 0.65, 0.7)
+\item Strong imbalance (0.2, 0.3, 0.5, 0.5, 0.675, 0.75)
+\end{enumerate}
+
+
+At maximum imbalance, some groups may have as few as one observation while others are much larger. I set the simulation so that all groups have at least one observation.
+
+\newpage
 
 \section{Tomz and Weeks Reanalysis}
 
-This summarizes a heterogeneous treatments model of \citep{TomzWeeks2021} and details the underlying \textsf{R} code. 
-
-\subsection{Heterogeneous Treatments} 
-
-Here, I examine how the impact of alliances varies with other factors in the experiment, especially costs, stakes, region and partner democracy.
-The heterogeneous treatment model corroborates TW's conclusion that alliances exert the greatest impact in instances when public opinion is otherwise skeptical of intervention.
-
-\autoref{fig:tw-het-treat} supports TW's findings that alliances exert the most influence in situations where the public is otherwise unlikely to intervene. 
-This figure shows the impact of alliances in unique combinations of all other experimental treatments. 
-For a hypothetical democracy in Eastern Europe where intervention has high stakes, alliances exert minimal impact on public attitudes. 
-In low-stakes and high cost interventions to support African, Asian or Latin American dictators, alliances increase support for intervention by 50\%. 
-Beyond these systematic differences, random variation that is not attributed to the other treatments is roughly 6\%. 
-
-
-\begin{figure}[htpb]
-	\centering
-		\includegraphics[width=0.95\textwidth]{tw-het-treat.png}
-	\caption{Estimated impact of military alliances on public support for war across hypothetical region, costs, stakes and partner regime. Colors distinguish stakes, point shapes mark different costs, and estimates are grouped by regime type. Point estimates give the posterior median and error bars summarize the 95\% credible interval.}
-	\label{fig:tw-het-treat}
-\end{figure}
+This section summarizes the hierarchical models of \citet{TomzWeeks2021} and details the underlying \textsf{R} code.
+Both models use the nonlinear lambda specification in brms, which separates the outcome into two linked equations: a heterogeneity equation modeling the treatment effect ($\lambda$) and a control equation.
 
 
 \subsection{R Code: Tomz and Weeks Reanalysis}
 
-First, the following model formula expresses a heterogeneous treatments model where the impact of alliances varies with the regime under attack, the stakes, the costs, and the region. 
-The \verb+treat.group+ indicator marks unique combinations of the regime, stakes, costs and region variables. 
-It can also be written as \verb+regime:stakes:costs:region.txt+. 
-I also control for gender, race, and three foreign policy dispositions. 
+First, the following model formula expresses a heterogeneous treatments model where the impact of alliances varies with the experimental conditions (regime, stakes, costs, and region).
+The \verb+treat_group+ indicator marks unique combinations of these experimental factors for the group-level random intercept.
+The control equation includes respondent demographics and foreign policy dispositions.
 
 \begin{verbatim}
-bf(force ~ 1 + white + male + hawk + intl + 
-             alliance*(regime + stakes + costs + region.txt) + 
-             (1 + alliance | treat.group) 
+bf(
+  force ~ lambda * alliance + controls,
+
+  lambda ~ regime + stakes + costs + region_txt + (1 | treat_group),
+
+  controls ~ white + male + hawk + intl + dem + rep + age + ed4,
+
+  nl = TRUE
+)
 \end{verbatim}
 
 
-The second formula expresses a treatment heterogeneity model where the impact of alliances varies with gender, race, and three foreign policy dispositions. 
-The \verb+het.group+ indicator marks unique combinations of the demographic modifiers.
-It can also be written as \verb+white:male:intl:hawk+. 
-In this model, the other experimental conditions are controls. 
+The second formula expresses a respondent heterogeneity model where the impact of alliances varies with demographic characteristics (party, news interest, race, and gender).
+The \verb+het_group+ indicator marks unique combinations of these demographic modifiers.
+The control equation includes experimental conditions and respondent age and education.
 
 \begin{verbatim}
-bf(force ~ 1 + regime + stakes + costs + region.txt +
-             alliance*(white + male + intl + hawk) +
-             (1 + alliance | het.group) 
+bf(
+  force ~ lambda * alliance + controls,
+
+  lambda ~ (dem + rep + high_newsint + white + male) + (1 | het_group),
+
+  controls ~ regime + stakes + costs + africa + europe + asia + age + ed4,
+
+  nl = TRUE
+)
 \end{verbatim}
 
 
 \subsection{Priors: Tomz and Weeks Reanalysis}
 
 
-\autoref{tab:priors} summarizes the prior distributions. 
-All priors are weakly informative relative to the scale of the data. 
+\autoref{tab:priors} summarizes the prior distributions for both models.
+All priors are weakly informative relative to the scale of the data.
+The lambda coefficients receive a $N(0, 1)$ prior, while control coefficients receive a tighter $N(0, 0.5)$ prior.
 
-\begin{table} % Create a table of priors.
+\begin{table}[htpb]
 \begin{center}
-\begin{tabular}{c} 
-$ p(\alpha) \sim N(0, 1)$  \\
-$ p(\sigma) \sim \mbox{half-}N(0, 1) $ \\
-$ p(\sigma_\theta) \sim \mbox{half-}N(0, 1) $ \\ 
-$ p(\beta) \sim N(0, .5) $ 
-$ p(\lambda) \sim N(0, .5) $ 
-\end{tabular} 
-\caption{Summary of priors in treatment heterogeneity model.} 
+\begin{tabular}{lc}
+\hline
+Parameter & Prior \\
+\hline
+$\lambda$ coefficients & $N(0, 1)$ \\
+Control coefficients & $N(0, 1)$ \\
+$\sigma$ (residual SD) & half-$N(0, 1)$ \\
+$\sigma_\theta$ (group SD) & half-$N(0, 1)$ \\
+\hline
+\end{tabular}
+\caption{Summary of priors in hierarchical models.}
 \label{tab:priors}
-\end{center} 
+\end{center}
 \end{table} 
 
 \newpage
@@ -134,41 +254,57 @@ They thus examine how the impact of side-taking varies with the direction of the
 To do this, they use four tables and figures, and rely on eight t-tests of differences in means between groups of roughly 25 respondents. 
 
 
-The heterogeneous effects model encapsulates the argument and all tests by estimating the impact of side-taking on economic engagement as a function of which country is involved, a dummy indicator of intention to vote for Clinton, and their interaction. 
-The interaction captures the hypothesis that Clinton voters will support engagement with Germany because Germany opposed Trump, and should be positive. 
-I also add an indicator of whether the experiment deals with trade or investment. 
-The heterogeneous effects equation also includes indicators of female gender and political engagement. 
-The political engagement measure is a sum of political knowledge and interest. 
+I use the same nonlinear lambda specification as in the Tomz and Weeks reanalysis.
+The heterogeneous effects model estimates the impact of side-taking on economic engagement, with the treatment effect ($\lambda$) modeled as a function of potential modifiers.
+The heterogeneity equation includes a dummy indicator of intention to vote for Clinton, an indicator of whether the experiment deals with trade or investment, female gender, and high political engagement.
+I measure political engagement as a sum of political knowledge and interest, dichotomized at the median.
+Groups are defined by unique combinations of these four binary modifiers, producing 16 groups.
 
 
-The outcome variable is a scale from one to four that measures support for greater economic engagement with the potential partner. 
-To approximate BP's analyses, I use a normal outcome likelihood. 
-Because this experimental randomization produced a roughly balanced sample, I do not include any control variables in the outcome equation. 
+The outcome variable is a scale from one to four that measures support for greater economic engagement with the potential partner.
+To approximate BP's analyses, I use a normal outcome likelihood.
+The control equation includes college education and employment status.
+
+\subsection{R Code: Bush and Prather Reanalysis}
+
+The following model formula expresses the heterogeneous effects model:
+
+\begin{verbatim}
+bf(
+  ipe_support ~ lambda * treat_germrus + controls,
+
+  lambda ~ (w2_vote_hill + woman + high_pol_engage + invest_cond) +
+           (1 | het_group),
+
+  controls ~ college_educ + employ_dum + woman + high_pol_engage
+
+  nl = TRUE
+)
+\end{verbatim}
+
+The priors follow the same structure as the Tomz and Weeks models, with $N(0, 1)$ on coefficients in the heterogeneity equation and $N(0, 0.5)$ on control coefficients.
 
 
 \begin{figure}[htpb]
 	\centering
-		\includegraphics[width=0.95\textwidth]{bp-het-est.png}
+		\includegraphics[width=0.95\textwidth]{bp-het-joint.png}
 	\caption{Heterogeneous effects of German side-taking in US elections on support for economic engagement with Germany. Each estimate reflects a treated group with a unique combination of other treatments and demographic characteristics.}
 	\label{fig:bp-het-est}
 \end{figure}
 
 
-These estimates corroborate BP's findings, and also suggest that side-taking exerts the greatest influence on individuals who are highly engaged in politics. 
+These estimates corroborate BP's findings.
 Clinton voters are more likely to support economic engagement with Germany when Germany has opposed Donald Trump. 
-Conversely, some Trump voters oppose greater trade with Germany after the same side-taking. 
-The impact of side-taking is also stronger for foreign investment than trade. 
-Individuals are more willing to support investment than trade.
+This has the largest impact on attitudes towards trade among highly engaged respondents.
+Low engagement Clinton voters are less responsive.
 
-
-Side-taking exerts the most influence on individuals who are highly engaged in politics. 
-Engaged Clinton voters respond most to German side-taking against Trump. 
-Among these respondents, side-taking increases support for economic engagement by .5 or more, which is a large effect on an outcome that ranges from one to four. 
+Trump voters are less responsive to German opposition to Trump.
+The effects are mostly null, and only for engaged voters in the investment condition does the endorsement have a clearly non-zero effect.
+This positive effect may reflect residual opposition to Trump in some sections of the Republican party.
 
 
 \singlespace
  
 \bibliography{../../MasterBibliography} 
-
 
 \end{document}

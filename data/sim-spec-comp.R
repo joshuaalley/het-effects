@@ -111,8 +111,9 @@ for(v in seq_along(num_vars)){
   cat("  Lambda model...")
   f_lambda <- bf(
     y ~ lambda * treat + controls,
-    as.formula(paste("lambda ~", x_sat, "+ (1 | grp)")),
-    controls ~ z1 + z2 + z3,
+    as.formula(paste("lambda ~", x_add, "+ (1 | grp)")),
+    as.formula(paste("controls ~", x_add, "+ z1 + z2 + z3")),
+    #controls ~ z1 + z2 + z3 + x_sat,
     nl = TRUE
   )
 

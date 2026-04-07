@@ -94,7 +94,7 @@ for(s in seq_along(prob_scenarios)){
 
   # 1. OLS 
   cat("  OLS...")
-  f_ols <- as.formula(paste("y ~ treat * (", x_add, ") + z1 + z2 + z3"))
+  f_ols <- as.formula(paste("y ~ treat * (", x_sat, ") + z1 + z2 + z3"))
   fit_ols <- lm(f_ols, data = sim_data)
 
   est_ols <- slopes(fit_ols, variables = "treat",
@@ -107,7 +107,7 @@ for(s in seq_along(prob_scenarios)){
   # 2. Interaction model with varying slopes
   cat("  Interaction model...")
   f_inter <- bf(as.formula(
-    paste("y ~ (1 + treat || grp) + treat * (", x_add, ") + z1 + z2 + z3")
+    paste("y ~ (1 + treat || grp) + treat * (", x_sat, ") + z1 + z2 + z3")
   ))
 
   inter_prior <- c(
@@ -136,7 +136,8 @@ for(s in seq_along(prob_scenarios)){
   f_lambda <- bf(
     y ~ lambda * treat + controls,
     as.formula(paste("lambda ~", x_add, "+ (1 | grp)")),
-    controls ~ z1 + z2 + z3,
+    as.formula(paste("controls ~", x_add, "+ z1 + z2 + z3")),
+    #controls ~ z1 + z2 + z3,
     nl = TRUE
   )
 
@@ -272,7 +273,7 @@ ggplot(bias_long, aes(x = scenario, y = bias,
   scale_color_grey(start = 0.1, end = 0.6) +
   labs(
     title = "Mean Bias by Group Size Imbalance",
-    subtitle = paste0("k = ", k, " (32 groups), n = ", n),
+    subtitle = paste0("k = ", k, " (", 2^k, " groups), n = ", n),
     x = "Group Size Imbalance",
     y = "Mean Bias",
     color = "Model"

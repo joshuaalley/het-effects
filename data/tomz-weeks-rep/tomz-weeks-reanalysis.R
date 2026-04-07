@@ -16,7 +16,7 @@ tw_rep <- tw_rep %>%
                 pid7 == 6 | pid7 == 7 ~ 1,
                 .default = 0
               ),
-              dem = ifelse(pid7 >= 2, 1, 0),
+              dem = ifelse(pid7 <= 2, 1, 0),
               force = ifelse(pref >= 4, 1, 0),
               white = ifelse(race == 1, 1, 0),
               male = ifelse(gender == 1, 1, 0),
@@ -95,7 +95,6 @@ coef_tw_het_nl <- coef_tw_het_nl %>%
           variable == "lambda_Intercept" ~ "Intercept",
           variable == "lambda_dem" ~ "Democrat",
           variable == "lambda_rep" ~ "Republican",
-          variable == "lambda_pid7" ~ "Party Position",
           variable == "lambda_high_newsint" ~ "High News\nInterest",
           variable == "lambda_white" ~ "White",
           variable == "lambda_male" ~ "Male",
@@ -169,7 +168,6 @@ slopes_het_long <- tw_est %>%
       variable == "male" ~ "Male",
       variable == "dem" ~ "Democrat",
       variable == "rep" ~ "Republican",
-      variable == "pid7" ~ "Party ID",
       variable == "high_newsint" ~ "High News Interest"
     )
   )
@@ -335,7 +333,7 @@ het_treat_prior <- c(
 formula_het_treat <- bf(
   force ~ lambda*alliance + controls,
 
-  lambda ~ regime*stakes*costs*region_txt + (1|treat_group),
+  lambda ~ regime + stakes + costs + region_txt + (1|treat_group),
 
   controls ~ white + male + hawk + intl +
     dem + rep + age + ed4,
