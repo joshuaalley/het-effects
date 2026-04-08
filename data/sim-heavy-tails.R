@@ -28,9 +28,10 @@ draw_group_effects <- function(n_groups, mu, sigma, df) {
   } else {
     # t distribution scaled to match mean and variance
     # var of t(df) = df/(df-2), so scale by sigma / sqrt(df/(df-2))
-    raw <- rt(n_groups, df = df)
-    scale_factor <- sigma / sqrt(df / (df - 2))
-    mu + raw * scale_factor
+    #raw <- rt(n_groups, df = df)
+    #scale_factor <- sigma / sqrt(df / (df - 2))
+    #mu + raw # * scale_factor
+    rstudent_t(n = n_groups, df = df, mu = mu, sigma = sigma)
   }
 }
 
@@ -195,21 +196,19 @@ rmse_long <- summary_all %>%
     scenario = factor(scenario, levels = c("Normal", "t(5)", "t(3)"))
   )
 
-ggplot(rmse_long, aes(x = scenario, y = rmse,
+ht_rmse <- ggplot(rmse_long, aes(x = scenario, y = rmse,
                        color = model, group = model)) +
   geom_point(size = 3) +
   geom_line() +
   scale_color_grey(start = 0.5, end = 0.1) +
   labs(
-    title = "RMSE by Group Effect Distribution",
-    subtitle = paste0(n_groups, " groups, n = ", n),
-    x = "Group Effect Distribution",
+    title = "RMSE by Distribution",
+    x = "Effect Distribution",
     y = "RMSE",
     color = "Model"
   ) +
   theme(legend.position = "bottom")
-ggsave("figures/sim-heavy-tails-rmse.png", height = 6, width = 8)
-
+ht_rmse
 
 # scatter: true vs estimated by distribution
 group_long <- group_all %>%
@@ -228,7 +227,7 @@ group_long <- group_all %>%
     scenario = factor(scenario, levels = c("Normal", "t(5)", "t(3)"))
   )
 
-ggplot(group_long, aes(x = tau, y = estimate)) +
+ht_scatter <- ggplot(group_long, aes(x = tau, y = estimate)) +
   facet_grid(model ~ scenario) +
   geom_abline(slope = 1, intercept = 0, linetype = "dashed") +
   geom_point(aes(shape = outlier), alpha = 0.6) +
@@ -236,13 +235,15 @@ ggplot(group_long, aes(x = tau, y = estimate)) +
                      labels = c("Regular", "Outlier"),
                      name = "Group Type") +
   labs(
-    title = "Estimated vs. True Effects by Distribution",
-    subtitle = paste0(n_groups, " groups, n = ", n),
+    title = "Estimated vs. True Effects",
     x = "True",
     y = "Estimated"
   ) +
   theme(legend.position = "bottom")
-ggsave("figures/sim-heavy-tails-scatter.png", height = 6, width = 8)
+
+ht_rmse + ht_scatter + plot_annotation(title = "Student-T vs Normal Effect Distributions",     
+                                       subtitle = paste0(n_groups, " groups, n = ", n),)
+ggsave("figures/sim-heavy-tails.png", height = 6, width = 8)
 
 
 # bias by outlier status across distributions
@@ -277,4 +278,3 @@ ggplot(bias_summary, aes(x = abs(tau - mu_tau), y = abs(bias),
     color = "Model"
   ) +
   theme(legend.position = "bottom")
-ggsave("figures/sim-heavy-tails-bias.png", height = 6, width = 8)
