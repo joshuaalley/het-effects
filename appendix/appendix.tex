@@ -148,6 +148,13 @@ y_i &= \beta_1 z_{i1} + \beta_2 z_{i2} + \beta_3 z_{i3} + \tau_{g[i]} T_i + \eps
 
 I also fix the control coefficients $\boldsymbol{\beta} = (0.4, -0.3, 0.25)$.
 
+The third simulation replaces the group treatment effects draw with a student-t distribution, using either 3 or 5 degrees of freedom. 
+
+\begin{align*}
+\tau_g &\sim \mbox{Student T}(df, \mu_\tau, \sigma_\tau) \quad \text{where } df = (3, 5), \mu_\tau = 0.2, \sigma_\tau = 0.3
+\end{align*}
+
+
 \subsection{Unequal Group Size Simulation}
 
 The second simulation uses the same data generating process but fixes $k = 6$ (64 groups) and varies the probability parameter for the grouping variables.
