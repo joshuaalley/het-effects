@@ -241,6 +241,83 @@ $\sigma_\theta$ (group SD) & half-$N(0, 1)$ \\
 
 \newpage
 
+\subsection{Who Responds to Alliances?}
+
+
+To further explore the potential application of hierarchical models, this section examines how demographic factors modify the impact of alliances.
+I used party, news interest, race, and gender to modify the impact of alliances.
+I selected these variables because Tomz and Weeks examine party and news interest as potential modifiers, but gender \citep{Barnhartetal2020} and race are also salient modifiers.
+I control for other experimental manipulations, age and education.
+Age and education are important group-level controls because they are group-level variables that are correlated across party, race and gender.
+Following TW's OLS analysis, I use a Gaussian likelihood, although the outcome is a binary variable. 
+
+
+The resulting hierarchical model thus encompasses four subgroup comparisons in TW's appendix while adding two more modifiers.
+All of the comparisons in the hierarchical model would require at least six pairwise interaction models. 
+What TW present in four figures, I show with two.
+
+
+
+To start, I present the two regressions from the hierarchical model. 
+\autoref{fig:tw-het-source} plots how different variables shape either the impact of an alliance or support for intervention. 
+One facet of this figure gives the coefficient estimates from the model of heterogeneity, and a second gives the control estimates. 
+
+
+
+\begin{figure}[htpb]
+	\centering
+		\includegraphics[width=0.95\textwidth]{../figures/tw-treat-het-source.png}
+	\caption{Regression coefficients from a hierarchical model of how an alliance shapes public support for military intervention. The left facet reports predictors of group alliance effects, and the right facet the control variables in the equation with the alliance treatment. Points give the posterior median and error bars the 95\% credible interval.}
+	\label{fig:tw-het-source}
+\end{figure}
+
+
+High news interest is the strongest predictor of how alliances impact support for war. 
+Respondents with high news interest respond to alliances by .15 more than others in this survey, and that relationship could be as small as .05 or as large as .22.
+This differs from TW's conclusion that respondents with high and low news interest respond in roughly the same way, likely because the hierarchical model accounts for other factors that are correlated with news interest.
+
+
+Other demographic predictors do not differentiate responses to alliances as clearly. 
+The impact of alliances may be somewhat greater for white and male respondents, but those differences are not clearly different from zero as the 95\% credible intervals include zero and small negative values.
+Similarly, Republicans and Democrats are not all that different from independents in how they respond to alliances.
+This matches TW's conclusion that partisanship does not create substantial differences in alliance effects.
+The intercept in this equation is theoretically meaningful, as it captures the impact of alliances when all the modifiers are zero. 
+For independent, non-white women with low news interest, alliances increase support for force by roughly .15. 
+
+
+The control equation suggests that high stakes, high costs, and partner democracy all increase support for intervention.
+Region is less consequential, as neither Asia, Eastern Europe nor Africa is clearly different from the reference category of Latin America.
+Because neither education nor age are equal to zero, the intercept is not directly interpretable.
+
+
+\begin{figure}[htpb]
+	\centering
+		\includegraphics[width=0.95\textwidth]{../figures/tw-treat-het-joint.png}
+	\caption{Estimated impact of alliance on support for military intervention in different subgroups of respondents. Text gives the exact posterior median estimate.}
+	\label{fig:tw-treat-het-joint}
+\end{figure}
+
+
+
+While it is possible to construct a rough profile of who responds most to alliances using the estimates in \autoref{fig:tw-het-source}, I provide a more precise summary in \autoref{fig:tw-treat-het-joint}. 
+This figure plots the median estimate in each group of respondents, after grouping respondents based on race, gender, news interest and partisanship.
+The median depends on the regression coefficients in \autoref{fig:tw-het-source}, with additional noise from the partial pooling components.
+There are 24 unique estimates, all of which are clearly greater than zero. 
+Alliances thus increase support for using force among all demographic groups, but the magnitude of the effect varies. 
+
+
+Alliances most impact white Republican men with high interest in the news. 
+In this group, the impact of alliances is .5, because this group was skeptical of intervention without an alliance rationale. 
+The gap between high and low news interest in the other demographic groups is .15, which matches the coefficient in the heterogeneity equation.
+
+
+The weakest impact of alliances appears for non-white, politically independent women with low news interest.
+Here, alliances increase support for force by 13\%. 
+White respondents respond by 8\% more, Democrats by 4\% more, and Republicans by 10\%. 
+The accumulation of these different effects create substantial gaps between the groups.
+
+
+
 \section{Bush and Prather Reanalysis}
 
 
