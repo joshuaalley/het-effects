@@ -14,6 +14,8 @@ library(conflicted)
 library(Matrix)
 library(patchwork)
 library(dataverse)
+library(future.apply)
+library(lme4)
 
 
 # set ggplot theme

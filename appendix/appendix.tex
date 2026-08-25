@@ -45,82 +45,63 @@
 
 \section{Replication Analysis Details}
 
+To produce Figure 1, I downloaded every replication archive on the Harvard Dataverse for papers in the \textit{American Political Science Review}, \textit{American Journal of Political Science}, and \textit{Journal of Politics}, yielding 1,830 archives.
+Coverage runs from 2012 to 2024; deposits for 2025 and 2026 remain incomplete.
+Each paper is dated by its year of publication, taken from the Dataverse citation string, rather than by the year its archive was deposited.
+The distinction matters more than it appears: journals adopted deposit mandates around 2015, so older articles were archived retroactively, and dating by deposit places only one paper in 2012 and 274 in 2015 against true counts of 17 and 120.
 
-To produce Figure 1 in the manuscript, I downloaded all replication files from the Harvard Dataverse for papers in the\textit{American Political Science Review}, \textit{American Journal of Political Science}, and \textit{Journal of Politics}.
-The analysis covers from 2010 to 2024 because of lags in replication data upload and approval for 2025 and 2026. 
-This also means that the analysis covers the year the replication data was uploaded, not the year of publication.
-This is important because publication often lags acceptance by a year. 
+Within each archive I read every file of author-written analysis code, meaning scripts in \textsf{R}, Stata, Python, Stan, and JAGS.
+This excludes \texttt{.ado} files, which are third-party Stata packages rather than the author's analysis; their help text contains the same syntax the analysis looks for.
+The 1,830 archives contain 12,179 such files.
 
+\subsection{Classification}
 
-I then identified code files in the replication materials, downloading scripts in R, Stata, Python and other coding languages. 
-Within those files, I used regular expressions to identify models with an interaction, uses of associated tools such as marginal effects or STATA's margins command, and machine-learning tools for heterogeneous effects. 
-I also parsed comments.
-The two lists below summarize regular expressions for interactions and machine-learning. 
+Rather than match patterns, I gave each file in full to an open-weight language model and asked whether the analysis estimates an effect that varies across units, subgroups, or contexts.
+The model returns a structured judgment, the methods it identifies, and verbatim lines of code as evidence.
+Files longer than the context window are split into overlapping chunks and judged separately; a paper counts as estimating heterogeneous effects if any of its files does.
 
+Pattern matching was inadequate for this task in a way worth stating, because it bears on the trend rather than only the level.
+Regular expressions key on the syntax of an interaction, and that syntax changed over the period.
+Stata's factor-variable notation arrived in version 11 and displaced hand-constructed product variables only gradually, so a script from 2012 is far more likely to write \texttt{gen treatXpost = treat*post} and enter the result as an ordinary regressor.
+A pattern-matching classifier misses those, and misses them disproportionately in early years.
+Scoring the same corpus both ways, the two approaches agree almost exactly on recent papers and diverge sharply on old ones: over 2020 to 2024 both flag 67\% of papers, while over 2012 to 2015 pattern matching flags 35\% against the classifier's 58\%.
+Most of the upward trend a pattern-matching measure reports is therefore a change in how interactions are written rather than in how often they are estimated.
 
-\subsection*{Interaction Patterns}                                                                                                                         
-  \begin{itemize}
-      \item \texttt{(lm|glm|felm|feols|plm|ivreg)\textbackslash s*\textbackslash([{\textasciicircum})]* \textasciitilde[{\textasciicircum})]*[*:]}                 \item \texttt{feols?\textbackslash s*\textbackslash([{\textasciicircum})]*\textbackslash|}
-      \item \texttt{[ci]\textbackslash.\textbackslash w+\#}                                                                                                  
-      \item \texttt{\textbackslash w+\#\#\textbackslash w+}
-      \item \texttt{dydx\textbackslash s*\textbackslash(}
-      \item \texttt{margins\textbackslash s*,.*at\textbackslash s*\textbackslash(}
-      \item \texttt{marginaleffects|slopes\textbackslash s*\textbackslash(|comparisons\textbackslash s*\textbackslash(}
-      \item \texttt{heterogen(eous|eity)\textbackslash s*(effect|treatment)?}
-      \item \texttt{conditional\textbackslash s*(average)?\textbackslash s*(treatment)?\textbackslash s*effect}
-      \item \texttt{subgroup\textbackslash s*analysis|stratified\textbackslash s*analysis}
-      \item \texttt{moderat(ion|ing|or)\textbackslash s*(effect|analysis|variable)?}
-      \item \texttt{interaction\textbackslash s*(effect|term|model)}
-      \item \texttt{interplot|interact\_plot|marginsplot|coefplot.*\#}
-  \end{itemize}
+I use \texttt{openai/gpt-oss-120b}, served through DeepInfra at temperature zero.
+The prompt, the full text of every request, and every raw model response are archived in the replication materials, so the classification can be verified without re-running inference, and the weights are public so it can be re-run.
 
-\subsection*{ML Heterogeneity Patterns}
-  \begin{itemize}
-      \item \texttt{causal\_forest\textbackslash s*\textbackslash(}
-      \item \texttt{library\textbackslash s*\textbackslash(\textbackslash s*grf\textbackslash s*\textbackslash)|require\textbackslash
-  s*\textbackslash(\textbackslash s*grf\textbackslash s*\textbackslash)}
-      \item \texttt{average\_treatment\_effect|predict.*causal\_forest}
-      \item \texttt{bartc\textbackslash s*\textbackslash(|library\textbackslash s*\textbackslash(\textbackslash s*bartCause\textbackslash s*\textbackslash)} 
-      \item \texttt{bcf\textbackslash s*\textbackslash(|library\textbackslash s*\textbackslash(\textbackslash s*bcf\textbackslash s*\textbackslash)}
-      \item \texttt{\textbackslash bCATE\textbackslash b|conditional\textbackslash s+average\textbackslash s+treatment\textbackslash s+effect}
-      \item \texttt{\textbackslash bITE\textbackslash b|individual(ized)?\textbackslash s+treatment\textbackslash s+effect}
-      \item \texttt{(causal|treatment)\textbackslash s*(forest|tree|learning)}
-      \item \texttt{DoubleML|double.*machine.*learning|dml\_}
-      \item \texttt{[STXR][-\_]?learner|metalearner}
-  \end{itemize}
+\subsection{Validation}
 
-%  \subsection*{Hierarchical Model Patterns}
-%  \begin{itemize}
-%      \item \texttt{lmer\textbackslash s*\textbackslash(|glmer\textbackslash s*\textbackslash(}
-%      \item \texttt{brm\textbackslash s*\textbackslash(|brms::}
-%      \item \texttt{stan\_lmer|stan\_glmer|stan\_glm\textbackslash s*\textbackslash(}
-%      \item \texttt{\textbackslash([{\textasciicircum}|]+\textbackslash+[{\textasciicircum}|]+\textbackslash|}
-%      \item \texttt{\textbackslash|\textbackslash|}
-%      \item \texttt{\textbackslash.stan\$|\textbackslash.jags\$|stan\_code|stan\_model|rstan::}
-%      \item \texttt{mixed\textbackslash s+|xtmixed|meglm|melogit|xtmelogit}
-%      \item \texttt{\textbackslash|\textbackslash|\textbackslash s*\textbackslash w+:}
-%      \item \texttt{partial\textbackslash s*pool|shrinkage|borrow.*strength}
-%      \item \texttt{varying\textbackslash s*(slope|effect|coefficient|intercept)}
-%      \item \texttt{random\textbackslash s*(slope|effect|coefficient)}
-%      \item \texttt{multilevel|multi-level|hierarchical\textbackslash s*(model|linear|regression)}
-%      \item \texttt{posterior.*effect|effect.*posterior|credible.*interval}
-%  \end{itemize}
+I hand-adjudicated a stratified random sample of 100 file-chunks, drawn blind: the sample was shuffled and the model's judgment hidden until each item was answered.
+Each item displayed the relevant code with four lines of context on either side.
+Weighting back to the stratum populations, precision for the measure reported in Figure 1 is above 90\%.
+
+Two limits deserve statement.
+First, recall is not identified by this design.
+Estimating it requires knowing how often the classifier misses a heterogeneous effect entirely, and over half the corpus falls in the stratum where nothing was flagged and there is consequently nothing to check without reading whole files.
+Figure 1 is therefore a lower bound.
+Second, I do not count subgroup analysis conducted by splitting the sample and fitting the same model separately, though that estimator is algebraically identical to a fully crossed interaction for the group-specific point estimates.
+Counting it would raise the 2024 share from 65\% to roughly 86\%.
+I exclude it because it is the least reliably measured category: agreement between two independently prompted models on subgroup splitting was $\kappa = 0.49$, against 0.92 for the measure reported here.
 
 
 \section{Simulation Data Generating Process}
 
-This section summarizes the data generating process for the simulations in the main text.
-Both simulations fix the sample size at $n = 2000$ and vary the number of groups, with different numbers of observations in each group.
+This section summarizes the data generating processes for the simulations in the main text.
+All of them share one structure and differ only in two places: the probabilities used to assign the grouping variables, which control how uneven the groups are, and the distribution from which the true group treatment effects are drawn.
+Every condition fixes the sample size at $n = 2000$ and varies the number of groups.
 
-\subsection{Equal Group Size Simulation}
+\subsection{Common Structure}
 
-For the first simulation, I generate $k$ binary grouping variables, where $k \in \{3, 4, 5, 6, 7\}$:
+I generate $k$ binary grouping variables, where $k \in \{3, 4, 5, 6, 7\}$:
 \begin{align*}
-x_{ij} &\sim \text{Bernoulli}(0.5) \quad \text{for } j = 1, \ldots, k
+x_{ij} &\sim \text{Bernoulli}(p_j) \quad \text{for } j = 1, \ldots, k
 \end{align*}
 
 The simulation defines the groups by unique combinations of these variables, producing $2^k$ groups.
 With three modifiers, there are 8 groups, while 7 modifiers produces 128 groups.
+Most processes set $p_j = 0.5$ for all $j$, which makes the groups equal in expectation.
+The two unbalanced processes instead space the probabilities evenly over $[0.35, 0.65]$; with $k = 7$ this is already severe, giving expected cell sizes that run from roughly one observation to roughly one hundred.
 
 
 The treatment indicator is randomly assigned, also with a bernoulli draw:
@@ -135,11 +116,6 @@ z_{i2} &\sim \text{Bernoulli}(0.5) \\
 z_{i3} &\sim N(0, 1)
 \end{align*}
 
-True group-specific treatment effects are drawn from a normal distribution with mean $\mu_\tau$ and variance $\sigma_\tau$, both of which are fixed:
-\begin{align*}
-\tau_g &\sim N(\mu_\tau, \sigma_\tau) \quad \text{where } \mu_\tau = 0.2, \sigma_\tau = 0.3
-\end{align*}
-
 The outcome is then generated as:
 \begin{align*}
 y_i &= \beta_1 z_{i1} + \beta_2 z_{i2} + \beta_3 z_{i3} + \tau_{g[i]} T_i + \epsilon_i \\
@@ -147,29 +123,58 @@ y_i &= \beta_1 z_{i1} + \beta_2 z_{i2} + \beta_3 z_{i3} + \tau_{g[i]} T_i + \eps
 \end{align*}
 
 I also fix the control coefficients $\boldsymbol{\beta} = (0.4, -0.3, 0.25)$.
+Throughout, $\mu_\tau = 0.2$ and $\sigma_\tau = 0.3$, and each process is scaled so that the marginal standard deviation of the group effects stays near $\sigma_\tau$.
+Holding that constant keeps root mean squared error comparable across processes.
 
-The third simulation replaces the group treatment effects draw with a student-t distribution, using either 3 or 5 degrees of freedom. 
+\subsection{The Eight Data Generating Processes}
 
+Table \ref{tab:dgps} lists them.
+Let $\mathbf{Z}_g$ collect the modifier values for group $g$, and let
 \begin{align*}
-\tau_g &\sim \mbox{Student T}(df, \mu_\tau, \sigma_\tau) \quad \text{where } df = (3, 5), \mu_\tau = 0.2, \sigma_\tau = 0.3
+\boldsymbol{\gamma} &= (0.20,\, -0.15,\, 0.12,\, -0.10,\, 0.08,\, -0.06,\, 0.05)
 \end{align*}
+truncated to the first $k$ entries.
+Where a systematic component $\mathbf{Z}_g\boldsymbol{\gamma}^*$ appears it is centered and rescaled to the standard deviation shown.
 
+\begin{table}[htbp]
+\centering
+\small
+\begin{tabular}{>{\raggedright\arraybackslash}p{2.4cm}>{\centering\arraybackslash}p{1.9cm}>{\raggedright\arraybackslash}p{8.0cm}}
+\hline
+Process & $p_j$ & Group treatment effects \\
+\hline
+Normal & $0.5$ & $\tau_g \sim N(\mu_\tau, \sigma_\tau)$ \\
+Systematic + deviation & $0.5$ & $\tau_g = \mu_\tau + \mathbf{Z}_g\boldsymbol{\gamma}^* + \nu_g$, with $\mathbf{Z}_g\boldsymbol{\gamma}^*$ scaled to SD $\sigma_\tau/\sqrt{2}$ and $\nu_g \sim N(0, \sigma_\tau/\sqrt{2})$ \\
+Sparse & $0.5$ & $\tau_g = \mu_\tau + d_g \nu_g$, where $d_g \sim \text{Bernoulli}(0.15)$ and $\nu_g \sim N(0, \sigma_\tau/\sqrt{0.15})$: most groups share one common effect and a minority genuinely differ \\
+Bimodal & $0.5$ & $\tau_g = \mu_\tau \pm 0.3 + \nu_g$, sign drawn Bernoulli(0.5), $\nu_g \sim N(0, 0.1)$: two clusters, with little mass at the grand mean \\
+Student-$t$ & $0.5$ & $\tau_g = \mu_\tau + \sigma_\tau \, t_3 / \sqrt{3}$: heavy tails, so genuine outlier groups exist \\
+Unequal group sizes & $[0.35, 0.65]$ & $\tau_g \sim N(\mu_\tau, \sigma_\tau)$: effects as in the normal case, but groups differ enormously in size \\
+Unequal sizes, effects correlated with size & $[0.35, 0.65]$ & $\tau_g = \mu_\tau + \sigma_\tau(0.8 z_g + \sqrt{1 - 0.8^2}\,\nu_g)$, where $z_g$ is the standardized log expected size of group $g$: the groups with the most data pull the grand mean toward themselves \\
+Exactly additive & $0.5$ & $\tau_g = \mu_\tau + \mathbf{Z}_g\boldsymbol{\gamma}^*$ scaled to SD $\sigma_\tau$, with \emph{no} idiosyncratic component \\
+\hline
+\end{tabular}
+\caption{Data generating processes. All share the common structure above and differ only in the assignment probabilities and the distribution of the group treatment effects.}
+\label{tab:dgps}
+\end{table}
 
-\subsection{Unequal Group Size Simulation}
+The last process deserves comment, because it is the one designed against the hierarchical model.
+In every other process the group effects contain an idiosyncratic component that an additive interaction model cannot represent by construction, which is a comparison the hierarchical model cannot lose.
+Under the exactly additive process the additive model is correctly specified, and the hierarchical model is paying to estimate a group variance that is genuinely zero.
+It does lose there, by roughly three percent of root mean squared error.
+That is the scope condition: partial pooling costs little when it is unnecessary and gains substantially when it is not.
 
-The second simulation uses the same data generating process but fixes $k = 6$ (64 groups) and varies the probability parameter for the grouping variables.
-Rather than fixing all probabilities at 0.5, I vary them symmetrically across groups to create imbalanced group sizes.
-I consider four scenarios: 
+\subsection{Replication and Estimation}
 
-\begin{enumerate}
-\item Balanced (all probabilities at 0.5)
-\item Mild imbalance (0.35, 0.4, 0.5, 0.5, 0.6, 0.65) 
-\item moderate imbalance (0.25, 0.35, 0.5, 0.5, 0.65, 0.7)
-\item Strong imbalance (0.2, 0.3, 0.5, 0.5, 0.675, 0.75)
-\end{enumerate}
+Each condition uses 200 Monte Carlo replications, and the shaded bands in the figures give 95\% Monte Carlo intervals computed from the spread of per-replication root mean squared error.
+Seeds are a deterministic function of the process, the number of modifiers, and the replication index, so any single condition can be reproduced in isolation.
 
-
-At maximum imbalance, some groups may have as few as one observation while others are much larger. I set the simulation so that all groups have at least one observation.
+Accuracy and errors of inference come from different estimators, for a reason worth stating.
+Root mean squared error requires no standard error, so it is computed over all 200 replications using restricted maximum likelihood, which is fast enough to make that many replications affordable.
+Restricted maximum likelihood corresponds to no prior at all and therefore regularizes less than any half-$t$ or half-normal prior, so it is a conservative stand-in: where the additive model loses to it, the additive model loses to the Bayesian model by more.
+Sign and exaggeration errors, however, depend on which estimates are declared distinguishable from zero, and the mixed model has no convenient interval for a group treatment effect.
+The prediction error is $\mathbf{x}_g'(\hat{\boldsymbol{\beta}} - \boldsymbol{\beta}) + (\hat{\theta}_g - \theta_g)$, and the covariance between those two terms is strongly negative, because the varying slope absorbs error in the fixed part.
+Adding the two variances yields intervals covering 0.99 against a nominal 0.95, while the conditional variance alone covers 0.84.
+Those quantities are therefore computed from posterior intervals, whose coverage across these processes measures between 0.94 and 0.97.
 
 \newpage
 
