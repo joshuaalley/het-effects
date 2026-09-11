@@ -16,6 +16,7 @@ library(patchwork)
 library(dataverse)
 library(future.apply)
 library(lme4)
+library(jsonlite)
 
 
 # set ggplot theme

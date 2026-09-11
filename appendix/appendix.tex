@@ -178,6 +178,125 @@ Those quantities are therefore computed from posterior intervals, whose coverage
 
 \newpage
 
+\section{Comparison with Regularized Machine Learning}
+
+Beating an unregularized saturated interaction establishes little, since almost any form of shrinkage would do the same.
+The informative question is how partial pooling compares to the other ways of regularizing an estimate of effect heterogeneity, and in particular to the machine learning estimators this paper describes as the alternative.
+This section races the hierarchical model against three of them: the LASSO applied to the saturated interaction expansion \citep{RatkovicTingley2017, BlackwellOlson2022}, a causal forest \citep{WagerAthey2018}, and Bayesian additive regression trees \citep{Dorieetal2022}.
+
+All four estimators recover the same quantity, the treatment effect in each of the $2^k$ groups, so the comparison is on one estimand.
+The LASSO is fit over the full interaction basis and penalized by cross-validation; the forest and the trees estimate an effect for each observation, which is averaged within group.
+The data generating processes are those in the previous section, and each condition uses 50 Monte Carlo replications rather than the 200 used elsewhere, because a forest or a set of regression trees takes several orders of magnitude longer to fit than a mixed model.
+
+\begin{figure}[htpb]
+	\centering
+		\includegraphics[width=0.95\textwidth]{../figures/sim-ml-comp.png}
+	\caption{Accuracy of group treatment effect estimates under partial pooling and three regularized alternatives. Bands give 95\% Monte Carlo intervals.}
+	\label{fig:sim-ml-comp}
+\end{figure}
+
+\autoref{fig:sim-ml-comp} shows the result.
+The three regularized estimators behave much alike, and all three are far more accurate than the fully crossed model: with 128 groups under the normal process, root mean squared error is 0.30 for the LASSO, 0.30 for the forest and 0.30 for the trees, against 0.55 for saturated ordinary least squares.
+That similarity is the useful part of the comparison, because it says the fully crossed model's poor showing reflects the absence of regularization rather than anything specific to it.
+
+The hierarchical model is more accurate than all three in every condition, at 0.26 under the same setting.
+Paired within replication, the differences run from 0.007 to 0.098 and exclude zero in all but three of the forty-eight comparisons.
+The LASSO is the closest competitor throughout, which is what one would expect: penalizing the interaction basis and pooling group deviations are two ways of doing the same thing, one shrinking departures to zero and the other shrinking them toward the mean.
+The causal forest is consistently the least accurate of the three.
+
+Two qualifications matter.
+First, the advantage disappears when heterogeneity is sparse and groups are few: with eight groups under the sparse process, the difference from Bayesian additive regression trees is 0.012 with an interval spanning zero, and the hierarchical model is the more accurate estimator in only 48\% of replications.
+Second, and more important, this comparison is run on terms that suit the hierarchical model.
+The modifiers are known in advance, binary, and the grouping is given.
+Forests and regression trees are built to discover heterogeneity in high dimensional and continuous covariates, and they are not being asked to do that here.
+The claim this section supports is therefore narrow: when a researcher already knows which modifiers matter and wants effects for interpretable groups, partial pooling estimates them more accurately than a generic regularizer.
+Where the modifiers are unknown, the discovery problem is real and these methods are built for it.
+
+The exception noted in the previous section survives this comparison and is worth restating precisely.
+Under the process where the group effects are exactly additive in the modifiers, an additive interaction model is correctly specified and beats the hierarchical model, though only by about three percent of root mean squared error.
+None of the machine learning estimators does: with 128 groups the hierarchical model is more accurate than the trees by 0.027, the LASSO by 0.044, and the forest by 0.088.
+The scope condition is therefore specific rather than general.
+It is not that regularization of any kind does better when the additive model is right; it is that the correctly specified parametric model does.
+
+
+
+ewpage
+
+\section{Continuous Modifiers and the Cost of Binning}
+
+Grouping observations on a continuous modifier requires choosing how many bins to use and where to place the cuts.
+Both are researcher degrees of freedom of exactly the kind this paper argues interaction models leave open, so it is fair to ask what they cost.
+
+Measuring that requires a change of estimand.
+With binary modifiers there is a finite set of groups, each with a true effect, and accuracy can be measured against those.
+A continuous modifier has no groups until the analyst makes them, and every binning scheme induces a different set of true group effects, so comparing schemes against their own induced targets is circular.
+Accuracy is therefore measured against the true conditional effect at each respondent, $\tau(x_i)$, which does not depend on how the bins are drawn.
+
+The simulation draws $x \sim \text{Uniform}(0,1)$ with $n = 2000$, and generates the outcome as in the previous sections.
+Three shapes for $\tau(x)$ are used: linear, a logistic curve, and a step function that jumps at $x = 0.5$.
+Cuts are placed at equal widths, at quantiles of $x$, or at quantiles of the true effect.
+That last rule is infeasible in practice and is included only as an upper bound on what better guidance could buy.
+Five estimators are compared: saturated least squares on the bins, partial pooling across bins treated as exchangeable, partial pooling that respects the ordering of the bins through a penalized spline on the bin index, and two estimators that never bin at all, one interacting the treatment with $x$ linearly and one fitting a smooth varying slope.
+Each condition uses 100 Monte Carlo replications.
+
+\begin{figure}[htpb]
+	\centering
+		\includegraphics[width=0.95\textwidth]{../figures/sim-binning-comp.png}
+	\caption{Accuracy against the true conditional effect under different binning schemes. The estimators that never bin do not vary with the number of bins and are repeated across each panel as a benchmark.}
+	\label{fig:sim-binning}
+\end{figure}
+
+Three findings follow, and they point in different directions.
+
+\subsection{Where the Effect Varies Smoothly, Do Not Bin}
+
+When $\tau(x)$ is linear or logistic, an estimator that keeps $x$ continuous is more accurate than any binning of it, at any number of bins.
+Root mean squared error for the smooth varying slope is 0.064 under the linear process and 0.075 under the logistic one.
+The best binned estimator reaches 0.069 and 0.078 respectively, and only at eight bins.
+The gap is not large, but it never closes, and it should not be surprising: binning replaces a smooth function with a step function and throws away the ordering of the bins in the process.
+
+The practical implication is a scope condition rather than a defect.
+Grouping is worth its cost when the modifiers are genuinely categorical, or when the analyst wants effects reported for interpretable groups rather than a curve.
+When the modifier is continuous and the grouping is not itself of interest, a varying slope on a smooth term is the better tool, and the paper should not be read as recommending otherwise.
+
+\subsection{Partial Pooling Buys More Bins Than Least Squares Can Afford}
+
+The comparison between the two binned estimators is more useful than the comparison to the continuous ones, because it isolates what pooling does.
+Under the linear process with quantile cuts, saturated least squares is most accurate at four bins (0.095) and then deteriorates, reaching 0.124 at eight bins as the cells empty out.
+The hierarchical model improves monotonically over the same range, from 0.109 at two bins to 0.069 at eight.
+
+This is the argument of the paper restated in the units an applied researcher actually chooses.
+Finer bins reduce the approximation error and shrink the cells, and which of those dominates depends on whether the estimator can survive small cells.
+Least squares cannot and so is forced into coarse bins that misrepresent the function; partial pooling can, and so can afford the resolution.
+
+\subsection{Where the Cuts Fall Matters More Than How Many There Are}
+
+The threshold process makes the point that should most concern anyone worried about researcher degrees of freedom.
+The true effect jumps at $x = 0.5$, so a cut point at 0.5 represents it perfectly and any other placement cannot.
+With equal-width cuts the accuracy of the hierarchical model oscillates with the number of bins: 0.062 at two bins, 0.187 at three, 0.078 at four, 0.160 at five, and 0.096 at eight.
+Even numbers of bins place a boundary at 0.5 and odd numbers do not.
+
+Moving from two bins to three, a change most analysts would regard as innocuous, triples the error.
+No amount of additional resolution repairs a misplaced boundary, and nothing in the fitted model signals that anything is wrong.
+This is the strongest argument in the paper for pre-registering a grouping scheme, and for reporting results under more than one.
+
+\subsection{Ordering the Bins Does Not Help}
+
+Treating the bins as exchangeable discards information: bins 1 and 5 are pulled toward the grand mean as strongly as bins 1 and 2 are pulled toward each other, when adjacent bins should be more alike.
+The obvious remedy is a smoothing prior over the ordered bin index, and it does not work.
+
+Under the linear and logistic processes the difference between the exchangeable and ordered versions is at most 0.002 in either direction, which is nothing.
+Under the threshold process the ordered version is clearly worse, by 0.011 to 0.039 depending on the number of bins and the cut rule.
+The reason is the same one that makes the threshold case hard: smoothing across bins is a prior belief that the effect varies gradually, and when the truth is a discontinuity that belief is wrong in exactly the place it matters.
+
+The recommendation is therefore conditional rather than general.
+Where a modifier is expected to shift the effect gradually, smoothing across ordered bins is defensible and costs little either way.
+Where a discontinuity is plausible, exchangeable pooling is the safer default, because it imposes no belief about which bins should resemble which.
+
+
+
+ewpage
+
 \section{Tomz and Weeks Reanalysis}
 
 This section summarizes the hierarchical models of \citet{TomzWeeks2021} and details the underlying \textsf{R} code.

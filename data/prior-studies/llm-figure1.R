@@ -15,9 +15,6 @@
 # The first is a claim about breadth, the second about proliferation, and they
 # answer different halves of the motivating argument.
 
-library(jsonlite)
-library(stringr)
-
 ROOT <- "data/prior-studies"
 OUT <- "figures/het-effects-prev.png"
 
@@ -239,28 +236,33 @@ pa <- prev %>%
   scale_y_continuous(labels = scales::percent, limits = c(0, NA)) +
   scale_x_continuous(breaks = seq(min(YEARS), max(YEARS), 2),
                      limits = range(YEARS) + c(-0.6, 0.6)) +
-  labs(x = NULL, y = "Share of papers", linetype = NULL, shape = NULL,
-       title = "How often, and how many at once") +
+  labs(x = NULL, y = "Share of papers", linetype = NULL, shape = NULL) +
   theme(legend.position = "bottom")
+pa
+
+# ML het is usually
+prev %>%
+  pivot_longer(c(any_het, ml), names_to = "measure", values_to = "share") %>% 
+  select(measure, share) %>%
+  print(share)
 
 pb <- counts %>%
   ggplot(aes(x = year, y = n_pairs, group = year)) +
-  geom_boxplot(outlier.size = 0.6, outlier.alpha = 0.35, fill = "grey92",
-               width = 0.7) +
+  geom_boxplot(outlier.shape = NA) +
   coord_cartesian(ylim = c(0, quantile(counts$n_pairs, .95))) +
   scale_x_continuous(breaks = seq(min(YEARS), max(YEARS), 2),
                      limits = range(YEARS) + c(-0.6, 0.6)) +
   labs(x = "Year of Publication",
        y = "Distinct interactions\nper paper")
 
-p <- pa / pb + patchwork::plot_layout(heights = c(1.15, 1)) +
+p_inter <- pa / pb + patchwork::plot_layout(heights = c(1.15, 1)) +
   patchwork::plot_annotation(
+    title = "Heterogeneous Effect Estimation in Leading Journals",
+    subtitle = "2012-2024",
     caption = paste0(
-      "APSR, AJPS and JOP replication archives, ", min(YEARS), "-", max(YEARS),
-      ". Analysis code read and classified by an open-weight language model.\n",
-      "Lower panel covers papers estimating at least one interaction; ",
-      "the vertical axis is trimmed at the 95th percentile."),
+      "Lower panel covers papers estimating at least one interaction and drops outliers from view"),
     theme = theme(plot.caption = element_text(hjust = 0, size = 9)))
+p_inter
 
-ggsave(OUT, p, height = 8, width = 8)
+ggsave(OUT, p_inter, height = 8, width = 8)
 cat("\nwrote", OUT, "\n")

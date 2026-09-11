@@ -38,7 +38,8 @@ DGP_LABS <- c(
   bimodal     = "Bimodal",
   student_t   = "Student-t\n(heavy tails)",
   imbalanced  = "Unequal group sizes",
-  size_corr   = "Unequal sizes, effects\ncorrelated with size"
+  size_corr   = "Unequal sizes, effects\ncorrelated with size",
+  additive_only = "Additive heterogeneity"
 )
 MODEL_LABS <- c(
   ols_sat = "OLS, fully crossed",
@@ -483,12 +484,7 @@ p_shrink <- ggplot(shrink, aes(x = tau, y = est)) +
   labs(
     x = "True group treatment effect",
     y = "Estimated group treatment effect",
-    title = "What partial pooling does to individual group estimates",
-    subtitle = paste(
-      "Dashed line is perfect recovery; the solid line is the fitted slope.",
-      "The fully crossed model scatters\nwidely around the truth, the additive",
-      "model flattens toward a single common answer, and partial\npooling",
-      "trades a little attenuation for a large reduction in scatter.")
+    title = "Illustration of Shrinkage",
   )
 
 p_shrink
@@ -807,3 +803,4 @@ if (RUN_BRMS_CHECK) {
                 .groups = "drop")
   ), row.names = FALSE)
 }
+
