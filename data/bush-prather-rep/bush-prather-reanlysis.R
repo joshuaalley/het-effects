@@ -48,7 +48,10 @@ formula_bp <- bf(
 
   lambda ~ (w2_vote_hill + woman + high_pol_engage + invest_cond) + (1 | het_group),
 
-  controls ~ college_educ + employ_dum + woman + high_pol_engage,
+  # every modifier enters the outcome equation too; otherwise lambda absorbs
+  # baseline differences between Clinton and Trump voters and across conditions
+  controls ~ college_educ + employ_dum + woman + high_pol_engage +
+    w2_vote_hill + invest_cond,
 
   nl = TRUE
 )

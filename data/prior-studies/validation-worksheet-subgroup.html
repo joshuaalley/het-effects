@@ -1,0 +1,1364 @@
+<meta charset="utf-8"><title>Validation worksheet</title>
+<style>
+ body{font:15px/1.5 -apple-system,Segoe UI,sans-serif;max-width:1000px;
+      margin:2rem auto;padding:0 1rem;color:#111}
+ h1{margin-bottom:.2rem} h2{margin-top:2rem}
+ .two{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem}
+ .two ul{padding-left:1.1rem} .two li{margin:.3rem 0}
+ code{background:#f2f2f2;padding:1px 4px;border-radius:3px;font-size:13px}
+ .item{border:1px solid #ddd;border-radius:6px;padding:1rem;margin:1.5rem 0}
+ .hdr{display:flex;justify-content:space-between;align-items:baseline;
+      gap:1rem;flex-wrap:wrap}
+ .meta{color:#666;font-size:13px}
+ pre{background:#fafafa;border:1px solid #eee;border-radius:4px;padding:.6rem;
+     overflow-x:auto;font-size:13px;line-height:1.45;margin:.5rem 0}
+ .hit{background:#fff3bf;display:block}
+ .ln{color:#999;user-select:none}
+ .said{font-size:13px;color:#444;margin:.4rem 0}
+ .q{margin-top:.7rem;font-size:14px}
+ label{margin-right:1rem;cursor:pointer}
+ .done{border-color:#7ab97a;background:#f7fdf7}
+ #bar{position:sticky;top:0;background:#fff;border-bottom:1px solid #ddd;
+      padding:.6rem 0;margin-bottom:1rem;z-index:9}
+ button{font:inherit;padding:.35rem .8rem;cursor:pointer}
+ textarea{width:100%;height:9rem;font-family:monospace;font-size:12px}
+ .warn{color:#a33;font-size:13px;margin-top:.4rem}
+</style>
+<h1>Heterogeneous effects &mdash; hand adjudication</h1>
+<p class="meta">Model labels are hidden until you answer, so the sample reads
+blind. Answers save in this browser as you go.</p>
+
+
+<h2>What counts</h2>
+<p>The question for every item is the same: <b>does this file fit at least one
+model in which the effect of some variable is allowed to differ across units,
+subgroups, or contexts?</b> Judge the code that runs, not comments.</p>
+<div class="two">
+<div><h3>Counts</h3><ul>
+<li><code>y ~ x*z</code>, <code>x:z</code> &mdash; product term in a formula</li>
+<li>Stata <code>c.x#c.z</code>, <code>i.x#i.z</code>, <code>x##z</code></li>
+<li><code>gen xz = x*z</code> then <code>reg y xz x z</code> &mdash; an
+    interaction built by hand</li>
+<li>The same model fit on two or more contrasting subsets to compare the
+    effect: <code>reg y x if female==1</code> <i>and</i>
+    <code>reg y x if female==0</code></li>
+<li>Varying <b>slope</b>: <code>(1 + x | group)</code>,
+    <code>(0 + x | group)</code>, Stata <code>|| g: x</code></li>
+<li>Causal forest, <code>bartc</code>, <code>bcf</code>, meta-learners</li>
+</ul></div>
+<div><h3>Does not count</h3><ul>
+<li><code>feols(y ~ x | country + year)</code> &mdash; the pipe separates fixed
+    effects; there is no interaction</li>
+<li><code>areg</code>, <code>xtreg</code>, <code>i.country</code> as controls</li>
+<li>Varying <b>intercept</b> only: <code>(1 | group)</code>, Stata
+    <code>|| cntry:</code> with nothing after the colon</li>
+<li>One <code>subset()</code> or <code>if</code> defining the analysis sample,
+    with no comparison across subsets</li>
+<li><code>margins</code> / <code>slopes()</code> on a model with no
+    interaction</li>
+<li>A variable whose <i>name</i> suggests a product but which is never actually
+    constructed as one (e.g. <code>gen foo_x_bar = .</code>)</li>
+<li><code>sum</code>, <code>ttest</code>, <code>merge</code>, data cleaning</li>
+</ul></div></div>
+
+<div id="bar"><b><span id="n">0</span> / 55 answered</b> &nbsp; <button onclick="dump()">Show results</button><div id="warn" class="warn"></div><div id="out"></div></div>
+<div class="item" id="i1">
+<div class="hdr"><b>#1</b><span class="meta">R &middot; tableD4.R &middot; chunk 1/1</span></div>
+<pre>
+<span class="ln">   13</span>  load(&#x27;./data/panel_month_dummies.RData&#x27;)
+
+<span class="ln">   14</span>  
+
+<span class="ln">   15</span>  # Negative binomial model in DiD framework
+
+<span class="ln">   16</span>  # att
+
+<span class="hit"><span class="ln">   17</span>  nb_b_c &lt;- glm.nb(asian_hc ~ 1, data=panel[covid2==0 &amp; losing_income_d==0])</span>
+<span class="ln">   18</span>  nb_b_t &lt;- glm.nb(asian_hc ~ 1, data=panel[covid2==0 &amp; losing_income_d==1])
+
+<span class="ln">   19</span>  nb_a_c &lt;- glm.nb(asian_hc ~ 1, data=panel[covid2==1 &amp; losing_income_d==0])
+
+<span class="ln">   20</span>  nb_a_t &lt;- glm.nb(asian_hc ~ 1, data=panel[covid2==1 &amp; losing_income_d==1])
+
+<span class="ln">   21</span>  
+
+</pre>
+<div class="meta">Full file: <code>C:\Users\joshu\Dropbox\Research\het-effects\data\prior-studies\replication-files\doi_10.7910_DVN_0DCWT7\tableD4.R</code></div>
+<div class="said reveal" style="display:none">model A: no &middot; model B: yes (subgroup_split)</div>
+<div class="q">Does this file fit a model letting an effect vary? <label><input type="radio" name="v1" value="yes"> Yes</label><label><input type="radio" name="v1" value="no"> No</label><label><input type="radio" name="v1" value="unclear"> Can't tell</label></div></div>
+<div class="item" id="i2">
+<div class="hdr"><b>#2</b><span class="meta">Stata &middot; Do-file for analysis.do &middot; chunk 1/3</span></div>
+<pre>
+<span class="ln">  208</span>  eststo: xtreg ggini L.lexical_index_5 L.latent_gdppc_mean_log i.year, fe cluster(country_id)
+
+<span class="ln">  209</span>  
+
+<span class="ln">  210</span>  
+
+<span class="ln">  211</span>  *** Conditional on predemocratic inequality
+
+<span class="hit"><span class="ln">  212</span>  eststo: xtreg SEI c.L.lexical_index_5##c.L.pre_demo_ineq_best_SEI L.latent_gdppc_mean_log i.year, fe cluster(country_id)</span>
+<span class="ln">  213</span>  testparm c.L.lexical_index_5##c.L.pre_demo_ineq_best_SEI
+
+<span class="ln">  214</span>  
+
+<span class="ln">  215</span>  eststo: xtreg grg c.L.lexical_index_5##c.L.pre_demo_ineq_best_grg_ip L.latent_gdppc_mean_log i.year, fe cluster(country_id)
+
+<span class="ln">  216</span>  testparm c.L.lexical_index_5##c.L.pre_demo_ineq_best_grg_ip 
+
+</pre>
+<div class="meta">Full file: <code>C:\Users\joshu\Dropbox\Research\het-effects\data\prior-studies\replication-files\doi_10.7910_DVN_4UOQUR\Do-file for analysis.do</code></div>
+<div class="said reveal" style="display:none">model A: no (interaction_term) &middot; model B: yes (interaction_term, subgroup_split)</div>
+<div class="q">Does this file fit a model letting an effect vary? <label><input type="radio" name="v2" value="yes"> Yes</label><label><input type="radio" name="v2" value="no"> No</label><label><input type="radio" name="v2" value="unclear"> Can't tell</label></div></div>
+<div class="item" id="i3">
+<div class="hdr"><b>#3</b><span class="meta">R &middot; 09-figures.R &middot; chunk 1/1</span></div>
+<pre>
+<span class="ln">   63</span>      prop_women_hi = seq(1/11, 1, 1/11),
+
+<span class="ln">   64</span>      cum_weight = sapply(seq(1/11, 1, 1/11), function(xx)
+
+<span class="ln">   65</span>        wtd_data_list[[i]][public == 1 &amp; female == 1 &amp; prop_female &gt; 0,
+
+<span class="ln">   66</span>          sum(w[prop_female &lt;= xx])])
+
+<span class="hit"><span class="ln">   67</span>    )</span>
+<span class="ln">   68</span>  }))[,
+
+<span class="ln">   69</span>    .(cum_weight = mean(cum_weight)), .(group, prop_women_lo, prop_women_hi)]
+
+<span class="ln">   70</span>  hist_prop_women_w[, cum_weight := cum_weight / max(cum_weight)]
+
+<span class="ln">   71</span>  hist_prop_women_w[, lag_cum_weight := shift(cum_weight)]
+
+</pre>
+<div class="meta">Full file: <code>C:\Users\joshu\Dropbox\Research\het-effects\data\prior-studies\replication-files\doi_10.7910_DVN_EGUVG0\09-figures.R</code></div>
+<div class="said reveal" style="display:none">model A: yes (subgroup_split) &middot; model B: no</div>
+<div class="q">Does this file fit a model letting an effect vary? <label><input type="radio" name="v3" value="yes"> Yes</label><label><input type="radio" name="v3" value="no"> No</label><label><input type="radio" name="v3" value="unclear"> Can't tell</label></div></div>
+<div class="item" id="i4">
+<div class="hdr"><b>#4</b><span class="meta">R &middot; analysis_I.R &middot; chunk 2/2</span></div>
+<pre>
+<span class="ln">  648</span>      legend.position= &quot;bottom&quot;,
+
+<span class="ln">  649</span>      legend.key.size = unit(2, &quot;lines&quot;),
+
+<span class="ln">  650</span>      # Capitalization of legend items
+
+<span class="ln">  651</span>      legend.text = element_text(face=&quot;plain&quot;, color = &quot;black&quot;, size = 12)
+
+<span class="hit"><span class="ln">  652</span>    )</span>
+<span class="ln">  653</span>  
+
+<span class="ln">  654</span>  ggsave(&quot;Figures/Fig2.png&quot;, width = 7, height = 4)
+
+<span class="ln">  655</span>  
+
+<span class="ln">  656</span>  
+
+</pre>
+<div class="meta">Full file: <code>C:\Users\joshu\Dropbox\Research\het-effects\data\prior-studies\replication-files\doi_10.7910_DVN_NWDZJB\analysis_I.R</code></div>
+<div class="said reveal" style="display:none">model A: yes (interaction_term, subgroup_split) &middot; model B: no (interaction_term)</div>
+<div class="q">Does this file fit a model letting an effect vary? <label><input type="radio" name="v4" value="yes"> Yes</label><label><input type="radio" name="v4" value="no"> No</label><label><input type="radio" name="v4" value="unclear"> Can't tell</label></div></div>
+<div class="item" id="i5">
+<div class="hdr"><b>#5</b><span class="meta">R &middot; figureJ3_a_b_c.R &middot; chunk 1/1</span></div>
+<pre>
+<span class="ln">  189</span>        nnmatch = 3
+
+<span class="ln">  190</span>      } else {
+
+<span class="ln">  191</span>        nnmatch = i
+
+<span class="ln">  192</span>      }
+
+<span class="hit"><span class="ln">  193</span>      main &lt;- rdrobust(sentiment_before[(region_name!=&#x27;Scotland&#x27; &amp; as.numeric(as.character(period))&lt;=i &amp; !is.na(first_generation)), get(j)],</span>
+<span class="ln">  194</span>                       sentiment_before[(region_name!=&#x27;Scotland&#x27; &amp; as.numeric(as.character(period))&lt;=i) &amp; !is.na(first_generation), victory_margin], p = 1,
+
+<span class="ln">  195</span>                       kernel = &quot;triangular&quot;, bwselect = &quot;mserd&quot;, nnmatch = nnmatch,
+
+<span class="ln">  196</span>                       cluster = sentiment_before[(region_name!=&#x27;Scotland&#x27; &amp; as.numeric(as.character(period))&lt;=i &amp; !is.na(first_generation)), cluster])
+
+<span class="ln">  197</span>      
+
+</pre>
+<div class="meta">Full file: <code>C:\Users\joshu\Dropbox\Research\het-effects\data\prior-studies\replication-files\doi_10.7910_DVN_IJ2DW4\figureJ3_a_b_c.R</code></div>
+<div class="said reveal" style="display:none">model A: yes (subgroup_split) &middot; model B: no</div>
+<div class="q">Does this file fit a model letting an effect vary? <label><input type="radio" name="v5" value="yes"> Yes</label><label><input type="radio" name="v5" value="no"> No</label><label><input type="radio" name="v5" value="unclear"> Can't tell</label></div></div>
+<div class="item" id="i6">
+<div class="hdr"><b>#6</b><span class="meta">Stata &middot; EthnonationalistGenderNorms_Analysis_FINAL.do &middot; chunk 1/1</span></div>
+<pre>
+<span class="ln">   69</span>  
+
+<span class="ln">   70</span>  
+
+<span class="ln">   71</span>  *Table 1, Column 1
+
+<span class="ln">   72</span>  
+
+<span class="hit"><span class="ln">   73</span>  reg CandidateChosen i.CandidateFemale##i.CandidateForward##i.CandidateBJPvsRJD CandidateProtect CandidateOBC CandidateMuslim/*</span>
+<span class="ln">   74</span>  */ i.const_no  Female Age Education, cluster (RespondNumber)
+
+<span class="ln">   75</span>  
+
+<span class="ln">   76</span>  est store party_1
+
+<span class="ln">   77</span>  
+
+</pre>
+<div class="meta">Full file: <code>C:\Users\joshu\Dropbox\Research\het-effects\data\prior-studies\replication-files\doi_10.7910_DVN_USYADS\EthnonationalistGenderNorms_Analysis_FINAL.do</code></div>
+<div class="said reveal" style="display:none">model A: yes (interaction_term, subgroup_split) &middot; model B: yes (interaction_term, subgroup_split)</div>
+<div class="q">Does this file fit a model letting an effect vary? <label><input type="radio" name="v6" value="yes"> Yes</label><label><input type="radio" name="v6" value="no"> No</label><label><input type="radio" name="v6" value="unclear"> Can't tell</label></div></div>
+<div class="item" id="i7">
+<div class="hdr"><b>#7</b><span class="meta">R &middot; 3_SLES_analysis_appendix.R &middot; chunk 1/1</span></div>
+<pre>
+<span class="ln">  510</span>    starprep(mod_majmin_tlb, clusters = sles_agg[-mod_majmin_tlb$na.action,]$state_chamber, se_type = &quot;stata&quot;)[[1]],
+
+<span class="ln">  511</span>    starprep(mod_chair_tlb, clusters = sles_agg[-mod_chair_tlb$na.action,]$state_chamber, se_type = &quot;stata&quot;)[[1]],
+
+<span class="ln">  512</span>    starprep(mod_majsenior_tlb, clusters = sles_agg[-mod_majsenior_tlb$na.action,]$state_chamber, se_type = &quot;stata&quot;)[[1]],
+
+<span class="ln">  513</span>    starprep(mod_minsenior_tlb, clusters = sles_agg[-mod_minsenior_tlb$na.action,]$state_chamber, se_type = &quot;stata&quot;)[[1]]
+
+<span class="hit"><span class="ln">  514</span>  )</span>
+<span class="ln">  515</span>  
+
+<span class="ln">  516</span>  ### Table A9
+
+<span class="ln">  517</span>  stargazer(mod_majmin_tlb, mod_chair_tlb, mod_majsenior_tlb, mod_minsenior_tlb,
+
+<span class="ln">  518</span>            se = mm_SEs_tlb, 
+
+</pre>
+<div class="meta">Full file: <code>C:\Users\joshu\Dropbox\Research\het-effects\data\prior-studies\replication-files\doi_10.7910_DVN_NT7H5O\3_SLES_analysis_appendix.R</code></div>
+<div class="said reveal" style="display:none">model A: yes (interaction_term, subgroup_split) &middot; model B: no (interaction_term)</div>
+<div class="q">Does this file fit a model letting an effect vary? <label><input type="radio" name="v7" value="yes"> Yes</label><label><input type="radio" name="v7" value="no"> No</label><label><input type="radio" name="v7" value="unclear"> Can't tell</label></div></div>
+<div class="item" id="i8">
+<div class="hdr"><b>#8</b><span class="meta">R &middot; Trump_Replication.R &middot; chunk 1/1</span></div>
+<pre>
+<span class="ln">   87</span>  sents&lt;- as.matrix(X[sibp.fit$test.ind,use_col])%*%as.numeric(start[use,2])
+
+<span class="ln">   88</span>  dat2$sents &lt;- I(sents &gt; 0)
+
+<span class="ln">   89</span>  
+
+<span class="ln">   90</span>  ## Table 6, first leaving sentiment unmeasured then measuring positive sentiment
+
+<span class="hit"><span class="ln">   91</span>  summary(lm(Y ~ Z1 + Z2 + Z3 + Z4 + Z5, data = dat2, subset = which(dat2$dem == 1)))</span>
+<span class="ln">   92</span>  summary(lm(Y ~ Z1 + Z2 + Z3 + Z4 + Z5, data = dat2, subset = which(dat2$ind == 1)))
+
+<span class="ln">   93</span>  summary(lm(Y ~ Z1 + Z2 + Z3 + Z4 + Z5, data = dat2, subset = which(dat2$rep == 1)))
+
+<span class="ln">   94</span>  
+
+<span class="ln">   95</span>  summary(lm(Y ~ Z1 + Z2 + Z3 + Z4 + Z5 + sents, data = dat2, subset = which(dat2$dem == 1)))
+
+</pre>
+<div class="meta">Full file: <code>C:\Users\joshu\Dropbox\Research\het-effects\data\prior-studies\replication-files\doi_10.7910_DVN_MVDWCS\Trump_Replication.R</code></div>
+<div class="said reveal" style="display:none">model A: yes (subgroup_split, interaction_term) &middot; model B: yes (subgroup_split, interaction_term)</div>
+<div class="q">Does this file fit a model letting an effect vary? <label><input type="radio" name="v8" value="yes"> Yes</label><label><input type="radio" name="v8" value="no"> No</label><label><input type="radio" name="v8" value="unclear"> Can't tell</label></div></div>
+<div class="item" id="i9">
+<div class="hdr"><b>#9</b><span class="meta">R &middot; Script_APSR_appendix_dataverse_final_edit.R &middot; chunk 1/3</span></div>
+<pre>
+<span class="ln">   71</span>  prop.table(table(FinIre$country))
+
+<span class="ln">   72</span>  FinIre$country&lt;- dplyr::recode(FinIre$country, Finland=&quot;Finland&quot;, Ireland=&quot;Ireland&quot;, USA=&quot;Ireland&quot;)
+
+<span class="ln">   73</span>  prop.table(table(FinIre$country))
+
+<span class="ln">   74</span>  
+
+<span class="hit"><span class="ln">   75</span>  diff_amce_FinIre_choice &lt;- cj(FinIre, Mchoice, id = ~ID, estimate=&quot;amce_diff&quot;, feature_labels = feature_names, feature_order = c(&quot;outcome.fav&quot;, &quot;authorization&quot;, &quot;aim&quot;, &quot;majority&quot;, &quot;composition&quot;, &quot;size&quot;, &quot;recruitment&quot;, &quot;initiative&quot;, &quot;issue&quot;), by = ~country)</span>
+<span class="ln">   76</span>  diff_mm_FinIre_choice &lt;- cj(FinIre, Mchoice, id = ~ID, estimate=&quot;mm_diff&quot;, feature_labels = feature_names,feature_order = c(&quot;outcome.fav&quot;, &quot;authorization&quot;, &quot;aim&quot;, &quot;majority&quot;, &quot;composition&quot;, &quot;size&quot;, &quot;recruitment&quot;, &quot;initiative&quot;, &quot;issue&quot;), by = ~country)
+
+<span class="ln">   77</span>  
+
+<span class="ln">   78</span>  # Differencs AMCE vs MM for USA - Finland 
+
+<span class="ln">   79</span>  prop.table(table(FinUsa$country))
+
+</pre>
+<div class="meta">Full file: <code>C:\Users\joshu\Dropbox\Research\het-effects\data\prior-studies\replication-files\doi_10.7910_DVN_ZU4FMC\Script_APSR_appendix_dataverse_final_edit.R</code></div>
+<div class="said reveal" style="display:none">model A: yes (subgroup_split) &middot; model B: yes (subgroup_split)</div>
+<div class="q">Does this file fit a model letting an effect vary? <label><input type="radio" name="v9" value="yes"> Yes</label><label><input type="radio" name="v9" value="no"> No</label><label><input type="radio" name="v9" value="unclear"> Can't tell</label></div></div>
+<div class="item" id="i10">
+<div class="hdr"><b>#10</b><span class="meta">R &middot; governor ads data analyze.R &middot; chunk 1/1</span></div>
+<pre>
+<span class="ln">  112</span>  			   	   is_incumbent = (party==&quot;R&quot; &amp; incumbent_rep &amp; standing_reelection) | (party == &quot;D&quot; &amp; incumbent_dem &amp; standing_reelection) | (party==&quot;I&quot; &amp; incumbent_other &amp; standing_reelection))]
+
+<span class="ln">  113</span>  
+
+<span class="ln">  114</span>  ## incumbent candidates
+
+<span class="ln">  115</span>  # ad quantity
+
+<span class="hit"><span class="ln">  116</span>  inc_q_10 &lt;- felm(tot_ads ~ rate_sa_bin_10 + poly(rate_sa_diff,3) + mile_good_any_sa_6 + mile_bad_any_sa_6 + factor(month) | cand | 0 | cand, data = inc_ads)</span>
+<span class="ln">  117</span>  inc_q_20 &lt;- felm(tot_ads ~ rate_sa_bin_20 + poly(rate_sa_diff,3) + mile_good_any_sa_6 + mile_bad_any_sa_6 + factor(month) | cand | 0 | cand, data = inc_ads)
+
+<span class="ln">  118</span>  inc_q_50 &lt;- felm(tot_ads ~ rate_sa_bin_50 + poly(rate_sa_diff,3) + mile_good_any_sa_6 + mile_bad_any_sa_6 + factor(month) | cand | 0 | cand, data = inc_ads)
+
+<span class="ln">  119</span>  
+
+<span class="ln">  120</span>  # any economic mention
+
+</pre>
+<div class="meta">Full file: <code>C:\Users\joshu\Dropbox\Research\het-effects\data\prior-studies\replication-files\doi_10.7910_DVN_NYONTD\governor ads data analyze.R</code></div>
+<div class="said reveal" style="display:none">model A: yes (subgroup_split) &middot; model B: yes (subgroup_split)</div>
+<div class="q">Does this file fit a model letting an effect vary? <label><input type="radio" name="v10" value="yes"> Yes</label><label><input type="radio" name="v10" value="no"> No</label><label><input type="radio" name="v10" value="unclear"> Can't tell</label></div></div>
+<div class="item" id="i11">
+<div class="hdr"><b>#11</b><span class="meta">R &middot; regs_wlms_figA33.R &middot; chunk 1/1</span></div>
+<pre>
+<span class="ln">   55</span>  ############################################################################################
+
+<span class="ln">   56</span>  ## Distinguishing resource types
+
+<span class="ln">   57</span>  ############################################################################################
+
+<span class="ln">   58</span>  
+
+<span class="hit"><span class="ln">   59</span>  m1 &lt;- mdlr_dummy_plus(y=&quot;preg_link&quot;, x=&quot;pub23_dummy + crop5_yn + crops_other_yn + hance_minerals_dummy + popc_mean_1720_1890_log&quot;,cntr=base.x,</span>
+<span class="ln">   60</span>                           cl=&quot;iso3c&quot;,fe=&quot;iso3c&quot;,dat=wlms_data_preg)
+
+<span class="ln">   61</span>  summary(m1)
+
+<span class="ln">   62</span>  
+
+<span class="ln">   63</span>  m2 &lt;- mdlr_dummy_plus(y=&quot;epr_link&quot;, x=&quot;pub23_dummy +crop5_yn + crops_other_yn+ hance_minerals_dummy + popc_mean_1720_1890_log&quot;,cntr=base.x,
+
+</pre>
+<div class="meta">Full file: <code>C:\Users\joshu\Dropbox\Research\het-effects\data\prior-studies\replication-files\doi_10.7910_DVN_WQEQPN\regs_wlms_figA33.R</code></div>
+<div class="said reveal" style="display:none">model A: yes (subgroup_split) &middot; model B: no</div>
+<div class="q">Does this file fit a model letting an effect vary? <label><input type="radio" name="v11" value="yes"> Yes</label><label><input type="radio" name="v11" value="no"> No</label><label><input type="radio" name="v11" value="unclear"> Can't tell</label></div></div>
+<div class="item" id="i12">
+<div class="hdr"><b>#12</b><span class="meta">R &middot; 13_nycc_fit.R &middot; chunk 1/1</span></div>
+<pre>
+<span class="ln">   23</span>  
+
+<span class="ln">   24</span>  # Fit models -----
+
+<span class="ln">   25</span>  cities = unique(fit_d$city)
+
+<span class="ln">   26</span>  
+
+<span class="hit"><span class="ln">   27</span>  m_full = neighborhood_model(form_full, filter(fit_d))</span>
+<span class="ln">   28</span>  
+
+<span class="ln">   29</span>  m_baseline =  neighborhood_model(form_baseline_nodemg, filter(fit_d))
+
+<span class="ln">   30</span>  
+
+<span class="ln">   31</span>  
+
+</pre>
+<div class="meta">Full file: <code>C:\Users\joshu\Dropbox\Research\het-effects\data\prior-studies\replication-files\doi_10.7910_DVN_SDSUQG\13_nycc_fit.R</code></div>
+<div class="said reveal" style="display:none">model A: yes (interaction_term, subgroup_split) &middot; model B: no (interaction_term)</div>
+<div class="q">Does this file fit a model letting an effect vary? <label><input type="radio" name="v12" value="yes"> Yes</label><label><input type="radio" name="v12" value="no"> No</label><label><input type="radio" name="v12" value="unclear"> Can't tell</label></div></div>
+<div class="item" id="i13">
+<div class="hdr"><b>#13</b><span class="meta">R &middot; igm-Results_Appendix.R &middot; chunk 2/2</span></div>
+<pre>
+<span class="ln">  325</span>                UtbAr + iKomRost +
+
+<span class="ln">  326</span>                icam2 + UtbAr2 + pInkomst2 + iKomRost2 +
+
+<span class="ln">  327</span>                icam3 + UtbAr3 + pInkomst3 + iKomRost3 | FodAr + round(FFodAr) + round(FFFodAr) + AntP + AntGP, data = ndb, cluster = &quot;ID&quot;)
+
+<span class="ln">  328</span>  m0 &lt;- summary(m0)
+
+<span class="hit"><span class="ln">  329</span>  m0</span>
+<span class="ln">  330</span>  
+
+<span class="ln">  331</span>  ndb[AntVal==1, sRost1 := scale(Rost1, center =T)]
+
+<span class="ln">  332</span>  ndb[AntVal==1, sRost2 := scale(Rost2, center =T)]
+
+<span class="ln">  333</span>  ndb[AntVal==1, sRost3 := scale(Rost3, center =T)]
+
+</pre>
+<div class="meta">Full file: <code>C:\Users\joshu\Dropbox\Research\het-effects\data\prior-studies\replication-files\doi_10.7910_DVN_U56Z43\igm-Results_Appendix.R</code></div>
+<div class="said reveal" style="display:none">model A: yes (interaction_term, subgroup_split) &middot; model B: yes (interaction_term, subgroup_split)</div>
+<div class="q">Does this file fit a model letting an effect vary? <label><input type="radio" name="v13" value="yes"> Yes</label><label><input type="radio" name="v13" value="no"> No</label><label><input type="radio" name="v13" value="unclear"> Can't tell</label></div></div>
+<div class="item" id="i14">
+<div class="hdr"><b>#14</b><span class="meta">R &middot; corstange-replication.r &middot; chunk 1/1</span></div>
+<pre>
+<span class="ln">  267</span>  
+
+<span class="ln">  268</span>  ## full sample
+
+<span class="ln">  269</span>  boot.refuse.all &lt;-
+
+<span class="ln">  270</span>      with(Leb,
+
+<span class="hit"><span class="ln">  271</span>           bootme(1-participate, treat))</span>
+<span class="ln">  272</span>  
+
+<span class="ln">  273</span>  ## Shia neighborhoods
+
+<span class="ln">  274</span>  boot.refuse.shia &lt;-
+
+<span class="ln">  275</span>      with(subset(Leb, subset = Leb$neigh.3types == &quot;Shia&quot;),
+
+</pre>
+<div class="meta">Full file: <code>C:\Users\joshu\Dropbox\Research\het-effects\data\prior-studies\replication-files\doi_10.7910_DVN_5TWA0G\corstange-replication.r</code></div>
+<div class="said reveal" style="display:none">model A: yes (subgroup_split) &middot; model B: yes (subgroup_split)</div>
+<div class="q">Does this file fit a model letting an effect vary? <label><input type="radio" name="v14" value="yes"> Yes</label><label><input type="radio" name="v14" value="no"> No</label><label><input type="radio" name="v14" value="unclear"> Can't tell</label></div></div>
+<div class="item" id="i15">
+<div class="hdr"><b>#15</b><span class="meta">R &middot; 27_app_polfun_iv_ols.R &middot; chunk 1/1</span></div>
+<pre>
+<span class="ln">  130</span>          pop64 = mean(pop64),
+
+<span class="ln">  131</span>          black = mean(black),
+
+<span class="ln">  132</span>          educ_9th = mean(educ_9th),
+
+<span class="ln">  133</span>          hispanic = mean(hispanic)
+
+<span class="hit"><span class="ln">  134</span>      ) %&gt;%</span>
+<span class="ln">  135</span>      mutate(intercept = 1)
+
+<span class="ln">  136</span>  
+
+<span class="ln">  137</span>  data.optim.all &lt;- inner_join(data.optim.all, sen_charcong, by = &quot;id.congress&quot;)
+
+<span class="ln">  138</span>  
+
+</pre>
+<div class="meta">Full file: <code>C:\Users\joshu\Dropbox\Research\het-effects\data\prior-studies\replication-files\doi_10.7910_DVN_MEIMWN\27_app_polfun_iv_ols.R</code></div>
+<div class="said reveal" style="display:none">model A: no &middot; model B: yes (subgroup_split)</div>
+<div class="q">Does this file fit a model letting an effect vary? <label><input type="radio" name="v15" value="yes"> Yes</label><label><input type="radio" name="v15" value="no"> No</label><label><input type="radio" name="v15" value="unclear"> Can't tell</label></div></div>
+<div class="item" id="i16">
+<div class="hdr"><b>#16</b><span class="meta">R &middot; Tables-appendix.R &middot; chunk 1/2</span></div>
+<pre>
+<span class="ln">   58</span>            digits=2,
+
+<span class="ln">   59</span>            font.size=&quot;small&quot;,
+
+<span class="ln">   60</span>            omit.summary.stat=c(&quot;p25&quot;, &quot;p75&quot;),
+
+<span class="ln">   61</span>            out=&quot;table_a2_sumstat.tex&quot;
+
+<span class="hit"><span class="ln">   62</span>  )</span>
+<span class="ln">   63</span>  
+
+<span class="ln">   64</span>  #######################################################################################
+
+<span class="ln">   65</span>  #### Table A3:  Effect of Log Distance to HQ on Outcomes Related to State Capacity ####
+
+<span class="ln">   66</span>  #######################################################################################
+
+</pre>
+<div class="meta">Full file: <code>C:\Users\joshu\Dropbox\Research\het-effects\data\prior-studies\replication-files\doi_10.7910_DVN_9JS5AJ\Tables-appendix.R</code></div>
+<div class="said reveal" style="display:none">model A: yes (interaction_term, subgroup_split) &middot; model B: no (interaction_term)</div>
+<div class="q">Does this file fit a model letting an effect vary? <label><input type="radio" name="v16" value="yes"> Yes</label><label><input type="radio" name="v16" value="no"> No</label><label><input type="radio" name="v16" value="unclear"> Can't tell</label></div></div>
+<div class="item" id="i17">
+<div class="hdr"><b>#17</b><span class="meta">Stata &middot; JOP Final code.do &middot; chunk 1/1</span></div>
+<pre>
+<span class="ln">  453</span>  keep if wave==3 &amp; pt~=. &amp; l2pt~=. 
+
+<span class="ln">  454</span>  ice pt self_in_issue_space_pt self_in_issue_space_pt_l2 ptnumdisc_pt ptnumdisc_pt_l nonptnumdisc_pt nonptnumdisc_pt_l awarez_pt awarez_pt_l2 ses_pt_l2 s10_age_pt_l2  lula_in_issue_space_pt lula_in_issue_space_pt_l2 lulatraits_pt lulatraits_pt_l2 econevals_pt econevals_pt_l2  city_pt self_in_issue_space_nonpt self_in_issue_space_nonpt_l2 ptnumdisc_nonpt ptnumdisc_nonpt_l nonptnumdisc_nonpt nonptnum
+
+<span class="ln">  455</span>  use &quot;`stick&#x27;:\My Documents\Research\Paper Anand\Imputes\wave3imputes.dta&quot;, clear
+
+<span class="ln">  456</span>  		*Model 1
+
+<span class="hit"><span class="ln">  457</span>  mim: probit pt lula_in_issue_space_pt lula_in_issue_space_pt_l2 self_in_issue_space_pt self_in_issue_space_pt_l2 lulatraits_pt lulatraits_pt_l2 econevals_pt econevals_pt_l2 city_pt lula_in_issue_space_nonpt lula_in_issue_space_nonpt_l2 self_in_issue_space_nonpt self_in_issue_space_nonpt_l2 lulatraits_nonpt lulatraits_nonpt_l2 econevals_nonpt econevals_nonpt_l2 city_nonpt l2pt [pweight=attriteweigh</span>
+<span class="ln">  458</span>  		*Model 5
+
+<span class="ln">  459</span>  mim: probit pt ptnumdisc_pt ptnumdisc_pt_l nonptnumdisc_pt nonptnumdisc_pt_l ses_pt_l2 s10_age_pt_l2 awarez_pt city_pt ptnumdisc_nonpt ptnumdisc_nonpt_l nonptnumdisc_nonpt nonptnumdisc_nonpt_l ses_nonpt_l2 s10_age_nonpt_l2 awarez_pt_l2 city_nonpt l2pt [pweight=attriteweight3]
+
+<span class="ln">  460</span>  
+
+<span class="ln">  461</span>  		*Estimate predicted probs
+
+</pre>
+<div class="meta">Full file: <code>C:\Users\joshu\Dropbox\Research\het-effects\data\prior-studies\replication-files\doi_10.7910_DVN_XSCFX5\JOP Final code.do</code></div>
+<div class="said reveal" style="display:none">model A: yes (interaction_term, subgroup_split) &middot; model B: no (interaction_term)</div>
+<div class="q">Does this file fit a model letting an effect vary? <label><input type="radio" name="v17" value="yes"> Yes</label><label><input type="radio" name="v17" value="no"> No</label><label><input type="radio" name="v17" value="unclear"> Can't tell</label></div></div>
+<div class="item" id="i18">
+<div class="hdr"><b>#18</b><span class="meta">Stata &middot; 9_positive_by_pid3.do &middot; chunk 1/1</span></div>
+<pre>
+<span class="ln">   37</span>  	replace pid3 = 3 if inlist(lucid_political_party, 5, 6, 7)
+
+<span class="ln">   38</span>  label define pid3 1 &quot;Dems (incl leaners)&quot; 2 &quot;Neither&quot; 3 &quot;Reps (incl leaners)&quot;
+
+<span class="ln">   39</span>  label val pid3 pid3
+
+<span class="ln">   40</span>  
+
+<span class="hit"><span class="ln">   41</span>  eststo: reg trump_vote2020_trichot ib2.treat_enc `covars&#x27; part2 if pid3 == 1</span>
+<span class="ln">   42</span>  estadd local usescovars &quot;$ \checkmark $&quot;
+
+<span class="ln">   43</span>  
+
+<span class="ln">   44</span>  eststo: reg trump_vote2020_trichot ib2.treat_enc `covars&#x27; part2 if pid3 == 2
+
+<span class="ln">   45</span>  estadd local usescovars &quot;$ \checkmark $&quot;
+
+</pre>
+<div class="meta">Full file: <code>C:\Users\joshu\Dropbox\Research\het-effects\data\prior-studies\replication-files\doi_10.7910_DVN_LLPKNG\9_positive_by_pid3.do</code></div>
+<div class="said reveal" style="display:none">model A: yes (subgroup_split) &middot; model B: yes (subgroup_split)</div>
+<div class="q">Does this file fit a model letting an effect vary? <label><input type="radio" name="v18" value="yes"> Yes</label><label><input type="radio" name="v18" value="no"> No</label><label><input type="radio" name="v18" value="unclear"> Can't tell</label></div></div>
+<div class="item" id="i19">
+<div class="hdr"><b>#19</b><span class="meta">Stata &middot; Construction_ESS.do &middot; chunk 1/1</span></div>
+<div class="meta">The quoted line was not exact; the closest real line is highlighted.</div>
+<pre>
+<span class="ln">  200</span>  *** Remove countries where there is no first stage (i.e. that the reform did not increase respondent education levels)
+
+<span class="ln">  201</span>  quietly foreach x in &quot;PT (1964)&quot; {
+
+<span class="ln">  202</span>  	di &quot;******************** Reform = `x&#x27; **********************&quot;
+
+<span class="ln">  203</span>  	foreach y in plus6 eduyrs_actual {
+
+<span class="hit"><span class="ln">  204</span>  		rdplot `y&#x27; running if reform==&quot;`x&#x27;&quot;, c(0) p(3) lowerend(-20) upperend(19) numbinl(20) numbinr(20) graph_options(graphregion(fcolor(white) lcolor(white)) ylab(,nogrid) ///</span>
+<span class="ln">  205</span>  			title(&quot;Portugal (1964)&quot;) ytitle(&quot;6 yrs of schooling or more&quot;) xtitle(&quot;Cohort relative to reform&quot;) legend(off) ylabel(#3))
+
+<span class="ln">  206</span>  		graph save Graph &quot;g_`y&#x27;_`x&#x27;.gph&quot;, replace
+
+<span class="ln">  207</span>  	}
+
+<span class="ln">  208</span>  }
+
+</pre>
+<div class="meta">Full file: <code>C:\Users\joshu\Dropbox\Research\het-effects\data\prior-studies\replication-files\doi_10.7910_DVN_YDSRWF\Construction_ESS.do</code></div>
+<div class="said reveal" style="display:none">model A: yes (subgroup_split) &middot; model B: no</div>
+<div class="q">Does this file fit a model letting an effect vary? <label><input type="radio" name="v19" value="yes"> Yes</label><label><input type="radio" name="v19" value="no"> No</label><label><input type="radio" name="v19" value="unclear"> Can't tell</label></div></div>
+<div class="item" id="i20">
+<div class="hdr"><b>#20</b><span class="meta">JAGS &middot; mccullochtsay_partial.jags &middot; chunk 1/1</span></div>
+<div class="meta">No model-fitting lines found in this file.</div>
+<div class="meta">Full file: <code>C:\Users\joshu\Dropbox\Research\het-effects\data\prior-studies\replication-files\doi_10.7910_DVN_1GLFE1\mccullochtsay_partial.jags</code></div>
+<div class="said reveal" style="display:none">model A: no &middot; model B: no</div>
+<div class="q">Does this file fit a model letting an effect vary? <label><input type="radio" name="v20" value="yes"> Yes</label><label><input type="radio" name="v20" value="no"> No</label><label><input type="radio" name="v20" value="unclear"> Can't tell</label></div></div>
+<div class="item" id="i21">
+<div class="hdr"><b>#21</b><span class="meta">R &middot; B28 GSC only subversion outside of regime formation periods.R &middot; chunk 1/1</span></div>
+<pre>
+<span class="ln">   30</span>  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~	
+
+<span class="ln">   31</span>  # ---- Subsection: Centre-seeking subversions ----
+
+<span class="ln">   32</span>  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+<span class="ln">   33</span>  
+
+<span class="hit"><span class="ln">   34</span>  out &lt;- gsynth(priad_ipo ~ treated_centre_1900p_nonreg + ln_oilpc + popdensity_UNDP + v2x_polyarchy + civilwar_combined + war_combined + leftistideo + v2x_clphy + lngdppc_vdemplus_ipo + urbanisation_UNDP + hiv_WDI, data = data.earlystrongoilall, index = c(&quot;cowcode&quot;,&quot;year&quot;), </span>
+<span class="ln">   35</span>                force = &quot;unit&quot;, CV = TRUE, r = c(0, 5), se = TRUE, inference = &quot;parametric&quot;, nboots = 1000, na.rm = TRUE, min.T0 = 10, 
+
+<span class="ln">   36</span>                parallel = TRUE, estimator = &quot;ife&quot;, EM = TRUE)
+
+<span class="ln">   37</span>  
+
+<span class="ln">   38</span>  p1 &lt;- plot(out, type = &quot;gap&quot;, theme.bw = TRUE) 
+
+</pre>
+<div class="meta">Full file: <code>C:\Users\joshu\Dropbox\Research\het-effects\data\prior-studies\replication-files\doi_10.7910_DVN_YYTXOB\B28 GSC only subversion outside of regime formation periods.R</code></div>
+<div class="said reveal" style="display:none">model A: yes (subgroup_split) &middot; model B: no (interaction_term)</div>
+<div class="q">Does this file fit a model letting an effect vary? <label><input type="radio" name="v21" value="yes"> Yes</label><label><input type="radio" name="v21" value="no"> No</label><label><input type="radio" name="v21" value="unclear"> Can't tell</label></div></div>
+<div class="item" id="i22">
+<div class="hdr"><b>#22</b><span class="meta">Stata &middot; demo_subv_adm_code.do &middot; chunk 1/1</span></div>
+<pre>
+<span class="ln">   85</span>  
+
+<span class="ln">   86</span>  reg prescands opp_prop v2xps_party party_pastfounder govlegcoal, cluster(ccode)
+
+<span class="ln">   87</span>  outreg2 using main_table1.doc, aster(coef) alpha(0.01, 0.05, 0.10) ctitle(Model 5) append
+
+<span class="ln">   88</span>  
+
+<span class="hit"><span class="ln">   89</span>  reg prescands opp_prop v2xps_party party_pastfounder govlegcoal i.trs50##c.ethposner v2elprescons v2x_libdem lngdp lnpop ln_oil, cluster(ccode)</span>
+<span class="ln">   90</span>  outreg2 using main_table1.doc, aster(coef) alpha(0.01, 0.05, 0.10) ctitle(Model 6) append
+
+<span class="ln">   91</span>  
+
+<span class="ln">   92</span>  
+
+<span class="ln">   93</span>  ********************************************
+
+</pre>
+<div class="meta">Full file: <code>C:\Users\joshu\Dropbox\Research\het-effects\data\prior-studies\replication-files\doi_10.7910_DVN_R8TUOQ\demo_subv_adm_code.do</code></div>
+<div class="said reveal" style="display:none">model A: no (interaction_term) &middot; model B: yes (interaction_term, subgroup_split)</div>
+<div class="q">Does this file fit a model letting an effect vary? <label><input type="radio" name="v22" value="yes"> Yes</label><label><input type="radio" name="v22" value="no"> No</label><label><input type="radio" name="v22" value="unclear"> Can't tell</label></div></div>
+<div class="item" id="i23">
+<div class="hdr"><b>#23</b><span class="meta">R &middot; 2_classify_political.R &middot; chunk 1/1</span></div>
+<div class="meta">Neither model flagged this file. Lines that look like model fits:</div><pre>
+<span class="ln">   99</span>    lm(political ~ domain_cat - 1, data = .)
+
+<span class="ln">  110</span>    lm(political ~ domain_cat - 1, data = .)
+
+</pre>
+<div class="meta">Full file: <code>C:\Users\joshu\Dropbox\Research\het-effects\data\prior-studies\replication-files\doi_10.7910_DVN_SS0UEI\2_classify_political.R</code></div>
+<div class="said reveal" style="display:none">model A: no &middot; model B: no</div>
+<div class="q">Does this file fit a model letting an effect vary? <label><input type="radio" name="v23" value="yes"> Yes</label><label><input type="radio" name="v23" value="no"> No</label><label><input type="radio" name="v23" value="unclear"> Can't tell</label></div></div>
+<div class="item" id="i24">
+<div class="hdr"><b>#24</b><span class="meta">R &middot; analysis_austhung.R &middot; chunk 1/1</span></div>
+<pre>
+<span class="ln">   30</span>  
+
+<span class="ln">   31</span>  # ESTIMATE MODEL #########
+
+<span class="ln">   32</span>  
+
+<span class="ln">   33</span>  # Models
+
+<span class="hit"><span class="ln">   34</span>  form.ls &lt;- unlist(lapply(c(1900, 1910), function(y){</span>
+<span class="ln">   35</span>    list(austhung_ldv_hd = as.formula(paste0(&quot;cshp&quot;,
+
+<span class="ln">   36</span>                                             &quot; ~ &quot;, main_cov_spec, &quot; + land.diff + abram_sum + &quot;,
+
+<span class="ln">   37</span>                                             &quot;cshp_lag + hell.dist.&quot;, y)),
+
+<span class="ln">   38</span>         austhung_xsec_hd = as.formula(paste0(&quot;cshp&quot;,
+
+</pre>
+<div class="meta">Full file: <code>C:\Users\joshu\Dropbox\Research\het-effects\data\prior-studies\replication-files\doi_10.7910_DVN_T1NXVQ\analysis_austhung.R</code></div>
+<div class="said reveal" style="display:none">model A: yes (subgroup_split) &middot; model B: no</div>
+<div class="q">Does this file fit a model letting an effect vary? <label><input type="radio" name="v24" value="yes"> Yes</label><label><input type="radio" name="v24" value="no"> No</label><label><input type="radio" name="v24" value="unclear"> Can't tell</label></div></div>
+<div class="item" id="i25">
+<div class="hdr"><b>#25</b><span class="meta">R &middot; Replication.R &middot; chunk 1/2</span></div>
+<pre>
+<span class="ln">  472</span>                    all.mat[2,], c(pooled.se[2,], pooled.information.se[2]),
+
+<span class="ln">  473</span>                    all.mat[3,], c(pooled.se[3,], pooled.information.se[3]),
+
+<span class="ln">  474</span>                    all.mat[4,], c(pooled.se[4,], pooled.information.se[4]),
+
+<span class="ln">  475</span>                    c(all.mat[5,1:4], NA), c(pooled.target.se, NA)
+
+<span class="hit"><span class="ln">  476</span>  )</span>
+<span class="ln">  477</span>  
+
+<span class="ln">  478</span>  ## report
+
+<span class="ln">  479</span>  xtable(main.tab, digits=3)
+
+<span class="ln">  480</span>  
+
+</pre>
+<div class="meta">Full file: <code>C:\Users\joshu\Dropbox\Research\het-effects\data\prior-studies\replication-files\doi_10.7910_DVN_BXPKHG\Replication.R</code></div>
+<div class="said reveal" style="display:none">model A: yes (subgroup_split) &middot; model B: yes (subgroup_split)</div>
+<div class="q">Does this file fit a model letting an effect vary? <label><input type="radio" name="v25" value="yes"> Yes</label><label><input type="radio" name="v25" value="no"> No</label><label><input type="radio" name="v25" value="unclear"> Can't tell</label></div></div>
+<div class="item" id="i26">
+<div class="hdr"><b>#26</b><span class="meta">Stata &middot; HarbridgeYong_Volden_Wiseman_House_Models_Replication_Code.do &middot; chunk 1/1</span></div>
+<pre>
+<span class="ln">   20</span>  xtreg les mean_prop_cospon_opp_spon_HR prop_co_bipart seniority majority maj_leader min_leader speaker chair subchr power meddist female afam latino deleg_size votepct votepct_sq mean_cospon_spon_HR, fe cluster(icpsr)
+
+<span class="ln">   21</span>  
+
+<span class="ln">   22</span>  * TABLE 2: Robustness to evolving conditions across Congresses
+
+<span class="ln">   23</span>  * Model 2.1 (interaction with linear time trend)
+
+<span class="hit"><span class="ln">   24</span>  xtreg les c.mean_prop_cospon_opp_spon_HR##c.time prop_co_bipart seniority majority maj_leader min_leader speaker chair subchr power meddist female afam latino deleg_size votepct votepct_sq mean_cospon_spon_HR, fe cluster(icpsr)</span>
+<span class="ln">   25</span>  * Model 2.2 (interaction with majority seat margin)
+
+<span class="ln">   26</span>  xtreg les c.mean_prop_cospon_opp_spon_HR##c.majmargin prop_co_bipart seniority majority maj_leader min_leader speaker chair subchr power meddist female afam latino deleg_size votepct votepct_sq mean_cospon_spon_HR, fe cluster(icpsr)
+
+<span class="ln">   27</span>  * Model 2.3 (interaction for polarization, difference in party medians)
+
+<span class="ln">   28</span>  xtreg les c.mean_prop_cospon_opp_spon_HR##c.normptydiff prop_co_bipart seniority majority maj_leader min_leader speaker chair subchr power meddist female afam latino deleg_size votepct votepct_sq mean_cospon_spon_HR, fe cluster(icpsr)
+
+</pre>
+<div class="meta">Full file: <code>C:\Users\joshu\Dropbox\Research\het-effects\data\prior-studies\replication-files\doi_10.7910_DVN_EARLA4\HarbridgeYong_Volden_Wiseman_House_Models_Replication_Code.do</code></div>
+<div class="said reveal" style="display:none">model A: yes (interaction_term, subgroup_split) &middot; model B: yes (interaction_term, subgroup_split)</div>
+<div class="q">Does this file fit a model letting an effect vary? <label><input type="radio" name="v26" value="yes"> Yes</label><label><input type="radio" name="v26" value="no"> No</label><label><input type="radio" name="v26" value="unclear"> Can't tell</label></div></div>
+<div class="item" id="i27">
+<div class="hdr"><b>#27</b><span class="meta">R &middot; liss_results.R &middot; chunk 1/1</span></div>
+<pre>
+<span class="ln">  184</span>      paste0(&quot;CI:&quot;,round(fitmeasures(libcon_clpm)[names(fitmeasures(libcon_clpm)) ==
+
+<span class="ln">  185</span>                                                    &quot;rmsea.ci.lower&quot;], 2),&quot;-&quot;,
+
+<span class="ln">  186</span>             round(fitmeasures(libcon_clpm)[names(fitmeasures(libcon_clpm)) ==
+
+<span class="ln">  187</span>                                              &quot;rmsea.ci.upper&quot;], 2)),NA, NA
+
+<span class="hit"><span class="ln">  188</span>    ),</span>
+<span class="ln">  189</span>    c(&quot;CFI&quot;, round(fitmeasures(libcon_clpm)[names(fitmeasures(libcon_clpm)) ==
+
+<span class="ln">  190</span>                                              &quot;cfi&quot;], 2), rep(NA, 3)),
+
+<span class="ln">  191</span>    c(&quot;SRMR&quot;, round(fitmeasures(libcon_clpm)[names(fitmeasures(libcon_clpm)) ==
+
+<span class="ln">  192</span>                                               &quot;srmr&quot;], 2), rep(NA, 3)))
+
+</pre>
+<div class="meta">Full file: <code>C:\Users\joshu\Dropbox\Research\het-effects\data\prior-studies\replication-files\doi_10.7910_DVN_WZI945\liss_results.R</code></div>
+<div class="said reveal" style="display:none">model A: yes (subgroup_split) &middot; model B: yes (subgroup_split)</div>
+<div class="q">Does this file fit a model letting an effect vary? <label><input type="radio" name="v27" value="yes"> Yes</label><label><input type="radio" name="v27" value="no"> No</label><label><input type="radio" name="v27" value="unclear"> Can't tell</label></div></div>
+<div class="item" id="i28">
+<div class="hdr"><b>#28</b><span class="meta">R &middot; success_dem.R &middot; chunk 1/1</span></div>
+<pre>
+<span class="ln">  210</span>  ############################################
+
+<span class="ln">  211</span>  # DEMOCRAT APPENDIX MODEL: INTERACTION (TABLE A4)
+
+<span class="ln">  212</span>  ############################################
+
+<span class="ln">  213</span>  
+
+<span class="hit"><span class="ln">  214</span>  m &lt;- glm(winwin ~ qual_chall*decade + gender + </span>
+<span class="ln">  215</span>             cf_score + seat_safety + primary_type + 
+
+<span class="ln">  216</span>             pre_primary*decade +
+
+<span class="ln">  217</span>             quality_total2, 
+
+<span class="ln">  218</span>           family = binomial(), data = master)
+
+</pre>
+<div class="meta">Full file: <code>C:\Users\joshu\Dropbox\Research\het-effects\data\prior-studies\replication-files\doi_10.7910_DVN_CYFIDH\success_dem.R</code></div>
+<div class="said reveal" style="display:none">model A: yes (interaction_term, subgroup_split) &middot; model B: no (interaction_term)</div>
+<div class="q">Does this file fit a model letting an effect vary? <label><input type="radio" name="v28" value="yes"> Yes</label><label><input type="radio" name="v28" value="no"> No</label><label><input type="radio" name="v28" value="unclear"> Can't tell</label></div></div>
+<div class="item" id="i29">
+<div class="hdr"><b>#29</b><span class="meta">R &middot; 03_policy_change.R &middot; chunk 1/1</span></div>
+<pre>
+<span class="ln">   76</span>                 &quot;Expanding transit service&quot; = &quot;changelocal_transit&quot;,
+
+<span class="ln">   77</span>                 &quot;Passing rent control&quot; = &quot;changelocal_rentcontrol&quot;,
+
+<span class="ln">   78</span>                 &quot;Giving neighborhoods more voice&quot; = &quot;changelocal_neighvoice&quot;,
+
+<span class="ln">   79</span>                 &quot;Changing laws to allow more construction&quot; = &quot;changelocal_construction&quot;
+
+<span class="hit"><span class="ln">   80</span>  )</span>
+<span class="ln">   81</span>  
+
+<span class="ln">   82</span>  # Data frame to store coefs for baseline models with no interaction between
+
+<span class="ln">   83</span>  # homeownership and ideology.
+
+<span class="ln">   84</span>  coefs = data.frame(vars = rep(changevars, 2), labs = rep(names(changevars),2),
+
+</pre>
+<div class="meta">Full file: <code>C:\Users\joshu\Dropbox\Research\het-effects\data\prior-studies\replication-files\doi_10.7910_DVN_NIMLAR\03_policy_change.R</code></div>
+<div class="said reveal" style="display:none">model A: no (interaction_term) &middot; model B: yes (interaction_term, subgroup_split)</div>
+<div class="q">Does this file fit a model letting an effect vary? <label><input type="radio" name="v29" value="yes"> Yes</label><label><input type="radio" name="v29" value="no"> No</label><label><input type="radio" name="v29" value="unclear"> Can't tell</label></div></div>
+<div class="item" id="i30">
+<div class="hdr"><b>#30</b><span class="meta">Stata &middot; SM 11 - Alternative Matching.do &middot; chunk 1/1</span></div>
+<pre>
+<span class="ln">    7</span>  set more off
+
+<span class="ln">    8</span>  *1) political parties
+
+<span class="ln">    9</span>  clear
+
+<span class="ln">   10</span>  use m.vote.025.dta
+
+<span class="hit"><span class="ln">   11</span>  ologit elecsd polpart lngdp lnpop polity2 civilwar injud iswar INGO_uia i.year, cluster(country)</span>
+<span class="ln">   12</span>  outreg2 polpart using &quot;SM11A.xls&quot;, nocons replace excel dec(3)
+
+<span class="ln">   13</span>  
+
+<span class="ln">   14</span>  clear
+
+<span class="ln">   15</span>  use m.vote.050.dta
+
+</pre>
+<div class="meta">Full file: <code>C:\Users\joshu\Dropbox\Research\het-effects\data\prior-studies\replication-files\doi_10.7910_DVN_NC06GQ\SM 11 - Alternative Matching.do</code></div>
+<div class="said reveal" style="display:none">model A: yes (subgroup_split) &middot; model B: no</div>
+<div class="q">Does this file fit a model letting an effect vary? <label><input type="radio" name="v30" value="yes"> Yes</label><label><input type="radio" name="v30" value="no"> No</label><label><input type="radio" name="v30" value="unclear"> Can't tell</label></div></div>
+<div class="item" id="i31">
+<div class="hdr"><b>#31</b><span class="meta">R &middot; simulations_4_plot_smooths.R &middot; chunk 1/1</span></div>
+<pre>
+<span class="ln">   10</span>  
+
+<span class="ln">   11</span>  smoother_corr &lt;- function(simResults, scenario_xB = .2, scenario_zB = -.2){
+
+<span class="ln">   12</span>    
+
+<span class="ln">   13</span>    
+
+<span class="hit"><span class="ln">   14</span>    loess_x &lt;- loess(b_x ~ corr, degree = 1, span = .5, data = simResults %&gt;% filter(xB == scenario_xB &amp; zB == scenario_zB))</span>
+<span class="ln">   15</span>    
+
+<span class="ln">   16</span>    loess_z &lt;- loess(b_z ~ corr, degree = 1, span = .5, data = simResults %&gt;% filter(xB == scenario_xB &amp; zB == scenario_zB))
+
+<span class="ln">   17</span>    
+
+<span class="ln">   18</span>    pr_x &lt;- avg_predictions(loess_x, by = &quot;corr&quot;) %&gt;% mutate(variable = &quot;x&quot;)
+
+</pre>
+<div class="meta">Full file: <code>C:\Users\joshu\Dropbox\Research\het-effects\data\prior-studies\replication-files\doi_10.7910_DVN_VEFZXI\simulations_4_plot_smooths.R</code></div>
+<div class="said reveal" style="display:none">model A: yes (subgroup_split) &middot; model B: no</div>
+<div class="q">Does this file fit a model letting an effect vary? <label><input type="radio" name="v31" value="yes"> Yes</label><label><input type="radio" name="v31" value="no"> No</label><label><input type="radio" name="v31" value="unclear"> Can't tell</label></div></div>
+<div class="item" id="i32">
+<div class="hdr"><b>#32</b><span class="meta">R &middot; figureJ5_a_b.R &middot; chunk 1/1</span></div>
+<pre>
+<span class="ln">   24</span>  covars &lt;- c(covars_media, &#x27;labour&#x27;)
+
+<span class="ln">   25</span>  
+
+<span class="ln">   26</span>  outcomes &lt;- c(&#x27;prop_negative&#x27;)
+
+<span class="ln">   27</span>  estimates &lt;- vector(mode = &#x27;list&#x27;, length = 10)
+
+<span class="hit"><span class="ln">   28</span>  for (i in seq(1,10,1)) {</span>
+<span class="ln">   29</span>    
+
+<span class="ln">   30</span>    coef &lt;- c()
+
+<span class="ln">   31</span>    se &lt;- c()
+
+<span class="ln">   32</span>    p_value &lt;- c()
+
+</pre>
+<div class="meta">Full file: <code>C:\Users\joshu\Dropbox\Research\het-effects\data\prior-studies\replication-files\doi_10.7910_DVN_IJ2DW4\figureJ5_a_b.R</code></div>
+<div class="said reveal" style="display:none">model A: no &middot; model B: yes (subgroup_split)</div>
+<div class="q">Does this file fit a model letting an effect vary? <label><input type="radio" name="v32" value="yes"> Yes</label><label><input type="radio" name="v32" value="no"> No</label><label><input type="radio" name="v32" value="unclear"> Can't tell</label></div></div>
+<div class="item" id="i33">
+<div class="hdr"><b>#33</b><span class="meta">R &middot; analysis_suffrage_ei.R &middot; chunk 1/1</span></div>
+<pre>
+<span class="ln">  100</span>                               no0 = suff_no_1857 / elig_1865,
+
+<span class="ln">  101</span>                               no1 =  suff_no_1865 / (elig_1865 - (vets_alt - vets_alt_h)),
+
+<span class="ln">  102</span>                               to0 = to_1857 / elig_1865,
+
+<span class="ln">  103</span>                               to1 = to_1865 / elig_1865
+
+<span class="hit"><span class="ln">  104</span>                             )</span>
+<span class="ln">  105</span>                           ]
+
+<span class="ln">  106</span>  #Enlistment
+
+<span class="ln">  107</span>  x0 = wi_twp_ei[,x0] 
+
+<span class="ln">  108</span>  x1 = wi_twp_ei[,x1] 
+
+</pre>
+<div class="meta">Full file: <code>C:\Users\joshu\Dropbox\Research\het-effects\data\prior-studies\replication-files\doi_10.7910_DVN_RZVMJW\analysis_suffrage_ei.R</code></div>
+<div class="said reveal" style="display:none">model A: yes (subgroup_split) &middot; model B: yes (subgroup_split)</div>
+<div class="q">Does this file fit a model letting an effect vary? <label><input type="radio" name="v33" value="yes"> Yes</label><label><input type="radio" name="v33" value="no"> No</label><label><input type="radio" name="v33" value="unclear"> Can't tell</label></div></div>
+<div class="item" id="i34">
+<div class="hdr"><b>#34</b><span class="meta">R &middot; 2_stan.R &middot; chunk 1/1</span></div>
+<pre>
+<span class="ln">   63</span>    
+
+<span class="ln">   64</span>    standata$R_covar_cats &lt;- standata[[paste0(&quot;R_&quot;, covar_name,&quot;_categorical&quot;)]]
+
+<span class="ln">   65</span>    standata$N_covar_cats &lt;- ncol(standata$R_covar_cats)
+
+<span class="ln">   66</span>    
+
+<span class="hit"><span class="ln">   67</span>    posterior_correlation &lt;- sampling(model_correlation, data = standata, </span>
+<span class="ln">   68</span>                                      iter = N_iter, 
+
+<span class="ln">   69</span>                                      warmup = N_warm,
+
+<span class="ln">   70</span>                                      chains = N_chains, 
+
+<span class="ln">   71</span>                                      cores = N_cores,
+
+</pre>
+<div class="meta">Full file: <code>C:\Users\joshu\Dropbox\Research\het-effects\data\prior-studies\replication-files\doi_10.7910_DVN_BWZ3N0\2_stan.R</code></div>
+<div class="said reveal" style="display:none">model A: yes (subgroup_split) &middot; model B: no (interaction_term)</div>
+<div class="q">Does this file fit a model letting an effect vary? <label><input type="radio" name="v34" value="yes"> Yes</label><label><input type="radio" name="v34" value="no"> No</label><label><input type="radio" name="v34" value="unclear"> Can't tell</label></div></div>
+<div class="item" id="i35">
+<div class="hdr"><b>#35</b><span class="meta">R &middot; tableA5.R &middot; chunk 1/3</span></div>
+<pre>
+<span class="ln">   20</span>  ######################
+
+<span class="ln">   21</span>  ######LISS PANEL######
+
+<span class="ln">   22</span>  ######################
+
+<span class="ln">   23</span>  
+
+<span class="hit"><span class="ln">   24</span>  lisscor1a &lt;- cor(liss$immigration_8[liss$all==0], liss$immigration_9[liss$all==0], method=&quot;spearman&quot;, use=&quot;pairwise&quot;)</span>
+<span class="ln">   25</span>  lisscor2a &lt;- cor(liss$immigration_8[liss$all==0], liss$immigration_10[liss$all==0], method=&quot;spearman&quot;, use=&quot;pairwise&quot;)
+
+<span class="ln">   26</span>  lisscor3a &lt;- cor(liss$immigration_8[liss$all==0], liss$immigration_11[liss$all==0], method=&quot;spearman&quot;, use=&quot;pairwise&quot;)
+
+<span class="ln">   27</span>  lisscor4a &lt;- cor(liss$immigration_8[liss$all==0], liss$immigration_12[liss$all==0], method=&quot;spearman&quot;, use=&quot;pairwise&quot;)
+
+<span class="ln">   28</span>  lisscor5a &lt;- cor(liss$immigration_8[liss$all==0], liss$immigration_13[liss$all==0], method=&quot;spearman&quot;, use=&quot;pairwise&quot;)
+
+</pre>
+<div class="meta">Full file: <code>C:\Users\joshu\Dropbox\Research\het-effects\data\prior-studies\replication-files\doi_10.7910_DVN_OYIAYK\tableA5.R</code></div>
+<div class="said reveal" style="display:none">model A: yes (subgroup_split) &middot; model B: no</div>
+<div class="q">Does this file fit a model letting an effect vary? <label><input type="radio" name="v35" value="yes"> Yes</label><label><input type="radio" name="v35" value="no"> No</label><label><input type="radio" name="v35" value="unclear"> Can't tell</label></div></div>
+<div class="item" id="i36">
+<div class="hdr"><b>#36</b><span class="meta">R &middot; 06-comscore_education_figure.R &middot; chunk 1/1</span></div>
+<pre>
+<span class="ln">   27</span>  &#x27;%.%&#x27; &lt;- function(x,y) paste(x,y,sep=&#x27;&#x27;)
+
+<span class="ln">   28</span>  
+
+<span class="ln">   29</span>  CairoFonts(regular=&quot;CMU Serif&quot;,
+
+<span class="ln">   30</span>  					 bold=&quot;CMU Serif Extra&quot;
+
+<span class="hit"><span class="ln">   31</span>  )</span>
+<span class="ln">   32</span>  
+
+<span class="ln">   33</span>  red_mit = &#x27;#A31F34&#x27;
+
+<span class="ln">   34</span>  red_light = &#x27;#A9606C&#x27;
+
+<span class="ln">   35</span>  blue_mit = &#x27;#315485&#x27;
+
+</pre>
+<div class="meta">Full file: <code>C:\Users\joshu\Dropbox\Research\het-effects\data\prior-studies\replication-files\doi_10.7910_DVN_MM2VWC\06-comscore_education_figure.R</code></div>
+<div class="said reveal" style="display:none">model A: yes (subgroup_split) &middot; model B: no</div>
+<div class="q">Does this file fit a model letting an effect vary? <label><input type="radio" name="v36" value="yes"> Yes</label><label><input type="radio" name="v36" value="no"> No</label><label><input type="radio" name="v36" value="unclear"> Can't tell</label></div></div>
+<div class="item" id="i37">
+<div class="hdr"><b>#37</b><span class="meta">R &middot; regs_dhs_figA25.R &middot; chunk 1/1</span></div>
+<pre>
+<span class="ln">   36</span>    # out &lt;- coef(m.stage2)[c(cropvar , pubvar)]
+
+<span class="ln">   37</span>    out &lt;- list(m.stage1,m.stage2)
+
+<span class="ln">   38</span>    names(out) &lt;- c(&quot;stage1&quot;,&quot;stage2&quot;)
+
+<span class="ln">   39</span>    return(out)
+
+<span class="hit"><span class="ln">   40</span>  }</span>
+<span class="ln">   41</span>  
+
+<span class="ln">   42</span>  ####  mediation function with felm &amp; unlim nb of mediators
+
+<span class="ln">   43</span>  ethn.mediation &lt;- function(yvar=yvar,mediators , Xconf =conf.pre,  Zconf=conf.int,  data){
+
+<span class="ln">   44</span>    
+
+</pre>
+<div class="meta">Full file: <code>C:\Users\joshu\Dropbox\Research\het-effects\data\prior-studies\replication-files\doi_10.7910_DVN_WQEQPN\regs_dhs_figA25.R</code></div>
+<div class="said reveal" style="display:none">model A: yes (subgroup_split) &middot; model B: no</div>
+<div class="q">Does this file fit a model letting an effect vary? <label><input type="radio" name="v37" value="yes"> Yes</label><label><input type="radio" name="v37" value="no"> No</label><label><input type="radio" name="v37" value="unclear"> Can't tell</label></div></div>
+<div class="item" id="i38">
+<div class="hdr"><b>#38</b><span class="meta">R &middot; figureB9.R &middot; chunk 1/1</span></div>
+<pre>
+<span class="ln">   14</span>  # Figure B9 (a)
+
+<span class="ln">   15</span>  if (!file.exists(&#x27;./output/doubledid_death_unbalanced_panel.RData&#x27;)) {
+
+<span class="ln">   16</span>    
+
+<span class="ln">   17</span>    set.seed(848)
+
+<span class="hit"><span class="ln">   18</span>    fit_unbalanced_panel &lt;- did(</span>
+<span class="ln">   19</span>      formula = hc_pc_asians ~ excess_deaths_jan_d + covid2,
+
+<span class="ln">   20</span>      data    = panel,
+
+<span class="ln">   21</span>      id_time = &#x27;month&#x27;,
+
+<span class="ln">   22</span>      is_panel= FALSE,
+
+</pre>
+<div class="meta">Full file: <code>C:\Users\joshu\Dropbox\Research\het-effects\data\prior-studies\replication-files\doi_10.7910_DVN_0DCWT7\figureB9.R</code></div>
+<div class="said reveal" style="display:none">model A: yes (subgroup_split) &middot; model B: no</div>
+<div class="q">Does this file fit a model letting an effect vary? <label><input type="radio" name="v38" value="yes"> Yes</label><label><input type="radio" name="v38" value="no"> No</label><label><input type="radio" name="v38" value="unclear"> Can't tell</label></div></div>
+<div class="item" id="i39">
+<div class="hdr"><b>#39</b><span class="meta">R &middot; slavery-youth-parent.R &middot; chunk 1/1</span></div>
+<div class="meta">No model-fitting lines found in this file.</div>
+<div class="meta">Full file: <code>C:\Users\joshu\Dropbox\Research\het-effects\data\prior-studies\replication-files\doi_10.7910_DVN_CAEEG7\slavery-youth-parent.R</code></div>
+<div class="said reveal" style="display:none">model A: no &middot; model B: no</div>
+<div class="q">Does this file fit a model letting an effect vary? <label><input type="radio" name="v39" value="yes"> Yes</label><label><input type="radio" name="v39" value="no"> No</label><label><input type="radio" name="v39" value="unclear"> Can't tell</label></div></div>
+<div class="item" id="i40">
+<div class="hdr"><b>#40</b><span class="meta">R &middot; MainManuscript_analysis_final.R &middot; chunk 1/1</span></div>
+<pre>
+<span class="ln">   37</span>          axis.ticks=element_blank(),
+
+<span class="ln">   38</span>          panel.grid.minor = element_blank(),
+
+<span class="ln">   39</span>          panel.grid.major = element_blank()) +
+
+<span class="ln">   40</span>    coord_equal()
+
+<span class="hit"><span class="ln">   41</span>  a</span>
+<span class="ln">   42</span>  ggsave(a, file=&quot;flowmap_final_final.pdf&quot;, family=&quot;sans&quot;, width=40, height=17, units= &quot;cm&quot;, dpi=800)
+
+<span class="ln">   43</span>  
+
+<span class="ln">   44</span>  
+
+<span class="ln">   45</span>  #-----------------------------------------------------------------------#
+
+</pre>
+<div class="meta">Full file: <code>C:\Users\joshu\Dropbox\Research\het-effects\data\prior-studies\replication-files\doi_10.7910_DVN_UQDLUB\MainManuscript_analysis_final.R</code></div>
+<div class="said reveal" style="display:none">model A: yes (interaction_term, subgroup_split) &middot; model B: no (interaction_term)</div>
+<div class="q">Does this file fit a model letting an effect vary? <label><input type="radio" name="v40" value="yes"> Yes</label><label><input type="radio" name="v40" value="no"> No</label><label><input type="radio" name="v40" value="unclear"> Can't tell</label></div></div>
+<div class="item" id="i41">
+<div class="hdr"><b>#41</b><span class="meta">R &middot; 2_SLES_analysis_nccppr.R &middot; chunk 1/1</span></div>
+<pre>
+<span class="ln">  167</span>    select(state, term, chamber, sles_sponsor, sles_id, match_name, party, in_majority, 
+
+<span class="ln">  168</span>           seniority, Leader, comm_chair, female, pred.race, appt_or_won_special, np_score, ideo_med_distance,
+
+<span class="ln">  169</span>           starts_with(&quot;SLES&quot;), sponsor_pass_rate, sponsor_law_rate, 
+
+<span class="ln">  170</span>           matthewsHitRate, bayeshitrate, 
+
+<span class="hit"><span class="ln">  171</span>           nccpprRanking</span>
+<span class="ln">  172</span>           ) %&gt;%
+
+<span class="ln">  173</span>    group_by(state, term, chamber) %&gt;%
+
+<span class="ln">  174</span>    arrange(state, term, chamber, nccpprRanking) %&gt;%
+
+<span class="ln">  175</span>    mutate(nccpprInverseRank = n():1,
+
+</pre>
+<div class="meta">Full file: <code>C:\Users\joshu\Dropbox\Research\het-effects\data\prior-studies\replication-files\doi_10.7910_DVN_NT7H5O\2_SLES_analysis_nccppr.R</code></div>
+<div class="said reveal" style="display:none">model A: yes (interaction_term, subgroup_split) &middot; model B: no (interaction_term)</div>
+<div class="q">Does this file fit a model letting an effect vary? <label><input type="radio" name="v41" value="yes"> Yes</label><label><input type="radio" name="v41" value="no"> No</label><label><input type="radio" name="v41" value="unclear"> Can't tell</label></div></div>
+<div class="item" id="i42">
+<div class="hdr"><b>#42</b><span class="meta">R &middot; Additional_Figures.R &middot; chunk 1/1</span></div>
+<pre>
+<span class="ln">   34</span>    x = as.factor(c(rep(c(1:2),2),rep(c(1:2),2))),
+
+<span class="ln">   35</span>    cond = as.factor(c(1,1,1,1,1,1,1,1)),
+
+<span class="ln">   36</span>    dv = as.factor(c(rep(&quot;Agree&quot;,4),rep(&quot;Vote&quot;,4))),
+
+<span class="ln">   37</span>    rr_def = c(rep(&quot;Republican&quot;,2),rep(&quot;Democrat&quot;,2),rep(&quot;Republican&quot;,2),rep(&quot;Democrat&quot;,2)),
+
+<span class="hit"><span class="ln">   38</span>    y = c(mean(na.omit(REPed$AgreeCandidate[REPed$treat==1])),</span>
+<span class="ln">   39</span>          mean(na.omit(REPed$AgreeCandidate[REPed$treat==3])),
+
+<span class="ln">   40</span>          mean(na.omit(DEMed$AgreeCandidate[DEMed$treat==1])),
+
+<span class="ln">   41</span>          mean(na.omit(DEMed$AgreeCandidate[DEMed$treat==3])),
+
+<span class="ln">   42</span>          mean(na.omit(REPed$vote[REPed$treat==1])),
+
+</pre>
+<div class="meta">Full file: <code>C:\Users\joshu\Dropbox\Research\het-effects\data\prior-studies\replication-files\doi_10.7910_DVN_2CVG5E\Additional_Figures.R</code></div>
+<div class="said reveal" style="display:none">model A: yes (subgroup_split) &middot; model B: no</div>
+<div class="q">Does this file fit a model letting an effect vary? <label><input type="radio" name="v42" value="yes"> Yes</label><label><input type="radio" name="v42" value="no"> No</label><label><input type="radio" name="v42" value="unclear"> Can't tell</label></div></div>
+<div class="item" id="i43">
+<div class="hdr"><b>#43</b><span class="meta">R &middot; merge_context.R &middot; chunk 1/1</span></div>
+<div class="meta">No model-fitting lines found in this file.</div>
+<div class="meta">Full file: <code>C:\Users\joshu\Dropbox\Research\het-effects\data\prior-studies\replication-files\doi_10.7910_DVN_QXJDJ5\merge_context.R</code></div>
+<div class="said reveal" style="display:none">model A: no &middot; model B: no</div>
+<div class="q">Does this file fit a model letting an effect vary? <label><input type="radio" name="v43" value="yes"> Yes</label><label><input type="radio" name="v43" value="no"> No</label><label><input type="radio" name="v43" value="unclear"> Can't tell</label></div></div>
+<div class="item" id="i44">
+<div class="hdr"><b>#44</b><span class="meta">Stata &middot; ABOT_Table5_1&amp;Figure5_1.do &middot; chunk 1/1</span></div>
+<pre>
+<span class="ln">   10</span>  gen changeXpres = corr_change*presidential
+
+<span class="ln">   11</span>  
+
+<span class="ln">   12</span>  
+
+<span class="ln">   13</span>  	
+
+<span class="hit"><span class="ln">   14</span>  	logit femaleminister corr_change date  gdppercapita_lag loggdp_lag  unified    pwc_lag  presidential   accountability 	</span>
+<span class="ln">   15</span>  	logit femaleminister corr_change date  gdppercapita_lag loggdp_lag  unified    pwc_lag  presidential if  accountability==1 	
+
+<span class="ln">   16</span>  	logit femaleminister corr_change date  gdppercapita_lag loggdp_lag  unified    pwc_lag   if  accountability==0 	
+
+<span class="ln">   17</span>  	logit femaleminister corr_change date  gdppercapita_lag loggdp_lag  unified    pwc_lag  presidential   accountability changeXacc 
+
+<span class="ln">   18</span>  	logit femaleminister corr_change date  gdppercapita_lag loggdp_lag  unified    pwc_lag       if  accountability==1 &amp; presidential==1
+
+</pre>
+<div class="meta">Full file: <code>C:\Users\joshu\Dropbox\Research\het-effects\data\prior-studies\replication-files\doi_10.7910_DVN_TYNEDE\ABOT_Table5_1&amp;Figure5_1.do</code></div>
+<div class="said reveal" style="display:none">model A: yes (interaction_term, subgroup_split) &middot; model B: yes (interaction_term, subgroup_split)</div>
+<div class="q">Does this file fit a model letting an effect vary? <label><input type="radio" name="v44" value="yes"> Yes</label><label><input type="radio" name="v44" value="no"> No</label><label><input type="radio" name="v44" value="unclear"> Can't tell</label></div></div>
+<div class="item" id="i45">
+<div class="hdr"><b>#45</b><span class="meta">R &middot; 04_simulation_06_DGP_naturalistic_sims.R &middot; chunk 1/1</span></div>
+<pre>
+<span class="ln">   15</span>  
+
+<span class="ln">   16</span>  ## OLS Truth
+
+<span class="ln">   17</span>  ## estimate linear model
+
+<span class="ln">   18</span>  lin_Y0 &lt;- lm( as.formula(paste0(&quot;trans.tolerance.dv.t1 ~ &quot;, paste0(covariates, collapse = &quot; + &quot;))),
+
+<span class="hit"><span class="ln">   19</span>                data = sample %&gt;% filter(treat_ind == 0))</span>
+<span class="ln">   20</span>  lin_Y1 &lt;- lm( as.formula(paste0(&quot;trans.tolerance.dv.t1 ~ &quot;, paste0(covariates, collapse = &quot; + &quot;))),
+
+<span class="ln">   21</span>                data = sample %&gt;% filter(treat_ind == 1))
+
+<span class="ln">   22</span>  
+
+<span class="ln">   23</span>  
+
+</pre>
+<div class="meta">Full file: <code>C:\Users\joshu\Dropbox\Research\het-effects\data\prior-studies\replication-files\doi_10.7910_DVN_3EKRSI\04_simulation_06_DGP_naturalistic_sims.R</code></div>
+<div class="said reveal" style="display:none">model A: no &middot; model B: yes (subgroup_split, ml_heterogeneity)</div>
+<div class="q">Does this file fit a model letting an effect vary? <label><input type="radio" name="v45" value="yes"> Yes</label><label><input type="radio" name="v45" value="no"> No</label><label><input type="radio" name="v45" value="unclear"> Can't tell</label></div></div>
+<div class="item" id="i46">
+<div class="hdr"><b>#46</b><span class="meta">Stata &middot; anes-0809-panel-ajps-replication-appendix-models.do &middot; chunk 1/1</span></div>
+<pre>
+<span class="ln">   41</span>  ********************************************************************************
+
+<span class="ln">   42</span>  
+
+<span class="ln">   43</span>  * PANEL A **********************************************************************
+
+<span class="ln">   44</span>  * mean low knowledge
+
+<span class="hit"><span class="ln">   45</span>  mean interest1 interest10 if bothwaves==1 &amp; soph==0</span>
+<span class="ln">   46</span>  est store low
+
+<span class="ln">   47</span>  * mean high knowledge
+
+<span class="ln">   48</span>  mean interest1 interest10 if bothwaves==1 &amp; soph==1
+
+<span class="ln">   49</span>  est store high
+
+</pre>
+<div class="meta">Full file: <code>C:\Users\joshu\Dropbox\Research\het-effects\data\prior-studies\replication-files\doi_10.7910_DVN_ED5O5U\anes-0809-panel-ajps-replication-appendix-models.do</code></div>
+<div class="said reveal" style="display:none">model A: no &middot; model B: yes (subgroup_split)</div>
+<div class="q">Does this file fit a model letting an effect vary? <label><input type="radio" name="v46" value="yes"> Yes</label><label><input type="radio" name="v46" value="no"> No</label><label><input type="radio" name="v46" value="unclear"> Can't tell</label></div></div>
+<div class="item" id="i47">
+<div class="hdr"><b>#47</b><span class="meta">R &middot; tabF8-cov-in.R &middot; chunk 1/1</span></div>
+<pre>
+<span class="ln">   12</span>                              dhs_kr$wave_year10, 
+
+<span class="ln">   13</span>                              dhs_kr$wave_year14, 
+
+<span class="ln">   14</span>                              dhs_kr$v012, 
+
+<span class="ln">   15</span>                              dhs_kr$v012^2 
+
+<span class="hit"><span class="ln">   16</span>                 ), </span>
+<span class="ln">   17</span>                 cluster = dhs_kr$DHSCLUST, 
+
+<span class="ln">   18</span>                 vce = &#x27;hc3&#x27;, 
+
+<span class="ln">   19</span>                 p = 1
+
+<span class="ln">   20</span>  ) 
+
+</pre>
+<div class="meta">Full file: <code>C:\Users\joshu\Dropbox\Research\het-effects\data\prior-studies\replication-files\doi_10.7910_DVN_RK5GOH\tabF8-cov-in.R</code></div>
+<div class="said reveal" style="display:none">model A: yes (subgroup_split) &middot; model B: no (interaction_term)</div>
+<div class="q">Does this file fit a model letting an effect vary? <label><input type="radio" name="v47" value="yes"> Yes</label><label><input type="radio" name="v47" value="no"> No</label><label><input type="radio" name="v47" value="unclear"> Can't tell</label></div></div>
+<div class="item" id="i48">
+<div class="hdr"><b>#48</b><span class="meta">R &middot; RPG_replication_content_analysis.R &middot; chunk 1/1</span></div>
+<pre>
+<span class="ln">   52</span>    trend.act.data &lt;- ques.act.data %&gt;% group_by(chamber, first_speaker, period) %&gt;% summarize(pr.subset = sum(subset_count)/sum(all_count))
+
+<span class="ln">   53</span>    all.trend &lt;- bind_rows(all.trend, trend.act.data %&gt;% mutate(type = outcome))
+
+<span class="ln">   54</span>    
+
+<span class="ln">   55</span>    ques.pr.reg &lt;- ques.act.data %&gt;% filter(period != &#x27;Pre-1955&#x27;) %&gt;% group_by(chamber, first_speaker) %&gt;% 
+
+<span class="hit"><span class="ln">   56</span>      do(</span>
+<span class="ln">   57</span>        fmt.regression(
+
+<span class="ln">   58</span>          plm(formula = pr.subset ~ period, data = ., index = &#x27;committee&#x27;), 
+
+<span class="ln">   59</span>          se.type = &#x27;robust&#x27;)
+
+<span class="ln">   60</span>      )
+
+</pre>
+<div class="meta">Full file: <code>C:\Users\joshu\Dropbox\Research\het-effects\data\prior-studies\replication-files\doi_10.7910_DVN_DFGQVW\RPG_replication_content_analysis.R</code></div>
+<div class="said reveal" style="display:none">model A: yes (subgroup_split) &middot; model B: no</div>
+<div class="q">Does this file fit a model letting an effect vary? <label><input type="radio" name="v48" value="yes"> Yes</label><label><input type="radio" name="v48" value="no"> No</label><label><input type="radio" name="v48" value="unclear"> Can't tell</label></div></div>
+<div class="item" id="i49">
+<div class="hdr"><b>#49</b><span class="meta">R &middot; tableD1.R &middot; chunk 1/1</span></div>
+<pre>
+<span class="ln">   20</span>  data_admin[, const_id:= .GRP, by=ons_id]
+
+<span class="ln">   21</span>  
+
+<span class="ln">   22</span>  # run regression
+
+<span class="ln">   23</span>  set.seed(123)
+
+<span class="hit"><span class="ln">   24</span>  out_att &lt;- att_gt(yname = &quot;turnout&quot;,</span>
+<span class="ln">   25</span>                    tname = &quot;election_id&quot;,
+
+<span class="ln">   26</span>                    idname = &quot;const_id&quot;,
+
+<span class="ln">   27</span>                    gname = &quot;first_treat&quot;,
+
+<span class="ln">   28</span>                    data = data_admin,
+
+</pre>
+<div class="meta">Full file: <code>C:\Users\joshu\Dropbox\Research\het-effects\data\prior-studies\replication-files\doi_10.7910_DVN_PGGT4N\tableD1.R</code></div>
+<div class="said reveal" style="display:none">model A: yes (subgroup_split) &middot; model B: no (ml_heterogeneity)</div>
+<div class="q">Does this file fit a model letting an effect vary? <label><input type="radio" name="v49" value="yes"> Yes</label><label><input type="radio" name="v49" value="no"> No</label><label><input type="radio" name="v49" value="unclear"> Can't tell</label></div></div>
+<div class="item" id="i50">
+<div class="hdr"><b>#50</b><span class="meta">Stata &middot; 01_Figure3_UnionCommunication.do &middot; chunk 1/1</span></div>
+<div class="meta">No model-fitting lines found in this file.</div>
+<div class="meta">Full file: <code>C:\Users\joshu\Dropbox\Research\het-effects\data\prior-studies\replication-files\doi_10.7910_DVN_FZI6NO\01_Figure3_UnionCommunication.do</code></div>
+<div class="said reveal" style="display:none">model A: no &middot; model B: no</div>
+<div class="q">Does this file fit a model letting an effect vary? <label><input type="radio" name="v50" value="yes"> Yes</label><label><input type="radio" name="v50" value="no"> No</label><label><input type="radio" name="v50" value="unclear"> Can't tell</label></div></div>
+<div class="item" id="i51">
+<div class="hdr"><b>#51</b><span class="meta">Stata &middot; Genforward.do &middot; chunk 1/1</span></div>
+<pre>
+<span class="ln">   42</span>  
+
+<span class="ln">   43</span>  
+
+<span class="ln">   44</span>  *** stata logit command for vote 
+
+<span class="ln">   45</span>  
+
+<span class="hit"><span class="ln">   46</span>  . logit Voted broker NonID Foreignparent College income age Female trust divtrimp Latino Asian Black Ideo</span>
+<span class="ln">   47</span>  
+
+<span class="ln">   48</span>  *** stata logit command for parentpoliticaltalk
+
+<span class="ln">   49</span>  
+
+<span class="ln">   50</span>   logit parentpoliticaltalk broker NonID Foreignparent College income age Female trust divtrimp Latino Asian Black Ideo
+
+</pre>
+<div class="meta">Full file: <code>C:\Users\joshu\Dropbox\Research\het-effects\data\prior-studies\replication-files\doi_10.7910_DVN_4P2JA3\Genforward.do</code></div>
+<div class="said reveal" style="display:none">model A: yes (subgroup_split) &middot; model B: no</div>
+<div class="q">Does this file fit a model letting an effect vary? <label><input type="radio" name="v51" value="yes"> Yes</label><label><input type="radio" name="v51" value="no"> No</label><label><input type="radio" name="v51" value="unclear"> Can't tell</label></div></div>
+<div class="item" id="i52">
+<div class="hdr"><b>#52</b><span class="meta">Stata &middot; 1_AJPS_Replication_MASTER.do &middot; chunk 1/1</span></div>
+<div class="meta">The quoted line was not exact; the closest real line is highlighted.</div>
+<pre>
+<span class="ln">   36</span>  
+
+<span class="ln">   37</span>  6. Asian Barometer: proportions_a2.dta; created in do file 4, used in do file 4; 
+
+<span class="ln">   38</span>  Source: Asian Barometer, &quot;Asian Barometer Project (2018-2021)&quot;, Hu Fu Center for East Asia Democratic Studies. https://www.asianbarometer.org/data?page=d10
+
+<span class="ln">   39</span>  
+
+<span class="hit"><span class="ln">   40</span>  7. Afrobarometer: proportions_a3.dta; created in do file 4, used in do file 4.</span>
+<span class="ln">   41</span>  Source: Afrobarometer, &quot;Merged Round 8 data (34 countries) (2022)&quot;, 9 March 2023. https://www.afrobarometer.org/survey-resource/merged-round-8-data-34-countries-2022/
+
+<span class="ln">   42</span>  
+
+<span class="ln">   43</span>  8. Manufacturing data: manufacturing.dta; created in do file 2, used in do file 2.
+
+<span class="ln">   44</span>  Source: CECODES, VVF, and UNDP. 2022. &quot;The 2021 Viet Nam Governance and Public Administration Performance Index (PAPI 2021): Measuring Citizens&#x27; Experiences.&quot; CECODES. Technical report. https://papi.org.vn/eng/
+
+</pre>
+<div class="meta">Full file: <code>C:\Users\joshu\Dropbox\Research\het-effects\data\prior-studies\replication-files\doi_10.7910_DVN_361LGD\1_AJPS_Replication_MASTER.do</code></div>
+<div class="said reveal" style="display:none">model A: yes (interaction_term, subgroup_split) &middot; model B: no</div>
+<div class="q">Does this file fit a model letting an effect vary? <label><input type="radio" name="v52" value="yes"> Yes</label><label><input type="radio" name="v52" value="no"> No</label><label><input type="radio" name="v52" value="unclear"> Can't tell</label></div></div>
+<div class="item" id="i53">
+<div class="hdr"><b>#53</b><span class="meta">R &middot; table-A08-2.R &middot; chunk 1/1</span></div>
+<pre>
+<span class="ln">  105</span>  df_delegate_raw_pooled$Bucket = factor(x=df_delegate_raw_pooled$Bucket, 
+
+<span class="ln">  106</span>                                         levels=c(&#x27;000 Control&#x27;,&#x27;050 Control&#x27;,&#x27;050 Citizen&#x27;,&#x27;100 Citizen&#x27;,&#x27;050 Firm&#x27;,&#x27;100 Firm&#x27;))
+
+<span class="ln">  107</span>  
+
+<span class="ln">  108</span>  
+
+<span class="hit"><span class="ln">  109</span>  fit_1 = lm(Q1 ~ 0 + Bucket, data=df_delegate_raw_survey)</span>
+<span class="ln">  110</span>  fit_2 = lm(Spoke ~ 0 + Bucket, data=df_delegate_raw_pooled)
+
+<span class="ln">  111</span>  
+
+<span class="ln">  112</span>  
+
+<span class="ln">  113</span>  table_A08_2 = ldply(.data=c(&#x27;Bucket050 Citizen = Bucket050 Control&#x27;,
+
+</pre>
+<div class="meta">Full file: <code>C:\Users\joshu\Dropbox\Research\het-effects\data\prior-studies\replication-files\doi_10.7910_DVN_RXA4JB\table-A08-2.R</code></div>
+<div class="said reveal" style="display:none">model A: yes (subgroup_split) &middot; model B: no</div>
+<div class="q">Does this file fit a model letting an effect vary? <label><input type="radio" name="v53" value="yes"> Yes</label><label><input type="radio" name="v53" value="no"> No</label><label><input type="radio" name="v53" value="unclear"> Can't tell</label></div></div>
+<div class="item" id="i54">
+<div class="hdr"><b>#54</b><span class="meta">Stata &middot; ActivatingAnimus_ReplicationCode_MainText_FINAL.do &middot; chunk 1/1</span></div>
+<pre>
+<span class="ln">  261</span>  
+
+<span class="ln">  262</span>  
+
+<span class="ln">  263</span>  
+
+<span class="ln">  264</span>  *FIGURE 3:  Dem Group Animus and Trump Support with interaction by 2011 PID
+
+<span class="hit"><span class="ln">  265</span>  reg Trumpfav1801  c.rr_demgroupsFT11##i.pid_baseline3 Ideo_baseline_cleaned_01 /// </span>
+<span class="ln">  266</span>  i.educ_baseline i.race_baseline i.religpew_baseline age2011decades female_baseline faminc_baseline_clean_01 rr_polinterest_baseline_01, robust 
+
+<span class="ln">  267</span>  
+
+<span class="ln">  268</span>  margins, at(rr_demgroupsFT11=(0 (.1) 1) pid_baseline3=(1 2 3)) atmeans saving(file1, replace)
+
+<span class="ln">  269</span>  
+
+</pre>
+<div class="meta">Full file: <code>C:\Users\joshu\Dropbox\Research\het-effects\data\prior-studies\replication-files\doi_10.7910_DVN_Q4VN7A\ActivatingAnimus_ReplicationCode_MainText_FINAL.do</code></div>
+<div class="said reveal" style="display:none">model A: yes (interaction_term, subgroup_split) &middot; model B: no (interaction_term)</div>
+<div class="q">Does this file fit a model letting an effect vary? <label><input type="radio" name="v54" value="yes"> Yes</label><label><input type="radio" name="v54" value="no"> No</label><label><input type="radio" name="v54" value="unclear"> Can't tell</label></div></div>
+<div class="item" id="i55">
+<div class="hdr"><b>#55</b><span class="meta">R &middot; study1_analysis.R &middot; chunk 1/1</span></div>
+<pre>
+<span class="ln">  130</span>  
+
+<span class="ln">  131</span>  
+
+<span class="ln">  132</span>  ### Figure 2a:
+
+<span class="ln">  133</span>  
+
+<span class="hit"><span class="ln">  134</span>  ggplot(repcon.data) +</span>
+<span class="ln">  135</span>    aes(x = pid7, y = Bscale, color = as.factor(treat), linetype==as.factor(treat)) +
+
+<span class="ln">  136</span>    geom_smooth(method = &quot;lm&quot;) + 
+
+<span class="ln">  137</span>    labs( y= &quot;Index&quot;,x = &quot;\nParty Id&quot;, color = &quot;Promise Outcome&quot;) +
+
+<span class="ln">  138</span>    scale_linetype_manual(name=&quot;Treatment&quot;, values=c(&quot;dotted&quot;,&quot;longdash&quot;,&quot;solid&quot;),
+
+</pre>
+<div class="meta">Full file: <code>C:\Users\joshu\Dropbox\Research\het-effects\data\prior-studies\replication-files\doi_10.7910_DVN_FW87Y1\study1_analysis.R</code></div>
+<div class="said reveal" style="display:none">model A: yes (subgroup_split) &middot; model B: no</div>
+<div class="q">Does this file fit a model letting an effect vary? <label><input type="radio" name="v55" value="yes"> Yes</label><label><input type="radio" name="v55" value="no"> No</label><label><input type="radio" name="v55" value="unclear"> Can't tell</label></div></div>
+
+<script>
+// localStorage is blocked on file:// origins in some browsers, so every read
+// and write is guarded and the export below reads the DOM rather than the
+// store. Losing an hour of adjudication to a silent storage failure would be
+// considerably worse than losing the ability to resume.
+const K='hetval-v1';
+let store=true, saved={};
+try{ saved=JSON.parse(localStorage.getItem(K)||'{}'); }
+catch(e){ store=false; }
+
+function persist(){
+  if(!store) return;
+  try{ localStorage.setItem(K,JSON.stringify(saved)); }
+  catch(e){ store=false; warn(); }
+}
+function warn(){
+  document.getElementById('warn').textContent =
+    'This browser will not save progress for a local file. Your answers are '
+    + 'kept for this tab only \u2014 press "Show results" and copy them out '
+    + 'before closing.';
+}
+function paint(){
+  let n=0;
+  document.querySelectorAll('.item').forEach(d=>{
+    const id=d.id.slice(1);
+    const c=d.querySelector('input[name="v'+id+'"]:checked');
+    if(saved[id] && !c){
+      const r=d.querySelector('input[value="'+saved[id]+'"]');
+      if(r) r.checked=true;
+    }
+    if(d.querySelector('input[name="v'+id+'"]:checked')){
+      n++; d.classList.add('done');
+      const rv=d.querySelector('.reveal'); if(rv) rv.style.display='block';
+    }
+  });
+  document.getElementById('n').textContent=n;
+}
+document.addEventListener('change',e=>{
+  if(e.target.type!=='radio')return;
+  saved[e.target.name.slice(1)]=e.target.value;
+  persist();
+  paint();
+});
+// read straight from the radios, so this works even with no storage at all
+function dump(){
+  let out='id,verdict\n', n=0;
+  document.querySelectorAll('.item').forEach(d=>{
+    const id=d.id.slice(1);
+    const c=d.querySelector('input[name="v'+id+'"]:checked');
+    if(c){ out+=id+','+c.value+'\n'; n++; }
+  });
+  document.getElementById('out').innerHTML=
+    '<p>'+n+' answered. Select all and copy into validation-verdicts.csv.</p>'
+    +'<textarea onclick="this.select()">'+out+'</textarea>';
+}
+if(!store) warn();
+paint();
+window.addEventListener('beforeunload',function(e){
+  const any=document.querySelector('.item input:checked');
+  if(any && !store){ e.preventDefault(); e.returnValue=''; }
+});
+</script>

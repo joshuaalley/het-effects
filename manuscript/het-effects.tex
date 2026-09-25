@@ -70,7 +70,7 @@ This paper describes why, when, and how to use hierarchical models to encompass 
 Doing so is simple, and starts with identifying the key sources of heterogeneity and grouping observations accordingly. 
 Next, fit a hierarchical model with two linked regressions, one connecting treatment with the outcome, and another that models the treatment effects with potential sources of heterogeneity and partially pools group estimates.
 This captures systematic and random variation in heterogeneous effects, encompasses many interactions, and fits commonly used modeling frameworks, but regularization in this model breaks down if there are many small groups.
-I document these claims with a simulation analysis and extension of a published study. 
+I document these claims with a simulation analysis and reanalysis of a published study. 
 \end{abstract} 
 
 
@@ -91,10 +91,10 @@ Other audience cost experiments manipulate casualties \citep{DaviesJohns2013}, h
 
 Many potential modifiers are evident in how scholars conduct quantitative research.
 In the \textit{American Political Science Review}, \textit{American Journal of Political Science} and \textit{Journal of Politics}, many researchers estimate some modifier of treatment effects, either to test their argument or explore others.
-\autoref{fig:het-effects-count} documents the prevalence of heterogeneous effects estimates from interactions or machine learning in Harvard Dataverse replication data from the \textit{American Political Science Review}, \textit{American Journal of Political Science}, and \textit{Journal of Politics} from 2010 to 2024.
+\autoref{fig:het-effects-count} documents the prevalence of heterogeneous effects estimates from interactions or machine learning in Harvard Dataverse replication data from the \textit{American Political Science Review}, \textit{American Journal of Political Science}, and \textit{Journal of Politics} from 2012 to 2024.
 In this figure I count the number of papers that fit at least one interaction or machine-learning model of effect heterogeneity in their replication data to show the prevalence of these tools.
 I did this by downloading all quantitative replication materials hosted in the Harvard dataverse, and then measuring the prevalence of heterogeneous effects estimates.
-I then used an open-weights LLM (gpt-oss-120b), to parse the code and identify models and interactions. 
+I then used an open-weights LLM (gpt-oss-120b) to parse the code and identify models and interactions.\footnote{Blind hand validation of a stratified sample puts precision above 90\%, with details in the appendix.}
 
 
 \begin{figure}[htpb]
@@ -110,8 +110,8 @@ In most years, 60\% of papers in the APSR, AJPS, and JOP estimate at least one i
 Use of machine-learning tools for heterogeneous effects is much less common, and is usually in the single-digits.\footnote{As another indicator of interaction popularity, \citet{BramborClarkGolder2006} has 8,279 citations as of September 2026.}
 
 
-Moreover, researchers fit many interactions, as the median paper estimates 6 distinct interaction models. 
-A few outliers estimate as many as 50. %reviewer 2 must have been a real peach on those
+Moreover, researchers fit many interactions, as the median paper estimates 6 distinct interaction terms. 
+A few outliers estimate many more. %reviewer 2 must have been a real peach on those
 Most applied research relies on parametric interactions, with different theories and robustness checks leading to multiple interactions in most papers. 
 
 
@@ -124,7 +124,7 @@ Adequate power to estimate even a single interaction can require significantly m
 As a result, statistically significant heterogeneous effect estimates may be far too large--- the result of noise in the data, not systematic differences. 
 This problem is partially responsible for widespread issues replicating findings based on interactions \citep{Simmonsetal2011}. 
 Adding more modifiers makes interpretation harder and increases these power problems.
-Researchers might instead fit separate pairwise interactions for each modifier, but multiples models and corresponding testing problems.
+Researchers might instead fit separate pairwise interactions for each modifier, but doing so multiplies models and corresponding multiple-testing problems.
 
 %Even when theory implies many potential modifiers, modeling such theories with interactions is not easy. 
 %The interpretation benefits of interactions diminish as researchers add more variables.
@@ -141,8 +141,9 @@ If researchers want to compare the impact of different modifiers, machine learni
 % two: introduce my solution 
 Despite a large statistics literature documenting how regression-based interpretation and regularization make Bayesian hierarchical models a useful tool for heterogeneous effects estimation (e.g., \cite{FellerGelman2015, McElreath2016, Dorieetal2022}), political scientists rarely use this tool. 
 For instance, of the three applied political science citations of \citet{FellerGelman2015}, only \citet{Marquardt2022} models treatment effects. 
-The MAIDHA (Multilevel Analysis of Individual and Heterogeneity and Discriminatory Accuracy) framework in intersectionality research is a noteworthy exception \citep[e.g.][]{Much2025}. 
+The MAIHDA (Multilevel Analysis of Individual Heterogeneity and Discriminatory Accuracy) framework in intersectionality research is a noteworthy exception \citep[e.g.][]{Much2025}. 
 These researchers estimate distinct effects for groups defined by class, race and gender, and partial pooling helps give reasonable estimates for small subgroups in survey data.
+I use a similar logic to estimate how treatment effects vary across groups.
 
 
 
@@ -163,9 +164,9 @@ It can also be slow to fit on large datasets, depending on the underlying sample
 There are two key steps when theory and data make using hierarchical models worthwhile.
 First, researchers should identify potential modifiers of a treatment effect and use them to group observations and model treatment effects.
 Second, they should take that model of treatment effects and connect it to a model linking the treatment and outcome, implementing a type of varying slopes model. 
-Modeling heterogeneous effects produces interpretable results, which facilitates argument testing.
+Modeling heterogeneous effects produces interpretable results, which helps researchers compare different modifiers. 
 It also allows researchers to compare different sources of heterogeneous effects and describe effect variation.  
-These are crucial advantages in a world with many conditional theories.
+These are crucial advantages given many conditional theories.\footnote{The downside is that when partial pooling moves subgroup estimates towards the overall mean, testing claims about specific groups is not wise.}
 
 
 While frequentist estimation of hierarchical models is possible, Bayesian estimation is easy, more informative and more robust \citep{Stegmueller2013}.
@@ -179,16 +180,15 @@ While computation and coding were once a barrier to employing Bayesian methods, 
 % wrap and introduce the application 
 In the remainder of this paper, I start by describing how and when to estimate hierarchical models of heterogeneous effects.
 I then use simulations to compare OLS and hierarchical estimates of treatment effects under different conditions.
-Finally, I demonstrate the process by analyzing a study of how military alliances shape public support for war by \citet{TomzWeeks2021}. 
-The reanalysis documents the importance of regularization in analyzing subgroups derived from combinations of experimental treatments.
+Finally, I demonstrate the process by analyzing a study by \citet{BarberPope2019}, who attempt to disentangle partisanship and ideology.
+The reanalysis documents the importance of jointly estimating modifiers in a single regularized model.
 
 
 
 \section{Hierarchical Modeling of Heterogeneous Effects}
 
 
-There are two steps in hierarchical models of heterogeneous effects. 
-This is simply a different way of expressing varying slopes models. 
+There are two steps in hierarchical models of heterogeneous effects with varying intercepts, varying slopes and group-level predictors of the slopes \citep{GelmanHill2007}.
 First, researchers must identify potential sources of heterogeneity, and think about the right model of heterogeneity.
 This will also depend on what variation is most important and interesting. 
 Theory, policy concerns, or normative factors are all possible motivations. 
@@ -211,7 +211,7 @@ A similar application of hierarchical estimators for topic-sampling experiments 
 
 At the moment, researchers often estimate the impact of different treatment combinations with fully crossed interactions.
 This estimates the impact of a treatment across experimental strata, but risks spurious results by functionally estimating subgroup results.
-This estimates are often noisy however, and can rely on 50 or fewer data points in smaller samples.
+These estimates are often noisy, however, and can rely on 50 or fewer data points in smaller samples.
 
 
 A second approach uses unit, demographic and contextual factors to estimate effect heterogeneity. 
@@ -243,7 +243,7 @@ To do this, a researcher might specify a heterogeneous effects model with race, 
 After defining moderators and how they relate to treatment effects, the second step is fitting a hierarchical model that links a model of the outcome with a model of heterogeneity.
 Essentially, researchers model the outcome and the process that produces heterogeneous treatments. 
 The model employs two connected regressions.
-One regression deals with the outcome, and includes the treatment effects.\footnote{If other units such as states define the groups, rather than combinations of modifying variables, then adding group-level predictors to this equation is essential. For examine, in a model where an effect varies by state, adding state-level variables like ideology, population and GDP would avoid partially pooling small groups too far towards the overall mean.}
+One regression deals with the outcome, and includes the treatment effects.\footnote{If other units such as states define the groups, rather than combinations of modifying variables, then adding group-level predictors to this equation is essential. For example, in a model where an effect varies by state, adding state-level variables like ideology, population and GDP would avoid partially pooling small groups too far towards the overall mean.}
 
 
 The other regression models the treatment effects.
@@ -264,12 +264,14 @@ A few small groups means less need for a hierarchical model.
 Smaller groups will be shrunk more towards the overall mean.
 Too many small groups and the regularization component will have less information to work with. 
 Using model fit criteria such as WAIC or leave-one-out cross validation can help guide group formulation.
-Pre-registration is also crucial, because this the area with the greatest researcher degrees of freedom.
+Pre-registration is also crucial, because this is the area with the greatest researcher degrees of freedom.
 
 
 Should the variables in the heterogeneity equation also appear in the outcome equation? 
-Here, the guidance of \citet{BramborClarkGolder2006} to include constituent terms in an interaction will often apply. 
+Here, the guidance of \citet{BramborClarkGolder2006} to include constituent terms in an interaction provides a helpful heuristic. 
 If a modifier is correlated with treatment and the outcome, then it is also a useful control, as it has an independent relationship with the dependent variable in addition to modifying the treatment effects.
+Moreover, if untreated units in every group share the same intercept, the treatment effects absorb baseline outcomes.
+Including modifiers or group intercepts $\alpha_g$ in the outcome equation prevents this.
 The functional form of the two equations may differ, however.
 
 
@@ -281,7 +283,8 @@ Assume that the outcome variable ${y}$ is normally distributed with mean $\mu_i$
 
 
 %The first equation predicts the outcome mean. 
-The outcome for each unit depends on an overall intercept $\alpha$, an optional matrix of control variables \textbf{X}, and a set of group treatment effects $\lambda_g$.
+The outcome for each unit depends on a set of group intercepts $\alpha_g$, an optional matrix of control variables \textbf{X}, and a set of group treatment effects $\lambda_g$.
+The group intercepts are essential: they hold the baseline level of the outcome in each group, so that $\lambda_g$ captures the effect of the treatment within groups rather than differences between them.
 When \textit{T} is binary, estimated $\lambda$ parameters for untreated units have no impact on the outcome and drop out of the likelihood.
 For a continuous treatment, effects will depend on the product of $\textit{T}_i$ and $\lambda$.
 
@@ -376,12 +379,13 @@ Interactions of the modifiers could capture processes where combinations of modi
 The random component of the heterogeneity equation is a series of group-specific varying intercepts $\theta_g$.
 These are critical, because they capture group deviations from the systematic trends expressed in the design matrix \textbf{Z}. 
 Group outliers in the $\lambda$ estimates are partially pooled back towards the overall mean $\mu_\theta$.
-The variance parameter $\sigma_\theta$ controls the dispersion of the group effects around the overall mean.\footnote{In brms, using non-linear syntax can express a model with a treatment, two controls, and three modifiers as: y $\sim$ lambda * treat + controls, lambda $\sim$ mod1 + mod2 + mod3 + (1 | mod1 + mod2 + mod3), controls $\sim$ control1 + control2, nl = TRUE} 
+The variance parameter $\sigma_\theta$ controls the dispersion of the group effects around the overall mean.\footnote{In brms, using non-linear syntax can express a model with a treatment, two controls, and three modifiers as: y $\sim$ lambda * treat + controls, lambda $\sim$ mod1 + mod2 + mod3 + (1 | mod1:mod2:mod3), controls $\sim$ mod1 + mod2 + mod3 + control1 + control2 + (1 | mod1:mod2:mod3), nl = TRUE. The modifiers and the group intercept must appear in the controls equation as well, because together they form $\alpha_g$. Omitting them imposes a common baseline on every group, and lambda then absorbs differences in the level of the outcome across groups rather than the effect of the treatment within them.}
 
 
 The above model can be fit with Bayesian or frequentist methods, but Bayesian estimation offers important advantages.
 First, it is more flexible, and including prior information can facilitate model fitting. 
 Priors on the $\alpha$, $\beta$, and $\gamma$ parameters will matter more in very small datasets.
+Priors on $\beta$ should be relatively weak with observational data, because shrinking coefficients on confounders too much might reintroduce omitted variable bias \citep{Hahnetal2018}. 
 The more important prior is for $\sigma_\theta$, and depending on beliefs about potential dispersion across groups, half-normal or half student-t priors are common choices. 
 This prior is what helps regularize estimates by pulling extreme groups towards the overall mean $\mu_\theta$.
 
@@ -504,36 +508,39 @@ Other techniques such as interactions in OLS with robust standard errors provide
 \section{Performance on Simulated Data}
 
 To assess how this hierarchical model compares to interactions, I first assess their performance on simulated data.
-I do not include machine-learning tools in the simulation because they often produce different effects, such as individual-level estimates that are not directly comparable to the group-level hierarchical and interaction estimates.
-I undertake a few illustrative comparisons in the appendix, however.
+For ease of exposition, I consider machine-learning models in the appendix. 
+The appendix compares LASSO, causal forest and BART, estimating the same group effects, and finds that the hierarchical model is usually more accurate. 
 
 
 In the simulations, I fix the number of observations, and then generate different scenarios with distinct groups and distributions of true effects across those groups. 
 All of these scenarios give a group-specific effect of a binary treatment variable.
 I then estimate those effects with three models.
-First, ordinary least squares where the treatment interacts with the group variables additively. 
+First, ordinary least squares where the treatment interacts with an additive combination of the group variables. 
 Second, ordinary least squares with fully crossed interactions between the grouping variables.
-The fully crossed model is somewhat extreme, but it appears regularly in applied research, especially for subgroup effects in factorial experiments.\footnote{The application below takes this approach.}
+The fully crossed model is somewhat extreme, but it appears regularly in applied research, especially for subgroup effects in factorial experiments.\footnote{An application in the appendix by \citet{TomzWeeks2021} takes this approach.}
 Third, a hierarchical model where an additive combination of grouping variables predicts treatment effects in each group and partial pooling regularizes effect variance.
-In the hierarchical model, I use main effects of the group variables in the heterogeneity equation and set a random intercept for each group.
+In the hierarchical model, each grouping variable enters the heterogeneity equation additively, with a random intercept for each group.
 Fully crossing the group variables would saturate the model and make the random intercepts redundant.
 
  
-There are seven total data-generating processes. 
+There are eight data-generating processes. 
 One uses equal group sizes and normal effect distribution, which matches the partial pooling process well.
 Another uses heavy tails, drawing effects from a t-distribution with three degrees of freedom.
 A second creates imbalanced groups with the normal effect distribution, because larger groups have more information and can thus diverge more from the overall mean, while partial pooling shrinks smaller groups closer to the overall mean. 
 To further test this mechanism, I implement another process where larger groups have larger effects, so partial pooling takes small groups closer to a potentially unrepresentative mean.
-Another tests include a sparse effect distribution with only a few different estimates, a bimodal distribution, and one with systematic effect variation that might be especially friendly to the additive interactions.
+Other tests include a sparse effect distribution with only a few different estimates, a bimodal distribution, and one with systematic effect variation that might be especially friendly to the additive interactions.
+The last process makes effects exactly additive in the modifiers, so the additive interaction model is correctly specified.
 
 
 When I divide the 2,000 observations into groups based on combinations of three to seven binary variables and give equal probability of assigning observations to a group, there are between 8 and 128 unique groups. 
 This gives approximately 250 observations per group at the low end and 16 observations at the high end.
 The imbalanced simulation can have hundreds of data points in one group and as few as two in another, but I fix the data-generating process so that all groups populate.
+Each condition uses 200 Monte Carlo replications. 
+For ease of computation, accuracy results come from restricted maximum likelihood fits of the hierarchical model and error rates from Bayesian estimation.\footnote{In the appendix, I document that variance hyper-priors do not change the results.}
 
 
 I then compare the models on root-mean squared error (RMSE) and the rate of type M and type S errors. 
-The root-mean squared error of the coefficient estimates compared to the true value is the most general metric, and is the best because the hierarchical model's shrinkage will introduce bias but compensate with lower variance \citep{CliffordRainey2024}.
+The root-mean squared error of the coefficient estimates compared to the true value is the most general metric, and is the best because the hierarchical model's shrinkage will introduce bias but compensate with lower variance \citep{EfronMorris1975, CliffordRainey2024}.
 The bias-variance trade-off is the core of the hierarchical advantage. 
 Lower variance may overcome greater bias in specific coefficients and make the hierarchical model more accurate on average.
 Pooling to the treatment mean is conservative in some ways, but that conservative approach is useful when we never know the true distribution of treatment effects.
@@ -549,14 +556,15 @@ Unequal group sizes make this problem especially acute.
 \begin{figure}[htpb]
 	\centering
 		\includegraphics[width=0.95\textwidth]{../figures/sim-additive-rmse.png}
-	\caption{Comparison of OLS and hierarchical root mean squared error in group coefficient estimates. Simulation fixes the sample size at 2,000 observations and varies the number of groups. Each group has equal assignment probability.}
+	\caption{Comparison of OLS and hierarchical root mean squared error in group coefficient estimates. Simulation fixes the sample size at 2,000 observations and varies the number of groups. Bands give 95\% Monte Carlo intervals.}
 	\label{fig:sim-rmse}
 \end{figure}
 
 
 The additive OLS specification does not decay in the same way. 
 For some group configurations, there is little difference as group size increases. 
-The downside is consistently larger RMSE relative to the hierarchical model across all of the group sizes and configurations.
+The downside is consistently larger RMSE relative to the hierarchical model across every group size, except for when the effects are exactly additive.
+Under additive heterogeneity, a correctly specified additive interaction model is 3\% more accurate.
 
 
 The hierarchical model is usually best in RMSE, especially as groups proliferate.
@@ -565,7 +573,7 @@ Like most models, accuracy degrades as groups proliferate, because there is grea
 
 
 These patterns are the result of reduced variance overcoming greater bias in the hierarchical estimates. 
-I illustrate this pattern in \autoref{fig:sim-shrinkage}, which draws from the simulations 8 and 128 groups with a normal effect distribution for ease of presentation.
+I illustrate this pattern in \autoref{fig:sim-shrinkage}, which draws from the simulations with 8 and 128 groups with a normal effect distribution for ease of presentation.
 This figure plots the true against estimated values in those simulations for the three model specifications, using the normal distribution of true effects to illustrate.
 To clarify the pattern, I regress the true values on the estimated values. 
 
@@ -573,7 +581,7 @@ To clarify the pattern, I regress the true values on the estimated values.
 \begin{figure}[htpb]
 	\centering
 		\includegraphics[width=0.95\textwidth]{../figures/sim-additive-shrinkage.png}
-	\caption{True and estimated effects from simulations with 8 and 128 groups. The black line regresses the true value on the estimates. Points on the dashed line are unbiased}
+	\caption{True and estimated effects from simulations with 8 and 128 groups. The black line regresses the true value on the estimates. Points on the dashed line are unbiased.}
 	\label{fig:sim-shrinkage}
 \end{figure}
 
@@ -593,17 +601,17 @@ It recovers the true values better than the additive OLS specification, with som
 
 
 This is the bias-variance tradeoff in action. 
-Hierarchical models are not as unbiased as some specification, but the reduction in variance makes them more accurate on average. 
+Hierarchical models are more biased than some specifications, but the reduction in variance makes them more accurate on average. 
 This conservative approach is especially important when there are many modifiers and group size decreases. 
 
 
 Conservative estimation of subgroup effects is especially important when researchers use statistical significance thresholds. 
-Hierarchical modeling reduces the risk of that statistically significant results have the wrong sign or an exaggerated size \citep{GelmanCarlin2014}.
+Hierarchical modeling reduces the risk that statistically significant results have the wrong sign or an exaggerated size \citep{GelmanCarlin2014}.
 These Type S (sign) and Type M (magnitude) errors are just as important as whether an uncertainty interval includes zero.
 Misstating the direction of an effect misleads in theory testing, and magnitude errors fail to capture the substantive importance of an effect.
 
 
-\autoref{fig:sim-errors} shows the rates of Type S and and M errors in estimates where the 95\% confidence or credible interval excludes zero.\footnote{Some OLS estimates drop due to perfect collinearity and are excluded.}
+\autoref{fig:sim-errors} shows the rates of Type S and M errors in estimates where the 95\% confidence or credible interval excludes zero.\footnote{Some OLS estimates drop due to perfect collinearity and are excluded.}
 This figure plots error rates at 8, 32, and 128 groups. 
 The rate gives the percentage of estimates with a sign error and the exaggeration ratio for Type M errors.
 
@@ -612,12 +620,12 @@ The rate gives the percentage of estimates with a sign error and the exaggeratio
 \begin{figure}[htpb]
 	\centering
 		\includegraphics[width=0.95\textwidth]{../figures/sim-additive-errors.png}
-	\caption{Type M an S error rates.}
+	\caption{Type M and S error rates.}
 	\label{fig:sim-errors}
 \end{figure}
 
 
-With sign errors, hierarchical models and and fully crossed OLS perform similarly.
+With sign errors, hierarchical models and fully crossed OLS perform similarly.
 The additive OLS model makes more sign errors because it fails to pick up adequate variation, especially as the number of groups increases. 
 In some cases, as many as 1/3 of statistically significant effects are the wrong sign using additive OLS interactions. 
 Other models make errors too, but they are far more rare. 
@@ -634,93 +642,64 @@ This reduces the rate of misleading conclusions about the sign and magnitude of 
 
 
 
-
-\section{Example Application: Alliances and Public Support for War} 
-
-
-In the following, I demonstrate how the hierarchical approach works in practice and compares to prior applied work by reanalyzing a study by \citet{TomzWeeks2021}. 
-Tomz and Weeks (TW hereafter) examine whether the public is more willing to go to war for when the beneficiary of that intervention is a U.S. ally.
-In a factorial experiment with vignettes, they find a 33\% average increase in support for military intervention on behalf of allies, compared to non-allies. 
-This is a large and potentially important relationship because the United States has a global network of allies. 
+\section{Reanalysis: Barber and Pope 2019}
 
 
-Given the size of the main effect, TW's paper is an ideal scenario for comparing interactions and hierarchical models. 
-Corresponding interaction effects may be large, and their sample size of 1,200 respondents is not unusual in published work. 
-At the same time, TW estimated many interactions to check how other treatments modify the impact of alliances by fully crossing interactions of their experimental treatments.\footnote{This is one example of fully crossed interactions in applied research.}
-There are 64 unique treatment groups with anywhere from 11 to 32 respondents, so estimates of the impact of alliances in the 32 pairs of alliance treatment and control groups employ at most 54 data points. 
-As such, hierarchical regularization will likely change some conclusions by pooling noisy estimates in small groups.
-For ease of comparison, I also compare an OLS model with additive instead of fully crossed interactions.
-As the simulation results indicate, the fully crossed results are far noisier.
+To further illustrate how this hierarchical approach works in practice, I reanalyze a study by \citet{BarberPope2019}.
+This clever paper attempts to disentangle ideology and party affiliation with an experiment that attributes liberal or conservative cues to Donald Trump. 
+They show that liberal cues from Trump move Republican attitudes in a liberal direction, while conservative cues move the same attitudes the other way.
 
 
+After showing the average effects, Barber and Pope (BP henceforth) analyze how knowledge, party attachment, Trump approval and ideology modify the impact of these cues. 
+They do this with four distinct models, one for each modifier.
+I unify these tests in a single hierarchical framework, which is crucial because as BP acknowledge, these four modifiers are highly correlated \citep[pg. 50]{BarberPope2019}. 
+As an additional comparison, I also fit an interaction model that enters each modifier additively. 
+Details of the grouping decisions, diagnostics of the Bayesian model, and example code are available in the appendix.
 
-\subsection{Differences by Experimental Scenario}
+
+\subsection{Results}
 
 
-Along with alliances, TW randomly assign whether the potential beneficiary of U.S. intervention is a democracy or not, the stakes of intervention, the potential costs, and the region of the world. 
-They estimate the impact of alliances in the 32 treatment conditions with an OLS model that fully crosses interactions between the treatments, and calculate marginal effects over different averages of these groups. 
-I use a hierarchical model to estimate the impact of alliances, with the experimental treatments as systematic modifiers of the alliance effect and group-specific intercepts.
-I keep their Gaussian likelihood to minimize changes, although a logistic regression would fit the data better.\footnote{In the appendix, I show that a Bernoulli likelihood does not change the results.}
-The resulting approach mirrors TW's model, but regularizes the estimates with partial pooling.
+\autoref{fig:bp-modifiers} plots marginal effects under three different approaches: the original BP separate models, one unified interaction, and the hierarchical model. 
+In this figure, positive values imply that a cue moves policy in a more liberal direction.
+Negative values imply more conservative preferences.
+
+
+While BP's four models find that each modifier changes the impact of Trump cues in a statistically significant way, unifying the estimates under a single model yields quite different results.
+Both the unified interaction model and the hierarchical model give less precise estimates, and usually less extreme point estimates as well.
+The hierarchical estimates are the most uncertain, but that additional variance is a true reflection of the correlations in these modifiers. 
 
 
 \begin{figure}[htpb]
 	\centering
-		\includegraphics[width=0.95\textwidth]{../figures/tw-het-treat-comp.png}
-	\caption{Comparison of OLS and hierarchical estimates of the impact of alliance across experimental conditions. The top panel gives a histogram of the treatment effects from each model. The bottom panel gives the difference between the hierarchical and OLS estimates for each group.}
-	\label{fig:tw-het-treat-comp}
+		\includegraphics[width=0.95\textwidth]{../figures/bp-modifiers.png}
+	\caption{Estimates of the marginal effect of liberal and conservative Trump cues on policy attitudes. Error bars show the 95\% confidence or credible interval.}
+	\label{fig:bp-modifiers}
 \end{figure}
 
 
-\autoref{fig:tw-het-treat-comp} compares the estimated alliance treatment effects across the experimental groups with the OLS and hierarchical models.
-This figure illustrates the regularization of hierarchical modeling in two ways.
-It shows the difference between the median hierarchical estimate and the OLS estimate for each combination of treatment groups and plots the distribution of effects.
+Most of the estimates retain the same sign, at least, or move from positive or negative to more negligible.
+This suggests that the direction of the relationship in the aggregate makes sense, but that this design cannot sort out their independent effect.
+The strong correlations between party identification, Trump approval and ideology make it hard to identify unique moderating effects.\footnote{Given the correlations in these four modifiers, another approach might have been to use a factor analysis or other model to capture the common concept or two behind party identification, approval and ideology.}
+Political knowledge is more orthogonal, and this makes the estimates more precise.
 
 
-First, the hierarchical estimates are much less variable and more tightly clustered around the overall mean.
-This occurs because the OLS model mechanically forces treatment effect estimates to the value of the coefficients and corresponding subgroup means. 
-Given the size of this sample, the treatment effects are based on comparisons of roughly 25 treatment and 25 control respondents. 
+Perhaps as a result, only political knowledge has a clearly non-zero relationship with cue responses, once the modifier models are unified.
+It also moves in a somewhat unexpected direction, as conservative cues from Trump move attitudes in a more liberal direction as political knowledge increases.
+This is also what BP find, and they attribute it to greater party loyalty among less knowledgeable Republican voters.
 
 
-Second, the hierarchical estimates pull in unusual values.
-The bottom panel of \autoref{fig:tw-het-treat-comp} shows the difference between the hierarchical and OLS estimate for each group.
-The downward slope from positive to negative values means that the hierarchical estimates are larger than below average OLS estimates, but smaller than above average interaction estimates. 
-The hierarchical estimates shift towards the overall mean, away from extreme values.
-The OLS model finds one scenario where alliances reduce support by almost 20\%, but the hierarchical model treats this as noise and brings it towards the grand mean, leading to a 50\% difference.
-
-
-\begin{figure}[htpb]
-	\centering
-		\includegraphics[width=0.95\textwidth]{../figures/tw-het-treat-source.png}
-	\caption{Comparison of OLS and hierarchical estimates of the impact of alliance across experimental conditions. Each point gives the effect estimate for each group.}
-	\label{fig:tw-het-treat-source}
-\end{figure}
-
-
-I compare the estimates for each group with greater detail about what shapes each heterogeneous treatment in \autoref{fig:tw-het-treat-source}.
-This clearly shows the reduced variation in the hierarchical estimates across the different experimental conditions.
-In some cases, the hierarchical and OLS estimates are very similar, but the model suggests that in a smaller sample, saturated interactions of treatment effects overstate effect heterogeneity. 
-For some conditions, such as a low-stakes, low-cost intervention to support a South American autocracy, the hierarchical estimate is 30\% lower than the OLS estimate. 
-The condition where TW find a 20\% drop in support for an ally compared to a non-ally is a high-cost intervention on behalf of an Eastern European democracy. 
-That would be concerning, but the hierarchical model suggests that this is closer to a 30\% increase.
-The 30\% increase matches later findings on how randomly assigning NATO membership to different Eastern European states impacts U.S. public support for war \citep{Tomz2023}.
-
-
-Given the very large average effect of alliances, these results do not change the direction of the findings- in some scenarios they even strengthen them. 
-However, the magnitudes of some subgroup estimates do matter, as they might lead observers to misidentify when alliances matter most.
-The hierarchical models suggest that low stakes are not as influential as the OLS results indicate, for example.
-For other, smaller effects, regularization with a hierarchical model might change inferences in subgroup analysis. 
-
-
-In the appendix, I document three patterns.
-First, I check sensitivity to the likelihood. 
-I also check whether covariate adjustment explains the results, instead of partial pooling.
-Last, I consider the standard deviation on the variance hyperparameter and show that only one group has opposite signs. 
+The hierarchical model also provides some information about residual effect variation that the modifiers do not capture, akin to the residual in a regression model.
+For conservative cues, the standard deviation of the treatment effects is .1, while it is .03 for liberal cues.
+The four modifiers account for most of the variation in responses to liberal cues.
+The hierarchical model picks up much more of the variation the modifiers miss in the conservative cues analysis.
+Thus, the hierarchical model gives a more accurate picture of the uncertainty and explanatory power of the modifiers.
 
 
 % variation
-These results show some potential uses of the hierarchical approach to heterogeneous effects.\footnote{In the appendix, I analyze \citet{BushPrather2020} and detail additional heterogenous effects from TW.}
-Regularization moderates what might otherwise be extreme inferences about experimental subgroups, and as I show in the appendix, provides useful inferences about demographic heterogeneity. 
+These results show some potential uses of the hierarchical approach to heterogeneous effects.
+Unifying disparate interactions in a single model is wise, and in doing so, scholars should also regularize those estimates.
+In this case, regularization makes it very clear that correlations between three of the modifiers make clear conclusions about each particular modifier unsupportable.
 
 
 \section{Conclusion}
@@ -732,7 +711,7 @@ Hierarchical modeling retains the clear interpretation of interactions in a sing
 
 
 I have therefore explained how to use hierarchical models to estimate heterogeneous effects. 
-The first step first identify sources of heterogeneity, usually unit characteristics or other treatments, and set corresponding groups.
+The first step is to identify sources of heterogeneity, usually unit characteristics or other treatments, and set corresponding groups.
 Then, fit two regressions, one that models the relationship between a treatment and the outcome, and another that models the treatment effect with the modifiers and varying intercepts by group.
 
 
@@ -757,7 +736,7 @@ Future work can build on this approach in other ways.
 Gaussian process regression is another flexible estimation tool with similar benefits that could extend to similar problems \citep{Pratietal2023}.
 Considering temporal, spatial and spatiotemporal autocorrelation in both equations is another worthwhile task.
 Another interesting application might be pooling experimental data and using the hierarchical structure to compare different manipulations in experiments with similar structure and smaller modifications.
-These tasks would further expand the benefits of hierarchical modeling in tackling multiple conditional arguments in a single framework.\footnote{AI Disclosure: I used Claude Code to refine simulation code and conduct the analysis of prior publications encapsulated in figure 1. I also checked the all the code for bugs or problems with Claude Code.}
+These tasks would further expand the benefits of hierarchical modeling in incorporating multiple conditional arguments into a single estimation framework.\footnote{AI Disclosure: I used Claude Code to write and refine the simulation and analysis code, including the analysis of prior publications encapsulated in figure 1. The classification itself also uses an open-weight language model (gpt-oss-120b). I also checked all the code for bugs or problems with Claude Code.}
 
 
 

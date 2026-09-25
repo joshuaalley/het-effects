@@ -30,6 +30,7 @@ tw_rep <- tw_rep %>%
               alliance = recode(alliance, `1` = 0, `2` = 1),
               regime = recode(regime, `1` = 0, `2` = 1),
               stakes = recode(stakes, `1` = 1, `2` = 0),
+              # 1 = LOW costs, as in TW's prepdata.do
               costs = recode(costs, `1` = 0, `2` = 1),
               costs_num = as.numeric(costs),
               region = as.integer(region),
@@ -60,7 +61,10 @@ formula_pred <- bf(
 
   lambda ~ (dem + rep + high_newsint + white + male) + (1| het_group),
 
-  controls ~ regime + stakes + costs +
+  # modifiers enter the outcome equation too; otherwise lambda absorbs
+  # differences in baseline support across groups
+  controls ~ dem + rep + high_newsint + white + male +
+              regime + stakes + costs +
               africa + europe + asia +
               age + ed4,
 
@@ -100,9 +104,14 @@ coef_tw_het_nl <- coef_tw_het_nl %>%
           variable == "lambda_male" ~ "Male",
           variable == "lambda_hawk" ~ "Militant\nAssertiveness",
           variable == "lambda_intl" ~ "Internationalism",
+          variable == "controls_dem" ~ "Democrat",
+          variable == "controls_rep" ~ "Republican",
+          variable == "controls_high_newsint" ~ "High News\nInterest",
+          variable == "controls_white" ~ "White",
+          variable == "controls_male" ~ "Male",
           variable == "controls_regime" ~ "Democracy",
           variable == "controls_stakes" ~ "High Stakes",
-          variable == "controls_costs" ~ "High Costs",
+          variable == "controls_costs" ~ "Low Costs",
           variable == "controls_africa" ~ "Africa",
           variable == "controls_europe" ~ "Eastern Europe",
           variable == "controls_asia" ~ "Asia",
@@ -113,7 +122,7 @@ coef_tw_het_nl <- coef_tw_het_nl %>%
     variable = factor(variable, levels = c(
       "Intercept", "Democrat", "Republican", "High News\nInterest",
       "White", "Male", "Militant\nAssertiveness", "Internationalism",
-      "Democracy",  "High Stakes", "High Costs",
+      "Democracy",  "High Stakes", "Low Costs",
       "Africa", "Eastern Europe", "Asia", "Age", "Education"), ordered = TRUE)
   )
 
@@ -335,7 +344,9 @@ formula_het_treat <- bf(
 
   lambda ~ regime + stakes + costs + region_txt + (1|treat_group),
 
-  controls ~ white + male + hawk + intl +
+  # the other treatments enter the outcome equation as main effects
+  controls ~ regime + stakes + costs + region_txt +
+    white + male + hawk + intl +
     dem + rep + age + ed4,
 
   nl = TRUE
@@ -386,8 +397,8 @@ slopes_het_treat_long <- tw_est_exp %>%
       stakes == 1 ~ "High Stakes"
     ),
     costs = case_when(
-      costs == 0 ~ "Low Costs",
-      costs == 1 ~ "High Costs"
+      costs == 0 ~ "High Costs",
+      costs == 1 ~ "Low Costs"
     )
   ) %>%
   pivot_longer(cols = -c(treat_10, treat_90,
@@ -468,8 +479,8 @@ slopes_het_treat_comp_long <- slopes_het_treat_comp %>%
       stakes == 1 ~ "High Stakes"
     ),
     costs = case_when(
-      costs == 0 ~ "Low Costs",
-      costs == 1 ~ "High Costs"
+      costs == 0 ~ "High Costs",
+      costs == 1 ~ "Low Costs"
     )
   )
 
@@ -497,7 +508,9 @@ sep = "\n"),
     title = "Alliance Treatment Estimates\nby Experimental Condition"
   ) +
   theme(legend.position = "bottom")
-ggsave("figures/tw-het-treat-source.png", height = 6, width = 8)
+# figures/tw-het-treat-source.png is now written by tw-robustness.R, which
+# adds the additive OLS model; saving here would overwrite it
+# ggsave("figures/tw-het-treat-source.png", height = 6, width = 8)
 
 slopes_diff_treat_sum <- slopes_het_treat_comp %>%
   group_by(ols) %>%

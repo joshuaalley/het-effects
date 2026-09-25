@@ -45,44 +45,45 @@
 
 \section{Replication Analysis Details}
 
-To produce Figure 1, I downloaded every replication archive on the Harvard Dataverse for papers in the \textit{American Political Science Review}, \textit{American Journal of Political Science}, and \textit{Journal of Politics}, yielding 1,830 archives.
-Coverage runs from 2012 to 2024; deposits for 2025 and 2026 remain incomplete.
-Each paper is dated by its year of publication, taken from the Dataverse citation string, rather than by the year its archive was deposited.
-The distinction matters more than it appears: journals adopted deposit mandates around 2015, so older articles were archived retroactively, and dating by deposit places only one paper in 2012 and 274 in 2015 against true counts of 17 and 120.
+To produce Figure 1, I downloaded every replication archive on the Harvard Dataverse for papers in the \textit{American Political Science Review}, \textit{American Journal of Political Science}, and \textit{Journal of Politics}.
+Coverage runs from 2012 to 2024 and includes 1,830 archives, as deposits for 2025 and 2026 remain incomplete.
+Each paper is dated by its year of publication, taken from the Dataverse citation string.
+I use date of publication because journals adopted deposit mandates around 2015 \citep{Raineyetal2025}, so older articles were archived retroactively. 
 
 Within each archive I read every file of author-written analysis code, meaning scripts in \textsf{R}, Stata, Python, Stan, and JAGS.
-This excludes \texttt{.ado} files, which are third-party Stata packages rather than the author's analysis; their help text contains the same syntax the analysis looks for.
+This excludes \texttt{.ado} files, which are third-party Stata packages rather than the author's analysis. 
+Their help text contains the same syntax the analysis looks for.
 The 1,830 archives contain 12,179 such files.
+
 
 \subsection{Classification}
 
 Rather than match patterns, I gave each file in full to an open-weight language model and asked whether the analysis estimates an effect that varies across units, subgroups, or contexts.
 The model returns a structured judgment, the methods it identifies, and verbatim lines of code as evidence.
-Files longer than the context window are split into overlapping chunks and judged separately; a paper counts as estimating heterogeneous effects if any of its files does.
+The model splits files longer than the context window into overlapping chunks and judges them in turn.
 
-Pattern matching was inadequate for this task in a way worth stating, because it bears on the trend rather than only the level.
+Pattern matching was inadequate here, and in a way that affects the trend as well as the level.
 Regular expressions key on the syntax of an interaction, and that syntax changed over the period.
 Stata's factor-variable notation arrived in version 11 and displaced hand-constructed product variables only gradually, so a script from 2012 is far more likely to write \texttt{gen treatXpost = treat*post} and enter the result as an ordinary regressor.
-A pattern-matching classifier misses those, and misses them disproportionately in early years.
-Scoring the same corpus both ways, the two approaches agree almost exactly on recent papers and diverge sharply on old ones: over 2020 to 2024 both flag 67\% of papers, while over 2012 to 2015 pattern matching flags 35\% against the classifier's 58\%.
-Most of the upward trend a pattern-matching measure reports is therefore a change in how interactions are written rather than in how often they are estimated.
+Scoring the same with pattern matching and the language model, the two approaches agree almost exactly on recent papers and diverge sharply on old ones. 
+Over 2020 to 2024 both flag 67\% of papers, while over 2012 to 2015 pattern matching flags 35\% against the classifier's 58\%.
+
 
 I use \texttt{openai/gpt-oss-120b}, served through DeepInfra at temperature zero.
-The prompt, the full text of every request, and every raw model response are archived in the replication materials, so the classification can be verified without re-running inference, and the weights are public so it can be re-run.
+The prompt, the full text of every request, and every raw model response are archived in the replication materials, so the classification can be verified without re-running inference.
 
 \subsection{Validation}
 
-I hand-adjudicated a stratified random sample of 100 file-chunks, drawn blind: the sample was shuffled and the model's judgment hidden until each item was answered.
+I hand-adjudicated a stratified random sample of 100 file-chunks, drawn blind. I shuffled the sample and hid the model's judgment until each item was answered.
 Each item displayed the relevant code with four lines of context on either side.
 Weighting back to the stratum populations, precision for the measure reported in Figure 1 is above 90\%.
 
-Two limits deserve statement.
+Two limits apply.
 First, recall is not identified by this design.
-Estimating it requires knowing how often the classifier misses a heterogeneous effect entirely, and over half the corpus falls in the stratum where nothing was flagged and there is consequently nothing to check without reading whole files.
+Estimating recall requires knowing how often the classifier misses a heterogeneous effect entirely. Over half the corpus falls in the stratum where nothing was flagged, so there is nothing to check without reading whole files.
 Figure 1 is therefore a lower bound.
 Second, I do not count subgroup analysis conducted by splitting the sample and fitting the same model separately, though that estimator is algebraically identical to a fully crossed interaction for the group-specific point estimates.
-Counting it would raise the 2024 share from 65\% to roughly 86\%.
-I exclude it because it is the least reliably measured category: agreement between two independently prompted models on subgroup splitting was $\kappa = 0.49$, against 0.92 for the measure reported here.
+I exclude it because it is the least reliably measured category. Agreement between two independently prompted models on subgroup splitting was $\kappa = 0.49$, against 0.92 for the measure reported here.
 
 
 \section{Simulation Data Generating Process}
@@ -101,7 +102,7 @@ x_{ij} &\sim \text{Bernoulli}(p_j) \quad \text{for } j = 1, \ldots, k
 The simulation defines the groups by unique combinations of these variables, producing $2^k$ groups.
 With three modifiers, there are 8 groups, while 7 modifiers produces 128 groups.
 Most processes set $p_j = 0.5$ for all $j$, which makes the groups equal in expectation.
-The two unbalanced processes instead space the probabilities evenly over $[0.35, 0.65]$; with $k = 7$ this is already severe, giving expected cell sizes that run from roughly one observation to roughly one hundred.
+The two unbalanced processes instead space the probabilities evenly over $[0.35, 0.65]$. With $k = 7$ this is already severe, giving expected cell sizes that run from roughly one observation to roughly one hundred.
 
 
 The treatment indicator is randomly assigned, also with a bernoulli draw:
@@ -135,6 +136,7 @@ Let $\mathbf{Z}_g$ collect the modifier values for group $g$, and let
 \end{align*}
 truncated to the first $k$ entries.
 Where a systematic component $\mathbf{Z}_g\boldsymbol{\gamma}^*$ appears it is centered and rescaled to the standard deviation shown.
+In \ref{tab:dgps}, $p_j$ gives bernoulli probabilities on grouping variable values.
 
 \begin{table}[htbp]
 \centering
@@ -157,36 +159,40 @@ Exactly additive & $0.5$ & $\tau_g = \mu_\tau + \mathbf{Z}_g\boldsymbol{\gamma}^
 \label{tab:dgps}
 \end{table}
 
-The last process deserves comment, because it is the one designed against the hierarchical model.
+The last process needs some comment, because it is the one designed against the hierarchical model.
 In every other process the group effects contain an idiosyncratic component that an additive interaction model cannot represent by construction, which is a comparison the hierarchical model cannot lose.
-Under the exactly additive process the additive model is correctly specified, and the hierarchical model is paying to estimate a group variance that is genuinely zero.
-It does lose there, by roughly three percent of root mean squared error.
-That is the scope condition: partial pooling costs little when it is unnecessary and gains substantially when it is not.
+Under the exactly additive process the additive model is correctly specified, and the hierarchical model estimates a group variance that is genuinely zero.
+This is why the hierarchical model is roughly three percent of root mean squared error worse in this process.
+
 
 \subsection{Replication and Estimation}
 
 Each condition uses 200 Monte Carlo replications, and the shaded bands in the figures give 95\% Monte Carlo intervals computed from the spread of per-replication root mean squared error.
 Seeds are a deterministic function of the process, the number of modifiers, and the replication index, so any single condition can be reproduced in isolation.
 
-Accuracy and errors of inference come from different estimators, for a reason worth stating.
+Accuracy and errors of inference come from different estimators.
 Root mean squared error requires no standard error, so it is computed over all 200 replications using restricted maximum likelihood, which is fast enough to make that many replications affordable.
-Restricted maximum likelihood corresponds to no prior at all and therefore regularizes less than any half-$t$ or half-normal prior, so it is a conservative stand-in: where the additive model loses to it, the additive model loses to the Bayesian model by more.
+Restricted maximum likelihood corresponds to no prior at all and therefore regularizes less than any half-$t$ or half-normal prior, so it is a conservative stand-in. Where the additive model loses to it, the additive model loses to the Bayesian model by more.
 Sign and exaggeration errors, however, depend on which estimates are declared distinguishable from zero, and the mixed model has no convenient interval for a group treatment effect.
 The prediction error is $\mathbf{x}_g'(\hat{\boldsymbol{\beta}} - \boldsymbol{\beta}) + (\hat{\theta}_g - \theta_g)$, and the covariance between those two terms is strongly negative, because the varying slope absorbs error in the fixed part.
 Adding the two variances yields intervals covering 0.99 against a nominal 0.95, while the conditional variance alone covers 0.84.
 Those quantities are therefore computed from posterior intervals, whose coverage across these processes measures between 0.94 and 0.97.
+The posterior tier uses 12 replications per condition, fit in brms under the normal, sparse, bimodal, and exactly additive processes at 8, 32, and 128 groups.
+
+The same tier checks sensitivity to the prior on $\sigma_\theta$.
+Replacing the brms default, a half-$t(3, 0, 2.5)$, with a half-normal$(0, 1)$ changed root mean squared error by at most 0.001 under the normal, systematic, sparse, and bimodal processes at 8 and 128 groups.
+With 2,000 observations the group standard deviation is identified well enough that any weakly informative prior gives the same answer.
 
 \newpage
 
 \section{Comparison with Regularized Machine Learning}
 
-Beating an unregularized saturated interaction establishes little, since almost any form of shrinkage would do the same.
-The informative question is how partial pooling compares to the other ways of regularizing an estimate of effect heterogeneity, and in particular to the machine learning estimators this paper describes as the alternative.
-This section races the hierarchical model against three of them: the LASSO applied to the saturated interaction expansion \citep{RatkovicTingley2017, BlackwellOlson2022}, a causal forest \citep{WagerAthey2018}, and Bayesian additive regression trees \citep{Dorieetal2022}.
+While interactions are very common, researchers have other tools with which to regularize effect estimates. 
+This section compares the hierarchical model with three of them with a LASSO applied to the saturated interaction expansion \citep{RatkovicTingley2017, BlackwellOlson2022}, a causal forest \citep{WagerAthey2018}, and Bayesian additive regression trees \citep{Dorieetal2022}.
 
 All four estimators recover the same quantity, the treatment effect in each of the $2^k$ groups, so the comparison is on one estimand.
-The LASSO is fit over the full interaction basis and penalized by cross-validation; the forest and the trees estimate an effect for each observation, which is averaged within group.
-The data generating processes are those in the previous section, and each condition uses 50 Monte Carlo replications rather than the 200 used elsewhere, because a forest or a set of regression trees takes several orders of magnitude longer to fit than a mixed model.
+The LASSO is fit over the full interaction basis and penalized by cross-validation. The forest and the trees estimate an effect for each observation, which I average within group.
+The data generating processes are those in the previous section, and each condition uses 50 Monte Carlo replications rather than the 200 used elsewhere, because a forest or a set of regression trees takes much longer to fit than a mixed model.
 
 \begin{figure}[htpb]
 	\centering
@@ -196,47 +202,58 @@ The data generating processes are those in the previous section, and each condit
 \end{figure}
 
 \autoref{fig:sim-ml-comp} shows the result.
-The three regularized estimators behave much alike, and all three are far more accurate than the fully crossed model: with 128 groups under the normal process, root mean squared error is 0.30 for the LASSO, 0.30 for the forest and 0.30 for the trees, against 0.55 for saturated ordinary least squares.
-That similarity is the useful part of the comparison, because it says the fully crossed model's poor showing reflects the absence of regularization rather than anything specific to it.
+The three regularized estimators are similar and far more accurate than the fully crossed model. 
+With 128 groups under the normal process, root mean squared error is 0.30 for the LASSO, 0.30 for the forest and 0.30 for the trees, against 0.55 for saturated ordinary least squares.
 
 The hierarchical model is more accurate than all three in every condition, at 0.26 under the same setting.
 Paired within replication, the differences run from 0.007 to 0.098 and exclude zero in all but three of the forty-eight comparisons.
-The LASSO is the closest competitor throughout, which is what one would expect: penalizing the interaction basis and pooling group deviations are two ways of doing the same thing, one shrinking departures to zero and the other shrinking them toward the mean.
-The causal forest is consistently the least accurate of the three.
+The LASSO is the closest competitor because penalizing the interaction basis and pooling group deviations do similar things.
+LASSO shrinks departures to zero and the hierarchical model shrinks them toward the mean.
+The causal forest is consistently the least accurate of the three, likely due to a smaller sample.
 
-Two qualifications matter.
-First, the advantage disappears when heterogeneity is sparse and groups are few: with eight groups under the sparse process, the difference from Bayesian additive regression trees is 0.012 with an interval spanning zero, and the hierarchical model is the more accurate estimator in only 48\% of replications.
+
+There are two important qualifications.
+First, the hierarchical advantage falls under sparse heterogeneity and few groups. 
+With eight groups under the sparse process, the difference from Bayesian additive regression trees is 0.012 with an interval spanning zero, and the hierarchical model is more accurate in only 48\% of replications.
+
+
 Second, and more important, this comparison is run on terms that suit the hierarchical model.
 The modifiers are known in advance, binary, and the grouping is given.
-Forests and regression trees are built to discover heterogeneity in high dimensional and continuous covariates, and they are not being asked to do that here.
-The claim this section supports is therefore narrow: when a researcher already knows which modifiers matter and wants effects for interpretable groups, partial pooling estimates them more accurately than a generic regularizer.
-Where the modifiers are unknown, the discovery problem is real and these methods are built for it.
+Forests and regression trees are built to discover heterogeneity in high dimensional and continuous covariates. 
+Therefore, when researchers already know which modifiers matter and want effects for interpretable groups, partial pooling estimates those effects more accurately than a generic regularizer.
+Where the modifiers are unknown, machine learning tools are much better.
 
-The exception noted in the previous section survives this comparison and is worth restating precisely.
-Under the process where the group effects are exactly additive in the modifiers, an additive interaction model is correctly specified and beats the hierarchical model, though only by about three percent of root mean squared error.
-None of the machine learning estimators does: with 128 groups the hierarchical model is more accurate than the trees by 0.027, the LASSO by 0.044, and the forest by 0.088.
-The scope condition is therefore specific rather than general.
-It is not that regularization of any kind does better when the additive model is right; it is that the correctly specified parametric model does.
+%
+%The exception from the previous section also holds up here.
+%Under the process where the group effects are exactly additive in the modifiers, an additive interaction model is correctly specified and beats the hierarchical model, though only by about three percent of root mean squared error.
+%None of the machine learning estimators does. 
+%With 128 groups the hierarchical model is more accurate than the trees by 0.027, the LASSO by 0.044, and the forest by 0.088.
 
 
 
-ewpage
+\newpage
 
-\section{Continuous Modifiers and the Cost of Binning}
+\section{Binning Continuous Modifiers}
 
 Grouping observations on a continuous modifier requires choosing how many bins to use and where to place the cuts.
-Both are researcher degrees of freedom of exactly the kind this paper argues interaction models leave open, so it is fair to ask what they cost.
+Both are researcher degrees of freedom that could hinder replication.
+I provide some simulation guidance in this section to inform design and pre-registration.
 
-Measuring that requires a change of estimand.
+
+Measuring this requires a different estimand.
 With binary modifiers there is a finite set of groups, each with a true effect, and accuracy can be measured against those.
-A continuous modifier has no groups until the analyst makes them, and every binning scheme induces a different set of true group effects, so comparing schemes against their own induced targets is circular.
+A continuous modifier has no groups until the analyst makes them, and every binning scheme implies a different set of true group effects. 
+As a result, I cannot compare true to estimated without a circular analysis.
 Accuracy is therefore measured against the true conditional effect at each respondent, $\tau(x_i)$, which does not depend on how the bins are drawn.
 
 The simulation draws $x \sim \text{Uniform}(0,1)$ with $n = 2000$, and generates the outcome as in the previous sections.
-Three shapes for $\tau(x)$ are used: linear, a logistic curve, and a step function that jumps at $x = 0.5$.
+I use three shapes for $\tau(x)$.
+These are linear, a logistic curve, and a step function that jumps at $x = 0.5$.
 Cuts are placed at equal widths, at quantiles of $x$, or at quantiles of the true effect.
-That last rule is infeasible in practice and is included only as an upper bound on what better guidance could buy.
-Five estimators are compared: saturated least squares on the bins, partial pooling across bins treated as exchangeable, partial pooling that respects the ordering of the bins through a penalized spline on the bin index, and two estimators that never bin at all, one interacting the treatment with $x$ linearly and one fitting a smooth varying slope.
+That last rule is infeasible in practice, and I include it only as an upper bound on what better guidance could achieve.
+
+
+I then compare five different approaches, including saturated least squares on the bins, partial pooling across bins treated as exchangeable, partial pooling that respects the ordering of the bins through a penalized spline on the bin index, and two estimators that never bin at all, one interacting the treatment with $x$ linearly and one fitting a smooth varying slope.
 Each condition uses 100 Monte Carlo replications.
 
 \begin{figure}[htpb]
@@ -246,123 +263,432 @@ Each condition uses 100 Monte Carlo replications.
 	\label{fig:sim-binning}
 \end{figure}
 
-Three findings follow, and they point in different directions.
 
-\subsection{Where the Effect Varies Smoothly, Do Not Bin}
+
+\subsection{Smoothly Varying Effects}
 
 When $\tau(x)$ is linear or logistic, an estimator that keeps $x$ continuous is more accurate than any binning of it, at any number of bins.
 Root mean squared error for the smooth varying slope is 0.064 under the linear process and 0.075 under the logistic one.
 The best binned estimator reaches 0.069 and 0.078 respectively, and only at eight bins.
-The gap is not large, but it never closes, and it should not be surprising: binning replaces a smooth function with a step function and throws away the ordering of the bins in the process.
+The gap is not large, but it never closes because when binning replaces a smooth function with a step function, it becomes less accurage.
 
-The practical implication is a scope condition rather than a defect.
-Grouping is worth its cost when the modifiers are genuinely categorical, or when the analyst wants effects reported for interpretable groups rather than a curve.
-When the modifier is continuous and the grouping is not itself of interest, a varying slope on a smooth term is the better tool, and the paper should not be read as recommending otherwise.
+This is a scope condition.
+Grouping is worth its cost when the modifiers are genuinely categorical, or when researchers want effects for interpretable groups instead of a curve.
+When the modifier is continuous and the grouping is not itself of interest, a varying slope on a smooth term is the better tool, it is just harder to integrate with discrete modifiers.
 
-\subsection{Partial Pooling Buys More Bins Than Least Squares Can Afford}
+\subsection{Bin Count and Cell Size}
 
-The comparison between the two binned estimators is more useful than the comparison to the continuous ones, because it isolates what pooling does.
+Comparing the two binned estimators is more useful than comparing them to the continuous ones, because it isolates what pooling does.
 Under the linear process with quantile cuts, saturated least squares is most accurate at four bins (0.095) and then deteriorates, reaching 0.124 at eight bins as the cells empty out.
 The hierarchical model improves monotonically over the same range, from 0.109 at two bins to 0.069 at eight.
 
-This is the argument of the paper restated in the units an applied researcher actually chooses.
-Finer bins reduce the approximation error and shrink the cells, and which of those dominates depends on whether the estimator can survive small cells.
-Least squares cannot and so is forced into coarse bins that misrepresent the function; partial pooling can, and so can afford the resolution.
 
-\subsection{Where the Cuts Fall Matters More Than How Many There Are}
+Finer bins reduce the approximation error and shrink the cells, and which of those dominates depends on whether the estimator can handle cells with little data.
+Least squares breaks down with many small cells, so it needs coarse bins that misrepresent the function. 
+Partial pooling can handle finer bins, but inferences about individual bins should be treated with caution because those bins will be regularized..
 
-The threshold process makes the point that should most concern anyone worried about researcher degrees of freedom.
+\subsection{Cut Points}
+
+The threshold process raises the largest concern about researcher degrees of freedom.
 The true effect jumps at $x = 0.5$, so a cut point at 0.5 represents it perfectly and any other placement cannot.
 With equal-width cuts the accuracy of the hierarchical model oscillates with the number of bins: 0.062 at two bins, 0.187 at three, 0.078 at four, 0.160 at five, and 0.096 at eight.
 Even numbers of bins place a boundary at 0.5 and odd numbers do not.
 
 Moving from two bins to three, a change most analysts would regard as innocuous, triples the error.
-No amount of additional resolution repairs a misplaced boundary, and nothing in the fitted model signals that anything is wrong.
-This is the strongest argument in the paper for pre-registering a grouping scheme, and for reporting results under more than one.
+While cut points may seem rare, this is a clear argument for pre-registering a grouping scheme and reporting results under more than one.
 
-\subsection{Ordering the Bins Does Not Help}
+\subsection{Ordered Bins}
 
-Treating the bins as exchangeable discards information: bins 1 and 5 are pulled toward the grand mean as strongly as bins 1 and 2 are pulled toward each other, when adjacent bins should be more alike.
-The obvious remedy is a smoothing prior over the ordered bin index, and it does not work.
+Treating the bins as exchangeable discards information. Bins 1 and 5 are pulled toward the grand mean as strongly as bins 1 and 2 are pulled toward each other, when adjacent bins should be more alike.
+A smoothing prior over the ordered bin index is the obvious remedy, but it does not work.
 
-Under the linear and logistic processes the difference between the exchangeable and ordered versions is at most 0.002 in either direction, which is nothing.
+Under the linear and logistic processes the difference between the exchangeable and ordered versions is at most 0.002 in either direction, which is negligible.
 Under the threshold process the ordered version is clearly worse, by 0.011 to 0.039 depending on the number of bins and the cut rule.
-The reason is the same one that makes the threshold case hard: smoothing across bins is a prior belief that the effect varies gradually, and when the truth is a discontinuity that belief is wrong in exactly the place it matters.
-
-The recommendation is therefore conditional rather than general.
-Where a modifier is expected to shift the effect gradually, smoothing across ordered bins is defensible and costs little either way.
-Where a discontinuity is plausible, exchangeable pooling is the safer default, because it imposes no belief about which bins should resemble which.
+The reason is the same one that makes the threshold case hard. Smoothing across bins assumes that the effect varies gradually, and when the truth is a discontinuity that assumption is wrong in the place it matters most.
 
 
+When a modifier is expected to shift the effect gradually, smoothing across ordered bins is defensible.
+Where a discontinuity is plausible, exchangeable pooling is the safer default, because it imposes no belief about which bins are similar. 
 
-ewpage
+\subsection{Practical Guidance}
 
-\section{Tomz and Weeks Reanalysis}
+These results translate into six recommendations.
 
-This section summarizes the hierarchical models of \citet{TomzWeeks2021} and details the underlying \textsf{R} code.
-Both models use the nonlinear lambda specification in brms, which separates the outcome into two linked equations: a heterogeneity equation modeling the treatment effect ($\lambda$) and a control equation.
+\begin{enumerate}
+\item \textit{Decide whether the groups are of interest.}
+If the goal is how an effect changes along a continuous modifier, do not bin.
+Fit a smooth varying slope instead, such as \texttt{s(x, by = treat)} in brms, or a Gaussian process \citep{Pratietal2023}.
+Bin only when effects for interpretable groups are the quantity of interest, or when a continuous modifier must be combined with categorical ones.
+
+\item \textit{Keep the trend in the systematic component and model deviation with bins.}
+This leaves partial pooling to regularize some levels. 
+
+\item \textit{Use more bins than least squares could support.}
+Least squares was most accurate at four bins and deteriorated beyond that, while partial pooling kept improving through eight.
+Before fitting, count the cells implied by crossing every grouping variable and check the smallest cell in each treatment arm, because crossing multiplies bins quickly.
+
+\item \textit{Put cuts where theory or institutions put a threshold, or use quantiles.}
+Adding bins does not help when a boundary is in the wrong spot.
+Quantile cuts keep cells balanced when the modifier is skewed, where equal-width cuts leave the tail bins nearly empty.
+
+\item \textit{Pool bins as exchangeable unless the effect should change gradually.}
+Smoothing across ordered bins gained nothing where it was correct and cost accuracy where the effect jumped.
+
+\item \textit{Pre-register the number of bins and the cut rule, and report at least one alternative.}
+As with other issues, pre-registration can help express prior beliefs about these functions. 
+Moreover, if pre-registered models do not fit well, that is informative, because model misspecification often complicates model fitting.
+\end{enumerate}
 
 
-\subsection{R Code: Tomz and Weeks Reanalysis}
 
-First, the following model formula expresses a heterogeneous treatments model where the impact of alliances varies with the experimental conditions (regime, stakes, costs, and region).
-The \verb+treat_group+ indicator marks unique combinations of these experimental factors for the group-level random intercept.
-The control equation includes respondent demographics and foreign policy dispositions.
+\newpage
+
+\section{Barber and Pope Reanalysis}
+
+\subsection{Data and Groups}
+
+\citet{BarberPope2019} randomly assigned respondents to one of four conditions before asking their positions on ten policies.
+In two, Trump was described as taking the liberal or the conservative position on each policy. In the third, Republican leaders in Congress took a position, and the fourth gave no cue.
+Their analysis of heterogeneity compares the two Trump cues with the no-cue condition, and so does this reanalysis, which leaves out the party-leader condition.
+Each respondent answered all ten items under a single condition.
+After dropping respondents who answered ``not sure'' to the party identification question or skipped the Trump approval question, the data contain 7,173 item responses from 845 respondents.
+That is the estimation sample of their Table 1, where the same respondents drop out through missing values on party strength and Trump approval.
+
+The four modifiers are political knowledge, measured as the number of eight factual questions answered correctly, the seven-point party identification scale, Trump approval on a five-point scale, and self-placed ideology on a five-point scale.
+Knowledge is nearly uncorrelated with the others, while party identification, Trump approval and ideology correlate between 0.62 and 0.68.
+Their Table 1 uses a folded measure of party strength, estimated among independents and Republicans only.
+Because the direction of a respondent's partisanship matters for a Trump cue, the models here use the full seven-point scale instead.
+
+The groups for partial pooling cross party (Democrat, independent, Republican), Trump approval (disapprove, neither, approve), and knowledge (four or fewer correct answers, five or more).
+That gives 18 groups, which range from 3 to 178 respondents, with a median of 22.
+
+\subsection{Model and Code}
+
+Each cue has its own heterogeneity equation, in which the four modifiers predict the effect of the cue and a varying intercept for each group is partially pooled.
+The modifiers also enter the outcome equation, alongside a varying intercept for each group, one for each respondent, since each answered ten items, and one for each policy item.
+The group intercept in the outcome equation matters.
+Without it, groups that differ in baseline support can only show that difference through the cue slopes, which inflates the residual variation the model attributes to the cues.
+In the paper's two-equation form, the brms formula is:
 
 \begin{verbatim}
 bf(
-  force ~ lambda * alliance + controls,
+  Support ~ lamlib * libtrump + lamcon * contrump + ctrl,
 
-  lambda ~ regime + stakes + costs + region_txt + (1 | treat_group),
+  lamlib ~ knowledge + pid7 + trump_approve + ideo5b + (1 | grp),
 
-  controls ~ white + male + hawk + intl + dem + rep + age + ed4,
+  lamcon ~ knowledge + pid7 + trump_approve + ideo5b + (1 | grp),
+
+  ctrl ~ knowledge + pid7 + trump_approve + ideo5b + race_white +
+    (1 | grp) + (1 | caseid) + (1 | Question),
 
   nl = TRUE
 )
 \end{verbatim}
 
-
-The second formula expresses a respondent heterogeneity model where the impact of alliances varies with demographic characteristics (party, news interest, race, and gender).
-The \verb+het_group+ indicator marks unique combinations of these demographic modifiers.
-The control equation includes experimental conditions and respondent age and education.
+Multiplying out the two equations gives a single formula with the same parameters:
 
 \begin{verbatim}
-bf(
-  force ~ lambda * alliance + controls,
-
-  lambda ~ (dem + rep + high_newsint + white + male) + (1 | het_group),
-
-  controls ~ regime + stakes + costs + africa + europe + asia + age + ed4,
-
-  nl = TRUE
-)
+Support ~ (libtrump + contrump) *
+    (knowledge + pid7 + trump_approve + ideo5b) +
+  race_white + (1 | caseid) + (1 | Question) +
+  (1 + libtrump + contrump || grp)
 \end{verbatim}
 
-
-\subsection{Priors: Tomz and Weeks Reanalysis}
-
-
-\autoref{tab:priors} summarizes the prior distributions for both models.
-All priors are weakly informative relative to the scale of the data.
-The lambda coefficients receive a $N(0, 1)$ prior, while control coefficients receive a tighter $N(0, 0.5)$ prior.
+The two are the same model, but with 845 respondent intercepts the non-linear version takes hours to sample and the multiplied-out version minutes, so the results reported here come from the second.
+\autoref{tab:bp-equivalence} checks that the two give the same answer.
+I ran that check on an earlier version of this model, before I added the group intercept to the outcome equation, and the two forms agree to three decimal places.
 
 \begin{table}[htpb]
 \begin{center}
-\begin{tabular}{lc}
+\begin{tabular}{lcc}
 \hline
-Parameter & Prior \\
+Coefficient & Two equations & Multiplied out \\
 \hline
-$\lambda$ coefficients & $N(0, 1)$ \\
-Control coefficients & $N(0, 1)$ \\
-$\sigma$ (residual SD) & half-$N(0, 1)$ \\
-$\sigma_\theta$ (group SD) & half-$N(0, 1)$ \\
+Liberal cue $\times$ knowledge & $-0.014$ & $-0.014$ \\
+Liberal cue $\times$ party identification & 0.014 & 0.013 \\
+Liberal cue $\times$ Trump approval & 0.031 & 0.032 \\
+Liberal cue $\times$ ideology & $-0.001$ & $-0.001$ \\
+Conservative cue $\times$ knowledge & 0.026 & 0.026 \\
+Conservative cue $\times$ party identification & 0.002 & 0.002 \\
+Conservative cue $\times$ Trump approval & 0.010 & 0.009 \\
+Conservative cue $\times$ ideology & 0.004 & 0.004 \\
+Group SD, liberal cue & 0.097 & 0.096 \\
+Group SD, conservative cue & 0.097 & 0.095 \\
 \hline
 \end{tabular}
-\caption{Summary of priors in hierarchical models.}
+\caption{Posterior means from the two parameterizations of the Barber and Pope model, fit without the group intercept in the outcome equation. Group standard deviations are posterior medians.}
+\label{tab:bp-equivalence}
+\end{center}
+\end{table}
+
+\subsection{Priors}
+
+All coefficients receive $N(0, 1)$ priors, which are weakly informative on the scale of a binary outcome.
+The standard deviations of the group, respondent, and item intercepts, and the residual standard deviation, take the brms default, a half-$t(3, 0, 2.5)$.
+
+\subsection{Standard Errors in the Published Models}
+
+Because each respondent answers ten items, the least squares models in the main text cluster standard errors by respondent.
+The published models do not.
+\autoref{tab:bp-clustering} reproduces their Table 1 and reports both.
+Clustering matters for the liberal cue, where three of the four interactions are no longer significant at the .05 level. All four conservative-cue interactions remain significant.
+The comparisons in the main text use clustered standard errors for every least squares model, so that clustering does not drive any difference between them.
+
+\begin{table}[htpb]
+\begin{center}
+\begin{tabular}{llccc}
+\hline
+Cue & Modifier & Estimate & $p$, published & $p$, clustered \\
+\hline
+Liberal & Knowledge & $-0.011$ & 0.041 & 0.213 \\
+Liberal & Party strength & 0.028 & 0.045 & 0.200 \\
+Liberal & Trump approval & 0.041 & $<0.001$ & $<0.001$ \\
+Liberal & Ideology & 0.031 & 0.002 & 0.058 \\
+Conservative & Knowledge & 0.019 & 0.001 & 0.031 \\
+Conservative & Party strength & $-0.066$ & $<0.001$ & 0.004 \\
+Conservative & Trump approval & $-0.026$ & $<0.001$ & 0.012 \\
+Conservative & Ideology & $-0.033$ & 0.001 & 0.014 \\
+\hline
+\end{tabular}
+\caption{Interactions from the four separate models in Table 1 of \citet{BarberPope2019}, with the published standard errors and with standard errors clustered by respondent.}
+\label{tab:bp-clustering}
+\end{center}
+\end{table}
+
+\subsection{Joint Tests}
+
+In the interaction model that enters all four modifiers additively, none of Trump approval, ideology, or party identification is individually significant for either cue.
+Tested jointly, the three moderate the liberal cue ($\chi^2_3 = 12.98$, $p = 0.005$) but only marginally the conservative cue ($\chi^2_3 = 6.87$, $p = 0.076$).
+All four modifiers together are significant for both cues ($p = 0.005$ and $p = 0.030$).
+
+
+\subsection{Group Variation and Robustness}
+
+The standard deviation of the group-specific cue effects, net of the four modifiers, is 0.027 for the liberal cue (90\% interval 0.003 to 0.088) and 0.097 for the conservative cue (0.027 to 0.189).
+The groups also differ in baseline support for these policies, with a standard deviation of 0.117 (0.079 to 0.173).
+For the liberal cue, then, the four modifiers account for nearly all of the variation across groups, while for the conservative cue they leave a good deal of it unexplained.
+
+Grouping by party and Trump approval alone, which gives nine groups, yields 0.044 and 0.115 with wider intervals.
+The subgroup effects from that model correlate 0.997 with the main model's for the liberal cue and 0.975 for the conservative cue, and differ by at most 0.012 and 0.036.
+
+The outcome is binary, and like the original analysis the main model uses a Gaussian likelihood.
+Under a Bernoulli likelihood, with effects computed as the average change in the predicted probability of support, the subgroup effects correlate 0.997 with the main model's for the liberal cue and 0.900 for the conservative cue, and differ by at most 0.013 and 0.045.
+
+\subsection{Sampler Diagnostics}
+
+Each model was fit with four chains of 2,000 iterations, the first 1,000 of them warmup, with \texttt{adapt\_delta} set to 0.95.
+The coarser model has one divergent transition, and the main model's largest $\hat{R}$ is 1.012, marginally above the usual threshold of 1.01.
+
+\begin{table}[htpb]
+\begin{center}
+\begin{tabular}{lccc}
+\hline
+Model & Max $\hat{R}$ & Min bulk ESS & Divergent \\
+\hline
+Gaussian, party $\times$ approval $\times$ knowledge & 1.012 & 522 & 0 \\
+Bernoulli & 1.007 & 894 & 0 \\
+Party $\times$ approval groups & 1.006 & 445 & 1 \\
+\hline
+\end{tabular}
+\caption{Convergence diagnostics for the Barber and Pope models.}
+\label{tab:bp-diag}
+\end{center}
+\end{table}
+
+\subsection{Out-of-Sample Accuracy}
+
+To check whether one model estimates the subgroup effects Barber and Pope report more accurately than their separate models, I split the respondents at random into halves, stratified by group and condition, 200 times for each cue.
+Using one half, each approach estimates the cue's effect among Democrats, independents and Republicans, among those who disapprove of Trump, neither approve nor disapprove, or approve, among low- and high-knowledge respondents, and among liberals, moderates and conservatives.
+Those estimates are scored against the raw differences in means in the other half.
+Because the held-out difference is independent and unbiased, its noise adds the same amount to every approach's error, and differences in the score are differences in mean squared error.
+The hierarchical model is fit by restricted maximum likelihood, as in the simulations.
+
+\begin{table}[htpb]
+\begin{center}
+\begin{tabular}{lcc}
+\hline
+& Liberal cue & Conservative cue \\
+\hline
+Held-out error, separate models & 0.0045 & 0.0063 \\
+Held-out error, one model & 0.0036 & 0.0068 \\
+Held-out error, hierarchical & 0.0038 & 0.0062 \\
+Hierarchical more accurate than separate & 76\% & 55\% \\
+One model more accurate than separate & 81\% & 27\% \\
+Hierarchical more accurate than one model & 31\% & 75\% \\
+\hline
+\end{tabular}
+\caption{Accuracy of subgroup effect estimates across 200 split-half replications. Percentages give the share of replications in which one approach has lower held-out error than another.}
+\label{tab:bp-split}
+\end{center}
+\end{table}
+
+For the liberal cue, most of the gain comes from estimating the modifiers jointly, and pooling costs a little compared to the additive model.
+For the conservative cue, the additive model is less accurate than the separate models in most replications, and pooling restores the accuracy it loses.
+
+
+
+\newpage
+
+\section{Tomz and Weeks Reanalysis}
+
+The section provides another demonstration of the hierarchical approach by reanalyzing a study by \citet{TomzWeeks2021}. 
+Tomz and Weeks (TW hereafter) examine whether the public is more willing to go to war when the beneficiary of that intervention is a U.S. ally.
+In a factorial experiment with vignettes, they find a 33\% average increase in support for military intervention on behalf of allies, compared to non-allies. 
+This is a large and potentially important relationship because the United States has a global network of allies. 
+
+
+Given the size of the main effect, TW's paper is an ideal scenario for comparing interactions and hierarchical models. 
+Corresponding interaction effects may be large, and their sample size of 1,200 respondents is not unusual in published work. 
+At the same time, TW estimated many interactions to check how other treatments modify the impact of alliances by fully crossing interactions of their experimental treatments.\footnote{This is one example of fully crossed interactions in applied research.}
+There are 64 unique treatment groups with anywhere from 11 to 32 respondents, so estimates of the impact of alliances in the 32 pairs of alliance treatment and control groups employ at most 54 data points. 
+As such, hierarchical regularization will likely change some conclusions by pooling noisy estimates in small groups.
+For ease of comparison, I also compare an OLS model with additive instead of fully crossed interactions.
+As the simulation results indicate, the fully crossed results are far noisier.
+
+
+
+\subsection{Model and Code}
+
+The alliance effect varies with the other four treatments (regime, stakes, costs, and region), which enter the heterogeneity equation additively.
+The \verb+treat_group+ indicator marks the 32 combinations of those treatments and carries the varying intercept that is partially pooled.
+The same four treatments also enter the outcome equation as main effects, alongside respondent demographics and foreign policy dispositions.
+Costs are coded as in the original data, where one indicates low costs.
+
+\begin{verbatim}
+bf(
+  force ~ lambda * alliance + controls,
+
+  lambda ~ regime + stakes + costs + region_txt +
+    (1 | treat_group),
+
+  controls ~ regime + stakes + costs + region_txt +
+    white + male + hawk + intl + dem + rep + age + ed4,
+
+  nl = TRUE
+)
+\end{verbatim}
+
+The main effects in the outcome equation are necessary, even though every treatment is randomized.
+Without them, untreated respondents in every condition share one intercept, so each $\lambda_g$ estimates the difference between allied respondents in condition $g$ and non-allied respondents in all conditions.
+That difference adds the condition's baseline support to its alliance effect.
+Omitting them changes the answer substantially.
+In the condition with the only negative fully crossed estimate, non-allied respondents support intervention at 0.90 against 0.47 across all conditions, so a model without main effects moves that estimate from $-0.15$ to 0.39.
+Across all 32 conditions, its estimates correlate $-0.52$ with the additive least squares estimates, and leave-one-out cross-validation prefers the model with main effects by 35.3 points of expected log predictive density (standard error 9.4).
+The same requirement applies to the Bush and Prather model below.
+
+
+\subsection{Priors}
+
+\autoref{tab:priors} lists the priors.
+The coefficient priors are set in the code, while the two standard deviations take the brms defaults.
+All are weakly informative on the scale of a binary outcome, and the default on $\sigma_\theta$ is the weakest of the three priors compared below.
+
+\begin{table}[htpb]
+\begin{center}
+\begin{tabular}{lll}
+\hline
+Parameter & Prior & Sensitivity check \\
+\hline
+Heterogeneity equation coefficients & $N(0, 1)$ & \\
+Outcome equation coefficients & $N(0, 1)$ & \\
+$\sigma$ (residual SD) & half-$t(3, 0, 2.5)$ & \\
+$\sigma_\theta$ (group SD) & half-$t(3, 0, 2.5)$ & half-$N(0, 1)$, half-$N(0, 0.5)$ \\
+\hline
+\end{tabular}
+\caption{Priors in the Tomz and Weeks model.}
 \label{tab:priors}
 \end{center}
-\end{table} 
+\end{table}
 
+\subsection{Specification and Pooling}
+
+I estimate the alliance effect in each of the 32 conditions three ways: with TW's fully crossed least squares model, with an additive least squares model that has the same modifiers and no pooling, and with the hierarchical model.
+\autoref{fig:tw-het-treat-source} plots all three.
+
+\begin{figure}[htpb]
+	\centering
+		\includegraphics[width=0.95\textwidth]{../figures/tw-het-treat-source.png}
+	\caption{Estimated impact of alliance in each of the 32 experimental conditions, under fully crossed OLS, additive OLS, and the hierarchical model.}
+	\label{fig:tw-het-treat-source}
+\end{figure}
+
+The additive model separates the two steps that distinguish the hierarchical model from TW's. Moving from the fully crossed to the additive model is specification, and moving from the additive to the hierarchical model is pooling.
+
+Almost all of the change comes from the first step.
+The standard deviation of the 32 estimates is 0.188 under the fully crossed model, 0.124 under the additive model, and 0.122 under the hierarchical model, and the hierarchical estimates correlate 0.997 with the additive ones.
+Pooling adds little because the data support little variation beyond the additive structure. The posterior median of $\sigma_\theta$ is 0.031.
+That estimate comes from the data rather than the prior, since it holds under the weakest prior considered.
+In this application, then, the hierarchical model estimates that the condition-specific variation is small, where the additive model can only assume it.
+
+The models rarely disagree about effect directions.
+The fully crossed and hierarchical models assign the same sign to 31 of 32 conditions, and the additive and hierarchical models to all 32.
+The exception is the only negative fully crossed estimate, $-0.154$ for a low-cost, high-stakes intervention on behalf of an Eastern European democracy, which the hierarchical model places at 0.070.
+
+The models disagree much more about effect magnitudes.
+For a high-cost, low-stakes intervention on behalf of a South American democracy, the fully crossed estimate is 0.048 and the hierarchical estimate 0.395.
+
+%\subsection{Out-of-Sample Accuracy}
+%
+%A survey experiment has no ground truth for the effect in each condition, but half of the sample can check the other half.
+%I split the respondents at random into two halves, stratifying by condition and alliance treatment so that every cell appears in both, and estimate the 32 condition effects on one half with each model.
+%I then score those estimates against the raw difference in means within each condition in the other half.
+%The held-out difference is independent of the estimates and unbiased for the condition effect, so its noise adds the same amount to every model's score. Differences in the score are therefore differences in mean squared error.
+%The hierarchical model is fit by restricted maximum likelihood, as in the simulations, since the check requires 300 fits.
+%
+%Across 300 splits, the mean held-out score is 0.087 for the fully crossed model, 0.058 for the additive model, and 0.058 for the hierarchical model.
+%The hierarchical model is more accurate than the fully crossed model in 99\% of splits, by 0.029 on average (Monte Carlo standard error 0.001).
+%Subtracting an estimate of the held-out noise, 0.044, puts the mean squared error of the fully crossed estimates at 0.043 and of the hierarchical estimates at 0.014, a reduction of about two-thirds.
+%The hierarchical and additive models are indistinguishable, which is consistent with the small estimated $\sigma_\theta$: in 68\% of the half samples, the restricted maximum likelihood estimate of $\sigma_\theta$ is zero and the two models coincide.
+%Each estimate here uses half the data, so these figures rank the models and do not measure the accuracy of the full-sample estimates.
+
+\subsection{Sensitivity to the Prior, Likelihood, and Grouping}
+
+Replacing the default prior on $\sigma_\theta$ with a half-normal$(0, 1)$ or half-normal$(0, 0.5)$ moves no condition estimate by more than 0.005, and the posterior median of $\sigma_\theta$ stays between 0.031 and 0.032.
+
+A Bernoulli likelihood with a logit link changes the scale on which the modifiers combine, so its effects are computed as the average change in predicted probability within each condition.
+Those estimates correlate 0.97 with the Gaussian ones and differ by at most 0.10.
+Every condition has a positive estimate under both likelihoods, the smallest being 0.070 under the Gaussian model and 0.127 under the Bernoulli.
+The usual weakness of the linear probability model shows up here, as 6\% of its expected values for individual respondents fall outside $[0, 1]$.
+It does not distort the condition estimates, which the Bernoulli model reproduces closely.
+As a posterior predictive check, the observed mean in each of the 64 alliance-by-condition cells falls inside its 90\% posterior predictive interval in 63 cells under the Gaussian model and 62 under the Bernoulli.
+
+Grouping is a researcher choice, so I refit the model with region dropped from the heterogeneity equation, which leaves eight groups instead of 32.
+The spread of the estimates is unchanged, with a standard deviation of 0.121 against 0.122.
+Leave-one-out cross-validation cannot distinguish the two groupings. The 32-group model trails by 1.0 points of expected log predictive density, with a standard error of 1.9.
+The conclusions do not depend on whether region defines the groups.
+
+\subsection{Sampler Diagnostics}
+
+Every model was fit with four chains of 2,000 iterations, the first 1,000 of them warmup, and \texttt{adapt\_delta} set to 0.95.
+\autoref{tab:tw-diag} reports convergence.
+The coarse model has a single divergent transition, and the others have none.
+
+\begin{table}[htpb]
+\begin{center}
+\begin{tabular}{lcccc}
+\hline
+Model & Max $\hat{R}$ & Min bulk ESS & Divergent & $\sigma_\theta$ \\
+\hline
+Default prior (half-$t$) & 1.005 & 1,289 & 0 & 0.031 \\
+Half-normal$(0, 1)$ & 1.004 & 1,523 & 0 & 0.031 \\
+Half-normal$(0, 0.5)$ & 1.003 & 1,184 & 0 & 0.032 \\
+Bernoulli likelihood & 1.005 & 873 & 0 & 0.282 \\
+Coarse grouping (8 groups) & 1.003 & 1,224 & 1 & 0.029 \\
+\hline
+\end{tabular}
+\caption{Convergence diagnostics for the Tomz and Weeks models. The Bernoulli model's $\sigma_\theta$ is on the logit scale.}
+\label{tab:tw-diag}
+\end{center}
+\end{table}
+
+% Suspended pending a decision: the respondent model this subsection reports
+% omitted the modifiers from the outcome equation. With them included (see
+% tomz-weeks-reanalysis.R), the news interest coefficient falls from 0.138
+% [0.051, 0.228] to 0.080 [-0.032, 0.196], matching additive OLS (0.077, SE
+% 0.053), so the claim that the model overturns TW on news interest does not
+% hold, and the male coefficient falls from 0.072 to 0.014. The text and both
+% figures would need rewriting. Delete \iffalse and \fi to restore.
+\iffalse
 \newpage
 
 \subsection{Who Responds to Alliances?}
@@ -439,76 +765,77 @@ The weakest impact of alliances appears for non-white, politically independent w
 Here, alliances increase support for force by 13\%. 
 White respondents respond by 8\% more, Democrats by 4\% more, and Republicans by 10\%. 
 The accumulation of these different effects create substantial gaps between the groups.
+\fi
 
+\newpage
 
-
-\section{Bush and Prather Reanalysis}
-
-
-In the following, I again demonstrate how the model works by reanalyzing a study by \citet{BushPrather2020} (BP hereafter). 
-This study examines how foreign meddling in elections impacts support for economic engagement with the meddler. 
-One of their experiments examines how Russian or German engagement in the 2016 US election impacts mass support for trade and investment with those countries.
-I use a heterogeneous effects model to check their results and further explore their findings. 
-
-
-% describe design
-BP employ a 2x2x2 factorial experiment.
-This design randomizes whether a foreign country is interfering in the 2016 election, the country and their attitude towards Trump and whether the potential economic ties entail greater trade or investment in the United States.
-In one meddling treatment, Russia expresses support for Trump and in the other, Germany expresses opposition to Trump. 
-
-
-BP hypothesize that individuals will prefer economic engagement with states that support their candidate. 
-They thus examine how the impact of side-taking varies with the direction of the endorsement, individual political preferences, and the economic issue. 
-To do this, they use four tables and figures, and rely on eight t-tests of differences in means between groups of roughly 25 respondents. 
-
-
-I use the same nonlinear lambda specification as in the Tomz and Weeks reanalysis.
-The heterogeneous effects model estimates the impact of side-taking on economic engagement, with the treatment effect ($\lambda$) modeled as a function of potential modifiers.
-The heterogeneity equation includes a dummy indicator of intention to vote for Clinton, an indicator of whether the experiment deals with trade or investment, female gender, and high political engagement.
-I measure political engagement as a sum of political knowledge and interest, dichotomized at the median.
-Groups are defined by unique combinations of these four binary modifiers, producing 16 groups.
-
-
-The outcome variable is a scale from one to four that measures support for greater economic engagement with the potential partner.
-To approximate BP's analyses, I use a normal outcome likelihood.
-The control equation includes college education and employment status.
-
-\subsection{R Code: Bush and Prather Reanalysis}
-
-The following model formula expresses the heterogeneous effects model:
-
-\begin{verbatim}
-bf(
-  ipe_support ~ lambda * treat_germrus + controls,
-
-  lambda ~ (w2_vote_hill + woman + high_pol_engage + invest_cond) +
-           (1 | het_group),
-
-  controls ~ college_educ + employ_dum + woman + high_pol_engage
-
-  nl = TRUE
-)
-\end{verbatim}
-
-The priors follow the same structure as the Tomz and Weeks models, with $N(0, 1)$ on coefficients in the heterogeneity equation and $N(0, 0.5)$ on control coefficients.
-
-
-\begin{figure}[htpb]
-	\centering
-		\includegraphics[width=0.95\textwidth]{bp-het-joint.png}
-	\caption{Heterogeneous effects of German side-taking in US elections on support for economic engagement with Germany. Each estimate reflects a treated group with a unique combination of other treatments and demographic characteristics.}
-	\label{fig:bp-het-est}
-\end{figure}
-
-
-These estimates corroborate BP's findings.
-Clinton voters are more likely to support economic engagement with Germany when Germany has opposed Donald Trump. 
-This has the largest impact on attitudes towards trade among highly engaged respondents.
-Low engagement Clinton voters are less responsive.
-
-Trump voters are less responsive to German opposition to Trump.
-The effects are mostly null, and only for engaged voters in the investment condition does the endorsement have a clearly non-zero effect.
-This positive effect may reflect residual opposition to Trump in some sections of the Republican party.
+%\section{Bush and Prather Reanalysis}
+%
+%
+%In the following, I again demonstrate how the model works by reanalyzing a study by \citet{BushPrather2020} (BP hereafter). 
+%This study examines how foreign meddling in elections impacts support for economic engagement with the meddler. 
+%One of their experiments examines how Russian or German engagement in the 2016 US election impacts mass support for trade and investment with those countries.
+%I use a heterogeneous effects model to check their results and further explore their findings. 
+%
+%
+%% describe design
+%BP employ a 2x2x2 factorial experiment.
+%This design randomizes whether a foreign country is interfering in the 2016 election, the country and their attitude towards Trump and whether the potential economic ties entail greater trade or investment in the United States.
+%In one meddling treatment, Russia expresses support for Trump and in the other, Germany expresses opposition to Trump. 
+%
+%
+%BP hypothesize that individuals will prefer economic engagement with states that support their candidate. 
+%They thus examine how the impact of side-taking varies with the direction of the endorsement, individual political preferences, and the economic issue. 
+%To do this, they use four tables and figures, and rely on eight t-tests of differences in means between groups of roughly 25 respondents. 
+%
+%
+%I use the same nonlinear lambda specification as in the Tomz and Weeks reanalysis.
+%The heterogeneous effects model estimates the impact of side-taking on economic engagement, with the treatment effect ($\lambda$) modeled as a function of potential modifiers.
+%The heterogeneity equation includes a dummy indicator of intention to vote for Clinton, an indicator of whether the experiment deals with trade or investment, female gender, and high political engagement.
+%I measure political engagement as a sum of political knowledge and interest, dichotomized at the median.
+%Groups are defined by unique combinations of these four binary modifiers, producing 16 groups.
+%
+%
+%The outcome variable is a scale from one to four that measures support for greater economic engagement with the potential partner.
+%To approximate BP's analyses, I use a normal outcome likelihood.
+%The outcome equation includes every modifier as a main effect, along with college education and employment status.
+%
+%\subsection{R Code: Bush and Prather Reanalysis}
+%
+%The following model formula expresses the heterogeneous effects model:
+%
+%\begin{verbatim}
+%bf(
+%  ipe_support ~ lambda * treat_germrus + controls,
+%
+%  lambda ~ (w2_vote_hill + woman + high_pol_engage + invest_cond) +
+%           (1 | het_group),
+%
+%  controls ~ college_educ + employ_dum + woman + high_pol_engage +
+%    w2_vote_hill + invest_cond,
+%
+%  nl = TRUE
+%)
+%\end{verbatim}
+%
+%The priors are $N(0, 1)$ on coefficients in the heterogeneity equation and $N(0, 0.5)$ on coefficients in the outcome equation, with the brms defaults on the standard deviations.
+%
+%
+%\begin{figure}[htpb]
+%	\centering
+%		\includegraphics[width=0.95\textwidth]{bp-het-joint.png}
+%	\caption{Heterogeneous effects of German side-taking in US elections on support for economic engagement with Germany. Each estimate reflects a treated group with a unique combination of other treatments and demographic characteristics.}
+%	\label{fig:bp-het-est}
+%\end{figure}
+%
+%
+%These estimates corroborate BP's central finding.
+%Clinton voters are more likely to support economic engagement with Germany when Germany has opposed Donald Trump: the Clinton voter coefficient in the heterogeneity equation is 0.54, with a 95\% interval from 0.23 to 0.83.
+%The effect is largest when the tie is investment rather than trade, where it approaches one point on the four-point scale, and high engagement adds somewhat to it.
+%
+%Trump voters do not respond when the tie is trade, with effects near zero in all four groups.
+%They do respond when it is investment, with effects between 0.39 and 0.59 whose intervals exclude zero regardless of gender or engagement.
+%The investment condition lowers baseline support by half a point, which is why it must also enter the outcome equation: without it, that baseline difference is absorbed into the investment groups' treatment effects.
 
 
 \singlespace
